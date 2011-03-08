@@ -291,4 +291,22 @@ package Viewpoint {
       current_node
     }
   }
+  package Testing {
+    class ParserSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
+      import Parser._
+
+      describe("The level parser") {
+        it("should correctly parse '*'") { parseLevel("*") should be (1) }
+        it("should correctly parse '**'") { parseLevel("**") should be (2) }
+        it("should correctly parse '*3*'") { parseLevel("*3*") should be (3) }
+        it("should correctly parse '*4*'") { parseLevel("*4*") should be (4) }
+      }
+    }
+    object ParserSpecification extends org.scalacheck.Properties("Parser") {
+      import org.scalacheck.Prop.forAll
+      import Parser._
+
+      property("level") = forAll { i: Int => i == parseLevel("*%s*".format(i)); }
+    }
+  }
 }
