@@ -78,6 +78,7 @@ package Viewpoint {
       val begin_section_regex = "(\\s)*%s@\\+(.*)".format(quoted_comment_marker).r
       val end_section_regex = "(\\s)*%s@-(.*)".format(quoted_comment_marker).r
       val property_regex = "%s@([^\\s])* (.*)".format(quoted_comment_marker).r
+      val verbatim_text = "%s@verbatim".format(comment_marker)
       def apply(line: String) : Line = {
         begin_comment_regex.findPrefixMatchOf(line).map({m =>
           return BeginCommentLine
@@ -99,7 +100,7 @@ package Viewpoint {
         end_section_regex.findPrefixMatchOf(line).map({m =>
           return EndSectionLine(m.group(1))
         })
-        if(line == "@verbatim") return VerbatimLine
+        if(line == verbatim_text) return VerbatimLine
         property_regex.findPrefixMatchOf(line).map({m =>
           return PropertyLine(m.group(1),m.group(2))
         })
@@ -317,6 +318,7 @@ package Viewpoint {
 
       property("level") = forAll { i: Int => i == parseLevel("*%s*".format(i)) }
       property("begin comment") = forAll { (c: Comment) => =?(BeginCommentLine,new LineParser(c)("%s@+at".format(c))) }
+      property("verbatim") = forAll { (c: Comment) => =?(VerbatimLine,new LineParser(c)("%s@verbatim".format(c))) }
     }
   }
 }
