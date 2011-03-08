@@ -69,14 +69,15 @@ package Viewpoint {
     case class PropertyLine(name: String, value: String) extends Line
     case class TextLine(text: String) extends Line
 
-    class LineParser(comment_marker: String) {
-      val node_regex = "%s@+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(comment_marker).r
-      val begin_comment_regex = "%s@\\+at\\z".format(comment_marker).r
-      val comment_line_regex = "%s (.*)".format(comment_marker).r
-      val end_comment_regex = "%s@@c\\z".format(comment_marker).r
-      val begin_section_regex = "(\\s)*%s@\\+(.*)".format(comment_marker).r
-      val end_section_regex = "(\\s)*%s@-(.*)".format(comment_marker).r
-      val property_regex = "%s@([^\\s])* (.*)".format(comment_marker).r
+    class LineParser(val comment_marker: String) {
+      val quoted_comment_marker = "\\Q%s\\E".format(comment_marker)
+      val node_regex = "%s@+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
+      val begin_comment_regex = "%s@\\+at\\z".format(quoted_comment_marker).r
+      val comment_line_regex = "%s (.*)".format(quoted_comment_marker).r
+      val end_comment_regex = "%s@@c\\z".format(quoted_comment_marker).r
+      val begin_section_regex = "(\\s)*%s@\\+(.*)".format(quoted_comment_marker).r
+      val end_section_regex = "(\\s)*%s@-(.*)".format(quoted_comment_marker).r
+      val property_regex = "%s@([^\\s])* (.*)".format(quoted_comment_marker).r
       def apply(line: String) : Line = {
         begin_comment_regex.findPrefixMatchOf(line).map({m =>
           return BeginCommentLine
@@ -303,10 +304,19 @@ package Viewpoint {
       }
     }
     object ParserSpecification extends org.scalacheck.Properties("Parser") {
-      import org.scalacheck.Prop.forAll
+      import org.scalacheck.Arbitrary
+      import org.scalacheck.Gen.{choose,listOf1}
+      import org.scalacheck.Prop.{=?,forAll}
       import Parser._
 
-      property("level") = forAll { i: Int => i == parseLevel("*%s*".format(i)); }
+      case class Comment(val string: String) { override def toString = string }
+      implicit def unwrapComment(c: Comment) : String = c.string
+      implicit val arbComment = Arbitrary[Comment] {
+        listOf1[Char](choose(33,63)).map(s => Comment(s.mkString))
+      }
+
+      property("level") = forAll { i: Int => i == parseLevel("*%s*".format(i)) }
+      property("begin comment") = forAll { (c: Comment) => =?(BeginCommentLine,new LineParser(c)("%s@+at".format(c))) }
     }
   }
 }
