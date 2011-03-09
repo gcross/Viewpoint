@@ -86,7 +86,7 @@ package Viewpoint {
     sealed abstract class ParseError extends Exception
     object UnexpectedIndent extends ParseError
     object UnexpectedUnindent extends ParseError
-    object BadLevelNumber extends ParseError
+    case class BadLevelNumber(level: Int) extends ParseError
     object UnmatchedBeginSection extends ParseError
     object MismatchedEndSection extends ParseError
     object ContentAfterEndOfFileSentinel extends ParseError
@@ -229,7 +229,7 @@ package Viewpoint {
 
       var current_node = parseLine(nextSectionLine) match {
         case NodeLine(id,level,heading) => {
-          if(level != 1) throw BadLevelNumber
+          if(level != 1) throw BadLevelNumber(level)
           new Node(id,heading,"")
         }
         case _ => throw NodeNotFoundImmediatelyAfterBeginSection
@@ -241,14 +241,14 @@ package Viewpoint {
         parseLine(line) match {
           case NodeLine(id,level,heading) => {
             current_node.body = current_body.toString
-            if(level < current_section_level) throw BadLevelNumber
+            if(level < current_section_level) throw BadLevelNumber(level)
             while(level < current_level) {
               current_node = current_parent_node
               current_parent_node = node_stack.pop
               current_level -= 1
             }
             if(level > current_level) {
-              if(level > current_level+1) throw BadLevelNumber
+              if(level > current_level+1) throw BadLevelNumber(level)
               node_stack.push(current_parent_node)
               current_parent_node = current_node
               current_level += 1
@@ -269,7 +269,7 @@ package Viewpoint {
               case (n : NodeLine) => n
               case _ => throw NodeNotFoundImmediatelyAfterBeginSection
             }
-            if(level != current_level+1) throw BadLevelNumber
+            if(level != current_level+1) throw BadLevelNumber(level)
             body_stack.push(current_body)
             node_stack.push(current_parent_node)
             current_parent_node = current_node
