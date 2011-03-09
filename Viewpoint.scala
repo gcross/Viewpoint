@@ -1,13 +1,15 @@
 package Viewpoint {
+  import java.util.LinkedList
   import scala.annotation.tailrec
 
   class Parent {
-    var children = new scala.collection.mutable.DoubleLinkedList[Node]
+    var children = new LinkedList[Node]
     var properties = new scala.collection.mutable.HashMap[String,String]
     def getProperty(name: String) : Option[String] = properties.get(name)
   }
 
   class Node(val id: String, var heading: String, var body: String) extends Parent {
+    import scala.collection.JavaConversions._
     var parents = new scala.collection.mutable.HashSet[Node]
     override def getProperty(name: String) : Option[String] =
       properties.get(name).orElse({
@@ -47,7 +49,7 @@ package Viewpoint {
       builder.append("children:")
       builder.append('\n')
 
-      val child_indentation = indentation + ' '*4
+      val child_indentation = indentation + " "*4
       for(child <- children) {
         builder.append("  - ")
         child.appendYAML(child_indentation,builder)
@@ -238,10 +240,11 @@ package Viewpoint {
             current_body = new StringBuilder
             current_node = new Node(id,heading,"")
             current_node.parents += current_parent_node
-            current_parent_node.children :+ current_node
+            current_parent_node.children.add(current_node)
           }
           case BeginSectionLine(indentation,section_name) => {
             for(_ <- 1 to indentation) current_body.append(' ')
+            current_body.append(section_name)
             current_body.append('\n')
             if(!lines.hasNext) throw UnmatchedBeginSection
             val NodeLine(id,level,heading) = parseLine(lines.next.substring(indentation)) match {
@@ -257,7 +260,7 @@ package Viewpoint {
             current_level = current_level+1
             current_node = new Node(id,heading,"")
             current_node.parents += current_parent_node
-            current_parent_node.children :+ current_node
+            current_parent_node.children.add(current_node)
 
             section_indentation_stack.push(current_section_indentation)
             section_level_stack.push(current_section_level)
@@ -276,7 +279,8 @@ package Viewpoint {
               current_level -= 1
             }
             if(current_level > 1) {
-              current_node = node_stack.pop
+              current_node = current_parent_node
+              current_parent_node = node_stack.pop
               current_body = body_stack.pop
               current_section_indentation = section_indentation_stack.pop
               current_section_level = section_level_stack.pop
@@ -361,6 +365,28 @@ package Viewpoint {
                |heading: @thin node.cpp
                |body: "@first Hello,\n@first world!\nfoo\nBar\n"
                |children:
+               |""".stripMargin
+          )
+        }
+        it("a file with a single named section") {
+          parse(
+            """|#@+leo-ver=5-thin
+               |#@+node:name: * @thin node.cpp
+               |foo
+               |#@+<< Section >>
+               |#@+node:nodeid: ** << Section >>
+               |content
+               |#@-<< Section >>
+               |bar
+               |#@-leo""".stripMargin.lines).toYAML should be(
+            """|id: name
+               |heading: @thin node.cpp
+               |body: "foo\n<< Section >>\nbar\n"
+               |children:
+               |  - id: nodeid
+               |    heading: << Section >>
+               |    body: "content\n"
+               |    children:
                |""".stripMargin
           )
         }
