@@ -49,7 +49,9 @@ package Viewpoint {
       builder.append(indentation)
       builder.append("properties:")
       builder.append('\n')
-      for(key <- properties.keySet) {
+      val keys : Array[String] = properties.keySet.toArray(Array[String]())
+      scala.util.Sorting.quickSort(keys)
+      for(key <- keys) {
         builder.append(indentation)
         builder.append("    ")
         builder.append(key)
@@ -383,6 +385,25 @@ package Viewpoint {
                |""".stripMargin
           )
         }
+        it("a single-node file with properties") {
+          parse(
+            """|#@+leo-ver=5-thin
+               |#@+node:namegoeshere: * @thin node.cpp
+               |A
+               |#@@key1 value1
+               |#@@key2 value2
+               |B
+               |#@-leo""".stripMargin.lines).toYAML should be(
+            """|id: namegoeshere
+               |heading: @thin node.cpp
+               |body: "A\n@key1 value1\n@key2 value2\nB\n"
+               |properties:
+               |    key1: value1
+               |    key2: value2
+               |children:
+               |""".stripMargin
+          )
+        }
         it("a file with a single named section") {
           parse(
             """|#@+leo-ver=5-thin
@@ -403,6 +424,34 @@ package Viewpoint {
                |    heading: << Section >>
                |    body: "content\n"
                |    properties:
+               |    children:
+               |""".stripMargin
+          )
+        }
+        it("a file with a single named section with properties") {
+          parse(
+            """|#@+leo-ver=5-thin
+               |#@+node:name: * @thin node.cpp
+               |foo
+               |#@@key value
+               |#@+<< Section >>
+               |#@+node:nodeid: ** << Section >>
+               |#@@key value
+               |content
+               |#@-<< Section >>
+               |bar
+               |#@-leo""".stripMargin.lines).toYAML should be(
+            """|id: name
+               |heading: @thin node.cpp
+               |body: "foo\n@key value\n<< Section >>\nbar\n"
+               |properties:
+               |    key: value
+               |children:
+               |  - id: nodeid
+               |    heading: << Section >>
+               |    body: "@key value\ncontent\n"
+               |    properties:
+               |        key: value
                |    children:
                |""".stripMargin
           )
