@@ -66,7 +66,7 @@ package Viewpoint {
       text == "others" || text.substring(0,2) == "<<" && text.substring(text.length-2) == ">>"
 
     sealed abstract class Line
-    case class NodeLine(id: String, level: Int, header: String) extends Line
+    case class NodeLine(id: String, level: Int, heading: String) extends Line
     object BeginCommentLine extends Line
     case class BeginSectionLine(indentation: Int, section_name: String) extends Line
     case class EndSectionLine(section_name: String) extends Line
@@ -176,9 +176,9 @@ package Viewpoint {
       }
 
       var current_node = parseLine(nextSectionLine) match {
-        case NodeLine(id,level,header) => {
+        case NodeLine(id,level,heading) => {
           if(level != 1) throw BadLevelNumber
-          new Node(id,header,"")
+          new Node(id,heading,"")
         }
         case _ => throw NodeNotFoundImmediatelyAfterBeginSection
       }
@@ -187,7 +187,7 @@ package Viewpoint {
         if(current_section_level == 0) throw ContentAfterEndOfFileSentinel
         val line = nextSectionLine
         parseLine(line) match {
-          case NodeLine(id,level,header) => {
+          case NodeLine(id,level,heading) => {
             current_node.body = current_body.toString
             if(level < current_section_level) throw BadLevelNumber
             while(level < current_level) {
@@ -202,7 +202,7 @@ package Viewpoint {
               current_level += 1
             }
             current_body = new StringBuilder
-            current_node = new Node(id,header,"")
+            current_node = new Node(id,heading,"")
             current_node.parents += current_parent_node
             current_parent_node.children :+ current_node
           }
@@ -210,7 +210,7 @@ package Viewpoint {
             for(_ <- 1 to indentation) current_body.append(' ')
             current_body.append('\n')
             if(!lines.hasNext) throw UnmatchedBeginSection
-            val NodeLine(id,level,header) = parseLine(lines.next.substring(indentation)) match {
+            val NodeLine(id,level,heading) = parseLine(lines.next.substring(indentation)) match {
               case (n : NodeLine) => n
               case _ => throw NodeNotFoundImmediatelyAfterBeginSection
             }
@@ -221,7 +221,7 @@ package Viewpoint {
 
             current_body = new StringBuilder
             current_level = current_level+1
-            current_node = new Node(id,header,"")
+            current_node = new Node(id,heading,"")
             current_node.parents += current_parent_node
             current_parent_node.children :+ current_node
 
@@ -323,7 +323,7 @@ package Viewpoint {
       property("level") = forAll { i: Int => i == parseLevel("*%s*".format(i)) }
       property("begin comment") = forAll { (c: Comment) => =?(BeginCommentLine,new LineParser(c)("%s@+at".format(c))) }
       property("verbatim") = forAll { (c: Comment) => =?(VerbatimLine,new LineParser(c)("%s@verbatim".format(c))) }
-      property("node") = forAll(arbitrary[Comment],alphaStr,choose(3,20),arbitrary[String]) { (c,name,level:Int,header) => =?(NodeLine(name,level,header),new LineParser(c)("%s@+node:%s: *%s* %s".format(c,name,level,header))) }
+      property("node") = forAll(arbitrary[Comment],alphaStr,choose(3,20),arbitrary[String]) { (c,name,level:Int,heading) => =?(NodeLine(name,level,heading),new LineParser(c)("%s@+node:%s: *%s* %s".format(c,name,level,heading))) }
       property("begin section (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),arbitrary[String]) { (c,indentation:Int,section_name) => =?(BeginSectionLine(indentation,"<<%s>>".format(section_name)),new LineParser(c)("%s%s@+<<%s>>".format(" "*indentation,c,section_name))) }
       property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) { (c,indentation:Int) => =?(BeginSectionLine(indentation,"others"),new LineParser(c)("%s%s@+others".format(" "*indentation,c))) }
       property("property") = forAll(arbitrary[Comment],alphaStr,arbitrary[String]) { (c,key,value) => =?(PropertyLine(key,value),new LineParser(c)("%s@@%s %s".format(c,key,value))) }
