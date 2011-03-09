@@ -37,7 +37,9 @@ package Viewpoint {
     object UnmatchedBeginSection extends ParseError
     object MismatchedEndSection extends ParseError
     object ContentAfterEndOfFileSentinel extends ParseError
-    object InvalidSectionName extends ParseError
+    case class InvalidSectionName(section_name: String) extends ParseError {
+      override def toString = "Invalid section name: " + section_name
+    }
     object NodeNotFoundImmediatelyAfterBeginSection extends ParseError
     object UnexpectedEndOfFile extends ParseError
     object BadCommentSectionLine extends ParseError
@@ -64,19 +66,19 @@ package Viewpoint {
     case class NodeLine(id: String, level: Int, header: String) extends Line
     object BeginCommentLine extends Line
     case class BeginSectionLine(indentation: Int, section_name: Option[String]) extends Line
-    case class EndSectionLine(section_nane: String) extends Line
+    case class EndSectionLine(section_name: String) extends Line
     object VerbatimLine extends Line
     case class PropertyLine(name: String, value: String) extends Line
     case class TextLine(text: String) extends Line
 
     class LineParser(val comment_marker: String) {
       val quoted_comment_marker = "\\Q%s\\E".format(comment_marker)
-      val node_regex = "%s@+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
+      val node_regex = "%s@\\+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
       val begin_comment_regex = "%s@\\+at\\z".format(quoted_comment_marker).r
       val comment_line_regex = "%s (.*)".format(quoted_comment_marker).r
       val end_comment_regex = "%s@@c\\z".format(quoted_comment_marker).r
-      val begin_section_regex = "(\\s)*%s@\\+(.*)".format(quoted_comment_marker).r
-      val end_section_regex = "(\\s)*%s@-(.*)".format(quoted_comment_marker).r
+      val begin_section_regex = "(\\s*)%s@\\+(.*)".format(quoted_comment_marker).r
+      val end_section_regex = "%s@-(.*)".format(quoted_comment_marker).r
       val property_regex = "%s@([^\\s])* (.*)".format(quoted_comment_marker).r
       val verbatim_text = "%s@verbatim".format(comment_marker)
       def apply(line: String) : Line = {
@@ -88,13 +90,13 @@ package Viewpoint {
         })
         begin_section_regex.findPrefixMatchOf(line).map({m =>
           val section_name = m.group(2)
-          BeginSectionLine(m.group(1).toInt,
+          BeginSectionLine(m.group(1).length,
             if(section_name == "others")
               None
             else if(section_name.substring(0,2) == "<<" && section_name.substring(section_name.length-2) == ">>")
               Some(section_name)
             else
-              throw InvalidSectionName
+              throw InvalidSectionName(section_name)
           )
         })
         end_section_regex.findPrefixMatchOf(line).map({m =>
@@ -306,7 +308,8 @@ package Viewpoint {
     }
     object ParserSpecification extends org.scalacheck.Properties("Parser") {
       import org.scalacheck.Arbitrary
-      import org.scalacheck.Gen.{choose,listOf1}
+      import org.scalacheck.Arbitrary.arbitrary
+      import org.scalacheck.Gen.{alphaStr,choose,listOf1,posNum}
       import org.scalacheck.Prop.{=?,forAll}
       import Parser._
 
@@ -319,6 +322,7 @@ package Viewpoint {
       property("level") = forAll { i: Int => i == parseLevel("*%s*".format(i)) }
       property("begin comment") = forAll { (c: Comment) => =?(BeginCommentLine,new LineParser(c)("%s@+at".format(c))) }
       property("verbatim") = forAll { (c: Comment) => =?(VerbatimLine,new LineParser(c)("%s@verbatim".format(c))) }
+      property("node") = forAll(arbitrary[Comment],alphaStr,choose(3,20),arbitrary[String]) { (c,name,level,header) => =?(NodeLine(name,level,header),new LineParser(c)("%s@+node:%s: *%s* %s".format(c,name,level,header))) }
     }
   }
 }
