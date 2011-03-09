@@ -1,26 +1,27 @@
 package Viewpoint {
+  import java.util.HashMap
+  import java.util.HashSet
   import java.util.LinkedList
   import scala.annotation.tailrec
 
   class Parent {
     var children = new LinkedList[Node]
-    var properties = new scala.collection.mutable.HashMap[String,String]
-    def getProperty(name: String) : Option[String] = properties.get(name)
+    var properties = new HashMap[String,String]
+    def getProperty(key: String) : String = properties.get(key)
+    def setProperty(key: String, value: String) : String = properties.put(key,value)
   }
 
   class Node(val id: String, var heading: String, var body: String) extends Parent {
     import scala.collection.JavaConversions._
-    var parents = new scala.collection.mutable.HashSet[Node]
-    override def getProperty(name: String) : Option[String] =
-      properties.get(name).orElse({
-        parents.map({
-          _.properties.get(name) match {
-            case s @ Some(value) => return s
-            case _ => ()
-          }
-        })
-        None
-      })
+    var parents = new HashSet[Parent]
+    override def getProperty(key: String) : String = {
+      var value = properties.get(key)
+      val iterator = parents.iterator
+      while((value eq null) && iterator.hasNext) {
+        value = iterator.next.getProperty(key)
+      }
+      value
+    }
     def toYAML: String = {
       val builder = new StringBuilder
       appendYAML("",builder)
@@ -239,7 +240,7 @@ package Viewpoint {
             }
             current_body = new StringBuilder
             current_node = new Node(id,heading,"")
-            current_node.parents += current_parent_node
+            current_node.parents.add(current_parent_node)
             current_parent_node.children.add(current_node)
           }
           case BeginSectionLine(indentation,section_name) => {
@@ -259,7 +260,7 @@ package Viewpoint {
             current_body = new StringBuilder
             current_level = current_level+1
             current_node = new Node(id,heading,"")
-            current_node.parents += current_parent_node
+            current_node.parents.add(current_parent_node)
             current_parent_node.children.add(current_node)
 
             section_indentation_stack.push(current_section_indentation)
@@ -311,7 +312,7 @@ package Viewpoint {
             current_body.append(nextSectionLine)
           }
           case PropertyLine(name,value) => {
-            current_node.properties(name) = value
+            current_node.setProperty(name,value)
             current_body.append('@')
             current_body.append(name)
             current_body.append(' ')
