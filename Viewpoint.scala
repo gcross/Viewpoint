@@ -66,6 +66,7 @@ package Viewpoint {
 
       val child_indentation = indentation + " "*4
       for(child <- children) {
+        builder.append(indentation)
         builder.append("  - ")
         child.appendYAML(child_indentation,builder)
       }
@@ -259,6 +260,8 @@ package Viewpoint {
           }
           case BeginSectionLine(indentation,section_name) => {
             for(_ <- 1 to indentation) current_body.append(' ')
+            if(section_name.charAt(0) != '<')
+              current_body.append('@')
             current_body.append(section_name)
             current_body.append('\n')
             if(!lines.hasNext) throw UnmatchedBeginSection
@@ -272,7 +275,7 @@ package Viewpoint {
             current_parent_node = current_node
 
             current_body = new StringBuilder
-            current_level = current_level+1
+            current_level = level
             current_node = new Node(id,heading,"")
             current_node.parents.add(current_parent_node)
             current_parent_node.children.add(current_node)
@@ -282,13 +285,13 @@ package Viewpoint {
             section_name_stack.push(current_section_name)
 
             current_section_indentation += indentation
-            current_section_level = current_level+2
+            current_section_level = current_level
             current_section_name = section_name
           }
           case EndSectionLine(section_name) => {
             if(section_name != current_section_name) throw MismatchedEndSection
             current_node.body = current_body.toString
-            while(current_level >= current_section_level) {
+            while(current_level > current_section_level) {
               current_node = current_parent_node
               current_parent_node = node_stack.pop
               current_level -= 1
@@ -453,6 +456,65 @@ package Viewpoint {
                |    properties:
                |        key: value
                |    children:
+               |""".stripMargin
+          )
+        }
+        it("a file with nested others sections") {
+          parse(
+            """|#@+leo-ver=5-thin
+               |#@+node:name: * @thin node.cpp
+               |pre1
+               |#@+others
+               |#@+node:ay: ** A
+               |content of A
+               |#@+node:ay1: *3* 1
+               |content of A1
+               |#@+node:ay2: *3* 2
+               |content of A2
+               |#@+node:bee: ** B
+               |content of B
+               |#@+node:bee1: *3* 1
+               |content of B1
+               |#@+node:bee1a: *4* a
+               |content of B1a
+               |#@-others
+               |post1
+               |#@-leo""".stripMargin.lines).toYAML should be(
+            """|id: name
+               |heading: @thin node.cpp
+               |body: "pre1\n@others\npost1\n"
+               |properties:
+               |children:
+               |  - id: ay
+               |    heading: A
+               |    body: "content of A\n"
+               |    properties:
+               |    children:
+               |      - id: ay1
+               |        heading: 1
+               |        body: "content of A1\n"
+               |        properties:
+               |        children:
+               |      - id: ay2
+               |        heading: 2
+               |        body: "content of A2\n"
+               |        properties:
+               |        children:
+               |  - id: bee
+               |    heading: B
+               |    body: "content of B\n"
+               |    properties:
+               |    children:
+               |      - id: bee1
+               |        heading: 1
+               |        body: "content of B1\n"
+               |        properties:
+               |        children:
+               |          - id: bee1a
+               |            heading: a
+               |            body: "content of B1a\n"
+               |            properties:
+               |            children:
                |""".stripMargin
           )
         }
