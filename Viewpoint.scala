@@ -47,6 +47,18 @@ package Viewpoint {
       builder.append('\n')
 
       builder.append(indentation)
+      builder.append("properties:")
+      builder.append('\n')
+      for(key <- properties.keySet) {
+        builder.append(indentation)
+        builder.append("    ")
+        builder.append(key)
+        builder.append(": ")
+        builder.append(properties.get(key))
+        builder.append('\n')
+      }
+
+      builder.append(indentation)
       builder.append("children:")
       builder.append('\n')
 
@@ -349,6 +361,7 @@ package Viewpoint {
             """|id: gcross.20101205182001.1356
                |heading: @thin node.cpp
                |body: ""
+               |properties:
                |children:
                |""".stripMargin
           )
@@ -365,6 +378,7 @@ package Viewpoint {
             """|id: namegoeshere
                |heading: @thin node.cpp
                |body: "@first Hello,\n@first world!\nfoo\nBar\n"
+               |properties:
                |children:
                |""".stripMargin
           )
@@ -383,10 +397,12 @@ package Viewpoint {
             """|id: name
                |heading: @thin node.cpp
                |body: "foo\n<< Section >>\nbar\n"
+               |properties:
                |children:
                |  - id: nodeid
                |    heading: << Section >>
                |    body: "content\n"
+               |    properties:
                |    children:
                |""".stripMargin
           )
