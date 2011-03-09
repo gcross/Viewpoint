@@ -304,7 +304,8 @@ package Viewpoint {
     object ParserSpecification extends org.scalacheck.Properties("Parser") {
       import org.scalacheck.Arbitrary
       import org.scalacheck.Arbitrary.arbitrary
-      import org.scalacheck.Gen.{alphaStr,choose,listOf1,posNum}
+      import org.scalacheck.Gen
+      import org.scalacheck.Gen.{alphaStr,choose,listOf1,oneOf,posNum}
       import org.scalacheck.Prop.{=?,forAll}
       import Parser._
 
@@ -313,6 +314,11 @@ package Viewpoint {
       implicit val arbComment = Arbitrary[Comment] {
         listOf1[Char](choose(33,63)).map(s => Comment(s.mkString))
       }
+
+      implicit val arbChar: Arbitrary[Char] = Arbitrary(
+        oneOf(Gen.choose(Char.MinValue,0xD800-1),Gen.choose(0xDFFF+1,Char.MaxValue))
+      )
+      implicit val arbString = Arbitrary[String](arbitrary[List[Char]].map(_.mkString))
 
       property("level") = forAll { i: Int => i == parseLevel("*%s*".format(i)) }
       property("begin comment") = forAll { (c: Comment) => =?(BeginCommentLine,new LineParser(c)("%s@+at".format(c))) }
