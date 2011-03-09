@@ -79,7 +79,7 @@ package Viewpoint {
       val end_comment_regex = "%s@@c\\z".format(quoted_comment_marker).r
       val begin_section_regex = "(\\s*)%s@\\+(.*)".format(quoted_comment_marker).r
       val end_section_regex = "%s@-(.*)".format(quoted_comment_marker).r
-      val property_regex = "%s@([^\\s])* (.*)".format(quoted_comment_marker).r
+      val property_regex = "%s@@([^\\s]*) (.*)".format(quoted_comment_marker).r
       val verbatim_text = "%s@verbatim".format(comment_marker)
       def apply(line: String) : Line = {
         begin_comment_regex.findPrefixMatchOf(line).map({m =>
@@ -325,6 +325,7 @@ package Viewpoint {
       property("node") = forAll(arbitrary[Comment],alphaStr,choose(3,20),arbitrary[String]) { (c,name,level,header) => =?(NodeLine(name,level,header),new LineParser(c)("%s@+node:%s: *%s* %s".format(c,name,level,header))) }
       property("begin section (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),arbitrary[String]) { (c,indentation,section_name) => =?(BeginSectionLine(indentation,Some(section_name)),new LineParser(c)("%s%s@+<<%s>>".format(" "*indentation,c,section_name))) }
       property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) { (c,indentation) => =?(BeginSectionLine(indentation,None),new LineParser(c)("%s%s@+others".format(" "*indentation,c))) }
+      property("property") = forAll(arbitrary[Comment],alphaStr,arbitrary[String]) { (c,key,value) => =?(PropertyLine(key,value),new LineParser(c)("%s@@%s %s".format(c,key,value))) }
     }
   }
 }
