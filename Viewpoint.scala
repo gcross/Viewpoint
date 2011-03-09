@@ -62,10 +62,13 @@ package Viewpoint {
       }
     }
 
+    def validSectionName(text: String) : Boolean =
+      text == "others" || text.substring(0,2) == "<<" && text.substring(text.length-2) == ">>"
+
     sealed abstract class Line
     case class NodeLine(id: String, level: Int, header: String) extends Line
     object BeginCommentLine extends Line
-    case class BeginSectionLine(indentation: Int, section_name: Option[String]) extends Line
+    case class BeginSectionLine(indentation: Int, section_name: String) extends Line
     case class EndSectionLine(section_name: String) extends Line
     object VerbatimLine extends Line
     case class PropertyLine(name: String, value: String) extends Line
@@ -90,14 +93,10 @@ package Viewpoint {
         })
         begin_section_regex.findPrefixMatchOf(line).map({m =>
           val section_name = m.group(2)
-          return BeginSectionLine(m.group(1).length,
-            if(section_name == "others")
-              None
-            else if(section_name.substring(0,2) == "<<" && section_name.substring(section_name.length-2) == ">>")
-              Some(section_name.substring(2,section_name.length-2))
-            else
-              throw InvalidSectionName(section_name)
-          )
+	  if(validSectionName(section_name))
+            return BeginSectionLine(m.group(1).length,section_name)
+	  else
+	    throw InvalidSectionName(section_name)
         })
         end_section_regex.findPrefixMatchOf(line).map({m =>
           return EndSectionLine(m.group(1))
@@ -207,12 +206,8 @@ package Viewpoint {
             current_node.parents += current_parent_node
             current_parent_node.children :+ current_node
           }
-          case BeginSectionLine(indentation,maybe_section_name) => {
+          case BeginSectionLine(indentation,section_name) => {
             for(_ <- 1 to indentation) current_body.append(' ')
-            val section_name = maybe_section_name match {
-              case Some(section_name) => { current_body.append(section_name); section_name }
-              case None => { current_body.append("@others"); "others" }
-            }
             current_body.append('\n')
             if(!lines.hasNext) throw UnmatchedBeginSection
             val NodeLine(id,level,header) = parseLine(lines.next.substring(indentation)) match {
@@ -322,9 +317,9 @@ package Viewpoint {
       property("level") = forAll { i: Int => i == parseLevel("*%s*".format(i)) }
       property("begin comment") = forAll { (c: Comment) => =?(BeginCommentLine,new LineParser(c)("%s@+at".format(c))) }
       property("verbatim") = forAll { (c: Comment) => =?(VerbatimLine,new LineParser(c)("%s@verbatim".format(c))) }
-      property("begin section (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),arbitrary[String]) { (c,indentation,section_name) => =?(BeginSectionLine(indentation,Some(section_name)),new LineParser(c)("%s%s@+<<%s>>".format(" "*indentation,c,section_name))) }
-      property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) { (c,indentation) => =?(BeginSectionLine(indentation,None),new LineParser(c)("%s%s@+others".format(" "*indentation,c))) }
       property("node") = forAll(arbitrary[Comment],alphaStr,choose(3,20),arbitrary[String]) { (c,name,level:Int,header) => =?(NodeLine(name,level,header),new LineParser(c)("%s@+node:%s: *%s* %s".format(c,name,level,header))) }
+      property("begin section (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),arbitrary[String]) { (c,indentation:Int,section_name) => =?(BeginSectionLine(indentation,"<<%s>>".format(section_name)),new LineParser(c)("%s%s@+<<%s>>".format(" "*indentation,c,section_name))) }
+      property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) { (c,indentation:Int) => =?(BeginSectionLine(indentation,"others"),new LineParser(c)("%s%s@+others".format(" "*indentation,c))) }
       property("property") = forAll(arbitrary[Comment],alphaStr,arbitrary[String]) { (c,key,value) => =?(PropertyLine(key,value),new LineParser(c)("%s@@%s %s".format(c,key,value))) }
     }
   }
