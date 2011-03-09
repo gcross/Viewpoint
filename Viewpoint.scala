@@ -90,11 +90,11 @@ package Viewpoint {
         })
         begin_section_regex.findPrefixMatchOf(line).map({m =>
           val section_name = m.group(2)
-          BeginSectionLine(m.group(1).length,
+          return BeginSectionLine(m.group(1).length,
             if(section_name == "others")
               None
             else if(section_name.substring(0,2) == "<<" && section_name.substring(section_name.length-2) == ">>")
-              Some(section_name)
+              Some(section_name.substring(2,section_name.length-2))
             else
               throw InvalidSectionName(section_name)
           )
@@ -323,6 +323,8 @@ package Viewpoint {
       property("begin comment") = forAll { (c: Comment) => =?(BeginCommentLine,new LineParser(c)("%s@+at".format(c))) }
       property("verbatim") = forAll { (c: Comment) => =?(VerbatimLine,new LineParser(c)("%s@verbatim".format(c))) }
       property("node") = forAll(arbitrary[Comment],alphaStr,choose(3,20),arbitrary[String]) { (c,name,level,header) => =?(NodeLine(name,level,header),new LineParser(c)("%s@+node:%s: *%s* %s".format(c,name,level,header))) }
+      property("begin section (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),arbitrary[String]) { (c,indentation,section_name) => =?(BeginSectionLine(indentation,Some(section_name)),new LineParser(c)("%s%s@+<<%s>>".format(" "*indentation,c,section_name))) }
+      property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) { (c,indentation) => =?(BeginSectionLine(indentation,None),new LineParser(c)("%s%s@+others".format(" "*indentation,c))) }
     }
   }
 }
