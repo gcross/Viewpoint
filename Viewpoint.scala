@@ -19,6 +19,41 @@ package Viewpoint {
         })
         None
       })
+    def toYAML: String = {
+      val builder = new StringBuilder
+      appendYAML("",builder)
+      builder.toString
+    }
+    def appendYAML(indentation: String, builder: StringBuilder): Unit = {
+      import org.apache.commons.lang.StringEscapeUtils
+
+      builder.append("id: ")
+      builder.append(id)
+      builder.append('\n')
+
+      builder.append(indentation)
+      builder.append("heading: ")
+      builder.append(heading)
+      builder.append('\n')
+
+      builder.append(indentation)
+      builder.append("body: ")
+      builder.append('"')
+      StringEscapeUtils.escapeJavaScript(body)
+      builder.append('"')
+      builder.append('\n')
+
+      builder.append(indentation)
+      builder.append("children:")
+      builder.append('\n')
+
+      val child_indentation = indentation + ' '*4
+      for(child <- children) {
+        builder.append("  - ")
+        child.appendYAML(child_indentation,builder)
+      }
+    }
+
   }
 
   class Tree {
@@ -147,7 +182,7 @@ package Viewpoint {
         throw NoHeaderFound
       }
       val (comment_marker,version) = parseHeader
-      if(version != "thin-5") throw UnsupportedFileVersion(version)
+      if(version != "5-thin") throw UnsupportedFileVersion(version)
 
       val parseLine = new LineParser(comment_marker)
 
@@ -300,6 +335,22 @@ package Viewpoint {
         it("should correctly parse '*3*'") { parseLevel("*3*") should be (3) }
         it("should correctly parse '*4*'") { parseLevel("*4*") should be (4) }
       }
+
+      describe("The node parser") {
+        it("should correctly parse an empty file") {
+          parse(
+            """|#@+leo-ver=5-thin
+               |#@+node:gcross.20101205182001.1356: * @thin node.cpp
+               |#@-leo""".stripMargin.lines).toYAML should be(
+            """|id: gcross.20101205182001.1356
+               |heading: @thin node.cpp
+               |body: ""
+               |children:
+               |""".stripMargin
+          )
+        }
+      }
+
     }
     object ParserSpecification extends org.scalacheck.Properties("Parser") {
       import org.scalacheck.Arbitrary
