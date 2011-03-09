@@ -39,7 +39,7 @@ package Viewpoint {
       builder.append(indentation)
       builder.append("body: ")
       builder.append('"')
-      StringEscapeUtils.escapeJavaScript(body)
+      builder.append(StringEscapeUtils.escapeJavaScript(body))
       builder.append('"')
       builder.append('\n')
 
@@ -162,16 +162,16 @@ package Viewpoint {
         if(!lines.hasNext) throw UnexpectedEndOfFile
         lines.next
       }
-      var body : StringBuilder = new StringBuilder
+      var current_body : StringBuilder = new StringBuilder
 
       def parseHeader : (String,String) = {
         while(lines.hasNext) {
           val line = nextLine
           header_regex.findPrefixMatchOf(line) match {
             case None => {
-              body.append("@first ")
-              body.append(line)
-              body.append('\n')
+              current_body.append("@first ")
+              current_body.append(line)
+              current_body.append('\n')
             }
             case Some(m) => {
               if(m.group(1).length > 0) throw UnexpectedIndent
@@ -188,7 +188,6 @@ package Viewpoint {
 
       import scala.collection.mutable.Stack
 
-      var current_body = new StringBuilder
       var current_level = 1
       var current_parent_node : Node = null
       var current_section_indentation = 0
@@ -345,6 +344,22 @@ package Viewpoint {
             """|id: gcross.20101205182001.1356
                |heading: @thin node.cpp
                |body: ""
+               |children:
+               |""".stripMargin
+          )
+        }
+        it("should correctly parse a single-node file with content") {
+          parse(
+            """|Hello,
+               |world!
+               |#@+leo-ver=5-thin
+               |#@+node:namegoeshere: * @thin node.cpp
+               |foo
+               |Bar
+               |#@-leo""".stripMargin.lines).toYAML should be(
+            """|id: namegoeshere
+               |heading: @thin node.cpp
+               |body: "@first Hello,\n@first world!\nfoo\nBar\n"
                |children:
                |""".stripMargin
           )
