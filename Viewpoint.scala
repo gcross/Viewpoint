@@ -328,15 +328,15 @@ package Viewpoint {
     class ParserSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
       import Parser._
 
-      describe("The level parser") {
-        it("should correctly parse '*'") { parseLevel("*") should be (1) }
-        it("should correctly parse '**'") { parseLevel("**") should be (2) }
-        it("should correctly parse '*3*'") { parseLevel("*3*") should be (3) }
-        it("should correctly parse '*4*'") { parseLevel("*4*") should be (4) }
+      describe("The level parser should correctly parse") {
+        it("*") { parseLevel("*") should be (1) }
+        it("**") { parseLevel("**") should be (2) }
+        it("*3*") { parseLevel("*3*") should be (3) }
+        it("*4*") { parseLevel("*4*") should be (4) }
       }
 
-      describe("The node parser") {
-        it("should correctly parse an empty file") {
+      describe("The node parser should correctly parse") {
+        it("an empty file") {
           parse(
             """|#@+leo-ver=5-thin
                |#@+node:gcross.20101205182001.1356: * @thin node.cpp
@@ -348,7 +348,7 @@ package Viewpoint {
                |""".stripMargin
           )
         }
-        it("should correctly parse a single-node file with content") {
+        it("a single-node file with content") {
           parse(
             """|Hello,
                |world!
