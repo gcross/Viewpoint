@@ -98,7 +98,9 @@ package Viewpoint {
     object BadCommentSectionLine extends ParseError
     object UnrecognizedSentinel extends ParseError
 
-    case class ParseErrorWithContext(line_number: Int, line: String, problem: ParseError) extends Exception
+    case class ParseErrorWithContext(line_number: Int, line: String, problem: ParseError) extends Exception {
+      override def toString = "Error encountered while parsing line %s:\n\"%s\"\n%s\n".format(line_number,line,problem)
+    }
 
     val header_regex = "(\\s*)(.*?)@\\+leo-ver=(.*)".r
 
@@ -240,7 +242,7 @@ package Viewpoint {
       while(lines.hasNext) {
         if(current_section_level == 0) throw ContentAfterEndOfFileSentinel
         val line = nextSectionLine
-        parseLine(line) match {
+        try { parseLine(line) match {
           case NodeLine(id,level,heading) => {
             current_node.body = current_body.toString
             if(level < current_section_level) throw BadLevelNumber(level)
@@ -342,6 +344,8 @@ package Viewpoint {
             current_body.append(text)
             current_body.append('\n')
           }
+        } } catch {
+          case (e : ParseError) => throw ParseErrorWithContext(line_number,line,e)
         }
       }
       if(current_level > 0) throw UnexpectedEndOfFile
