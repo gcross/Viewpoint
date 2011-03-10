@@ -532,7 +532,7 @@ package Viewpoint {
       case class Comment(val string: String) { override def toString = string }
       implicit def unwrapComment(c: Comment) : String = c.string
       implicit val arbComment = Arbitrary[Comment] {
-        listOf1[Char](choose(33,63)).map(s => Comment(s.mkString))
+        listOf1[Char](choose(33,39)).map(s => Comment(s.mkString))
       }
 
       implicit val arbChar: Arbitrary[Char] = Arbitrary(
