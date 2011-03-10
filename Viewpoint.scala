@@ -1,18 +1,61 @@
 package Viewpoint {
+  import java.io.{PrintWriter,Writer}
   import java.util.HashMap
   import java.util.HashSet
   import java.util.LinkedList
   import scala.annotation.tailrec
+
+  object Node {
+    val section_regex = "(\\s*)(?:<<\\s*(.*?)\\s*>>|@others)\\s*\\z".r
+    val named_section_regex = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
+    val property_keys = new HashSet[String]
+    property_keys.add("c")
+    property_keys.add("comment")
+    property_keys.add("language")
+    property_keys.add("tabwidth")
+
+    class TangleError extends Exception
+    case class NoSectionFound(section_name: String) extends TangleError
+    object OthersAppearsTwice extends TangleError
+
+    def isPropertyKey(key: String): Boolean =
+      return property_keys.contains(key)
+
+    def levelToString(level: Int): String = {
+      assert(level > 0)
+      level match {
+        case 1 => "*"
+        case 2 => "**"
+        case _ => "*%s*".format(level)
+      }
+    }
+  }
 
   class Parent {
     var children = new LinkedList[Node]
     var properties = new HashMap[String,String]
     def getProperty(key: String) : String = properties.get(key)
     def setProperty(key: String, value: String) : String = properties.put(key,value)
+    def findChildWithSectionName(section_name: String): Node = {
+      import scala.collection.JavaConversions._
+      for(child <- children) {
+        Node
+        .named_section_regex
+        .findPrefixMatchOf(child.heading)
+        .map({m => if(m.group(1) == section_name) return child})
+      }
+      return null
+    }
+    def writeUnnamedChildrenTo(level: Int, indentation: String, comment_marker: String, printer: PrintWriter) {
+      import scala.collection.JavaConversions._
+      for(child <- children
+          if Node.named_section_regex.findPrefixMatchOf(child.heading).isEmpty
+        ) child.writeTo(level,indentation,comment_marker,printer)
+    }
   }
 
   class Node(val id: String, var heading: String, var body: String) extends Parent {
-    import scala.collection.JavaConversions._
+    import Node._
     var parents = new HashSet[Parent]
     override def getProperty(key: String) : String = {
       var value = properties.get(key)
@@ -28,6 +71,7 @@ package Viewpoint {
       builder.toString
     }
     def appendYAML(indentation: String, builder: StringBuilder): Unit = {
+      import scala.collection.JavaConversions._
       import org.apache.commons.lang.StringEscapeUtils
 
       builder.append("id: ")
@@ -72,6 +116,128 @@ package Viewpoint {
       }
     }
 
+    def writeTo(writer: Writer): Unit = {
+      import scala.util.control.Breaks
+      val breaks = new Breaks
+      import breaks.{break,breakable}
+
+      val printer = new PrintWriter(writer)
+      val comment_marker = Option(getProperty("comment")).getOrElse("#")
+      val lines = body.lines
+      var number_of_first_lines = 0
+      breakable {
+        while(lines.hasNext) {
+          val line = lines.next
+          if(!line.startsWith("@first")) break;
+          number_of_first_lines += 1
+          printer.println(line.substring(7))
+        }
+      }
+
+      printer.print(comment_marker)
+      printer.println("@+leo-ver=5-thin")
+      writeTo(1,"",comment_marker,printer,Some(body.lines.drop(number_of_first_lines)))
+      printer.print(comment_marker)
+      printer.println("@-leo")
+    }
+
+    def writeTo(level: Int, indentation: String, comment_marker: String, printer: PrintWriter, maybe_lines: Option[Iterator[String]]=None): Unit = {
+      import scala.util.control.Breaks
+
+      printer.print(indentation)
+      printer.print(comment_marker)
+      printer.print("@+node:")
+      printer.print(id)
+      printer.print(": ")
+      printer.print(Node.levelToString(level))
+      printer.print(' ')
+      printer.println(heading)
+
+      var seen_others = false
+      val lines = maybe_lines.getOrElse({body.lines})
+      while(lines.hasNext) {
+        val line = lines.next
+        section_regex.findPrefixMatchOf(line) match {
+            case Some(m) => {
+              val additional_indentation = m.group(1)
+              val section_indentation = indentation + additional_indentation
+              val given_section_name =
+                Option(m.group(2)) match {
+                  case Some(_) => line.substring(additional_indentation.length)
+                  case None => "others"
+                }
+              printer.print(section_indentation)
+              printer.print(comment_marker)
+              printer.print("@+")
+              printer.println(given_section_name)
+              Option(m.group(2)) match {
+                case Some(section_name) =>
+                  Option(findChildWithSectionName(section_name)).getOrElse({
+                    throw NoSectionFound(section_name)
+                  }).writeTo(level+1,section_indentation,comment_marker,printer)
+                case None => {
+                  if(seen_others) throw OthersAppearsTwice
+                  seen_others = true
+                  writeUnnamedChildrenTo(level+1,section_indentation,comment_marker,printer)
+                }
+              }
+              printer.print(section_indentation)
+              printer.print(comment_marker)
+              printer.print("@-")
+              printer.println(given_section_name)
+            }
+            case None => {
+              if(line.charAt(0) == '@') {
+                printer.print(indentation)
+                line.substring(1) match {
+                  case "" => {
+                    printer.print(comment_marker)
+                    printer.println("@+at")
+                    val breaks = new Breaks
+                    import breaks.{break,breakable}
+                    breakable {
+                      while(lines.hasNext) {
+                        printer.print(indentation)
+                        printer.print(comment_marker)
+                        val line = lines.next
+                        if(line == "@c") {
+                          printer.println("@@c")
+                          break
+                        } else {
+                          printer.print(' ')
+                          printer.println(line)
+                        }
+                      }
+                    }
+                  }
+                  case "verbatim" => {
+                    printer.print(comment_marker)
+                    printer.println("@verbatim")
+                    printer.print(indentation)
+                    printer.println(lines.next)
+                  }
+                  case other => {
+                    if(isPropertyKey(other.takeWhile(!_.isSpaceChar))) {
+                      printer.print(comment_marker)
+                      printer.print('@')
+                      printer.println(line)
+                    } else {
+                      printer.println(line)
+                    }
+                  }
+                }
+              } else printer.println(line)
+            }
+        }
+      }
+      if(!seen_others)
+        writeUnnamedChildrenTo(level+1,indentation,comment_marker,printer)
+    }
+    def writeToString: String = {
+      val writer = new java.io.StringWriter
+      writeTo(writer)
+      writer.toString
+    }
   }
 
   class Tree {
@@ -364,12 +530,136 @@ package Viewpoint {
         it("*4*") { parseLevel("*4*") should be (4) }
       }
 
+      val empty_file =
+        """|#@+leo-ver=5-thin
+           |#@+node:gcross.20101205182001.1356: * @thin node.cpp
+           |#@-leo
+           |""".stripMargin
+      val single_node_file_with_content =
+        """|Hello,
+           |world!
+           |#@+leo-ver=5-thin
+           |#@+node:namegoeshere: * @thin node.cpp
+           |foo
+           |Bar
+           |#@-leo
+           |""".stripMargin
+      val single_node_file_with_explicitly_ended_comment =
+        """|#@+leo-ver=5-thin
+           |#@+node:namegoeshere: * @thin node.cpp
+           |pre
+           |#@+at
+           |# comment
+           |# goes
+           |# here
+           |#@@c
+           |post
+           |#@-leo
+           |""".stripMargin
+      val single_node_file_with_comment_ended_by_end_of_file =
+        """|#@+leo-ver=5-thin
+           |#@+node:namegoeshere: * @thin node.cpp
+           |pre
+           |#@+at
+           |# comment
+           |# goes
+           |# here
+           |#@-leo
+           |""".stripMargin
+      val single_node_file_with_properties =
+        """|#@+leo-ver=5-thin
+           |#@+node:namegoeshere: * @thin node.cpp
+           |A
+           |#@@language value1
+           |#@@tabwidth value2
+           |B
+           |#@-leo
+           |""".stripMargin
+      val file_with_single_named_section =
+        """|#@+leo-ver=5-thin
+           |#@+node:name: * @thin node.cpp
+           |foo
+           |#@+<< Section >>
+           |#@+node:nodeid: ** << Section >>
+           |content
+           |#@-<< Section >>
+           |bar
+           |#@-leo
+           |""".stripMargin
+      val file_with_single_named_section_with_properties =
+        """|#@+leo-ver=5-thin
+           |#@+node:name: * @thin node.cpp
+           |foo
+           |#@@language value
+           |#@+<< Section >>
+           |#@+node:nodeid: ** << Section >>
+           |#@@language value
+           |content
+           |#@-<< Section >>
+           |bar
+           |#@-leo
+           |""".stripMargin
+      val file_with_nested_others_sections =
+        """|#@+leo-ver=5-thin
+           |#@+node:name: * @thin node.cpp
+           |pre1
+           |#@+others
+           |#@+node:ay: ** A
+           |content of A
+           |#@+node:ay1: *3* 1
+           |content of A1
+           |#@+node:ay2: *3* 2
+           |content of A2
+           |#@+node:bee: ** B
+           |content of B
+           |#@+node:bee1: *3* 1
+           |content of B1
+           |#@+node:bee1a: *4* a
+           |content of B1a
+           |#@-others
+           |post1
+           |#@-leo
+           |""".stripMargin
+      val file_with_nested_others_sections_with_comments =
+        """|#@+leo-ver=5-thin
+           |#@+node:name: * @thin node.cpp
+           |pre1
+           |#@+at
+           |# comment 1
+           |#@@c
+           |#@+others
+           |#@+node:ay: ** A
+           |content of A
+           |#@+at
+           |# comment A
+           |#@+node:ay1: *3* 1
+           |content of A1
+           |#@+at
+           |# comment A1
+           |#@+node:ay2: *3* 2
+           |content of A2
+           |#@+at
+           |# comment A2
+           |#@+node:bee: ** B
+           |content of B
+           |#@+at
+           |# comment B
+           |#@+node:bee1: *3* 1
+           |content of B1
+           |#@+at
+           |# comment B1
+           |#@+node:bee1a: *4* a
+           |content of B1a
+           |#@+at
+           |# comment B1a
+           |#@-others
+           |post1
+           |#@-leo
+           |""".stripMargin
+
       describe("The node parser should correctly parse") {
         it("an empty file") {
-          parse(
-            """|#@+leo-ver=5-thin
-               |#@+node:gcross.20101205182001.1356: * @thin node.cpp
-               |#@-leo""".stripMargin.lines).toYAML should be(
+          parse(empty_file.lines).toYAML should be(
             """|id: gcross.20101205182001.1356
                |heading: @thin node.cpp
                |body: ""
@@ -379,14 +669,7 @@ package Viewpoint {
           )
         }
         it("a single-node file with content") {
-          parse(
-            """|Hello,
-               |world!
-               |#@+leo-ver=5-thin
-               |#@+node:namegoeshere: * @thin node.cpp
-               |foo
-               |Bar
-               |#@-leo""".stripMargin.lines).toYAML should be(
+          parse(single_node_file_with_content.lines).toYAML should be(
             """|id: namegoeshere
                |heading: @thin node.cpp
                |body: "@first Hello,\n@first world!\nfoo\nBar\n"
@@ -396,17 +679,7 @@ package Viewpoint {
           )
         }
         it("a single-node file with a comment ended by @c") {
-          parse(
-            """|#@+leo-ver=5-thin
-               |#@+node:namegoeshere: * @thin node.cpp
-               |pre
-               |#@+at
-               |# comment
-               |# goes
-               |# here
-               |#@@c
-               |post
-               |#@-leo""".stripMargin.lines).toYAML should be(
+          parse(single_node_file_with_explicitly_ended_comment.lines).toYAML should be(
             """|id: namegoeshere
                |heading: @thin node.cpp
                |body: "pre\n@\ncomment\ngoes\nhere\n@c\npost\n"
@@ -416,15 +689,7 @@ package Viewpoint {
           )
         }
         it("a single-node file with a comment ended by the end of file") {
-          parse(
-            """|#@+leo-ver=5-thin
-               |#@+node:namegoeshere: * @thin node.cpp
-               |pre
-               |#@+at
-               |# comment
-               |# goes
-               |# here
-               |#@-leo""".stripMargin.lines).toYAML should be(
+          parse(single_node_file_with_comment_ended_by_end_of_file.lines).toYAML should be(
             """|id: namegoeshere
                |heading: @thin node.cpp
                |body: "pre\n@\ncomment\ngoes\nhere\n"
@@ -434,35 +699,19 @@ package Viewpoint {
           )
         }
         it("a single-node file with properties") {
-          parse(
-            """|#@+leo-ver=5-thin
-               |#@+node:namegoeshere: * @thin node.cpp
-               |A
-               |#@@key1 value1
-               |#@@key2 value2
-               |B
-               |#@-leo""".stripMargin.lines).toYAML should be(
+          parse(single_node_file_with_properties.lines).toYAML should be(
             """|id: namegoeshere
                |heading: @thin node.cpp
-               |body: "A\n@key1 value1\n@key2 value2\nB\n"
+               |body: "A\n@language value1\n@tabwidth value2\nB\n"
                |properties:
-               |    key1: value1
-               |    key2: value2
+               |    language: value1
+               |    tabwidth: value2
                |children:
                |""".stripMargin
           )
         }
         it("a file with a single named section") {
-          parse(
-            """|#@+leo-ver=5-thin
-               |#@+node:name: * @thin node.cpp
-               |foo
-               |#@+<< Section >>
-               |#@+node:nodeid: ** << Section >>
-               |content
-               |#@-<< Section >>
-               |bar
-               |#@-leo""".stripMargin.lines).toYAML should be(
+          parse(file_with_single_named_section.lines).toYAML should be(
             """|id: name
                |heading: @thin node.cpp
                |body: "foo\n<< Section >>\nbar\n"
@@ -477,54 +726,24 @@ package Viewpoint {
           )
         }
         it("a file with a single named section with properties") {
-          parse(
-            """|#@+leo-ver=5-thin
-               |#@+node:name: * @thin node.cpp
-               |foo
-               |#@@key value
-               |#@+<< Section >>
-               |#@+node:nodeid: ** << Section >>
-               |#@@key value
-               |content
-               |#@-<< Section >>
-               |bar
-               |#@-leo""".stripMargin.lines).toYAML should be(
+          parse(file_with_single_named_section_with_properties.lines).toYAML should be(
             """|id: name
                |heading: @thin node.cpp
-               |body: "foo\n@key value\n<< Section >>\nbar\n"
+               |body: "foo\n@language value\n<< Section >>\nbar\n"
                |properties:
-               |    key: value
+               |    language: value
                |children:
                |  - id: nodeid
                |    heading: << Section >>
-               |    body: "@key value\ncontent\n"
+               |    body: "@language value\ncontent\n"
                |    properties:
-               |        key: value
+               |        language: value
                |    children:
                |""".stripMargin
           )
         }
         it("a file with nested others sections") {
-          parse(
-            """|#@+leo-ver=5-thin
-               |#@+node:name: * @thin node.cpp
-               |pre1
-               |#@+others
-               |#@+node:ay: ** A
-               |content of A
-               |#@+node:ay1: *3* 1
-               |content of A1
-               |#@+node:ay2: *3* 2
-               |content of A2
-               |#@+node:bee: ** B
-               |content of B
-               |#@+node:bee1: *3* 1
-               |content of B1
-               |#@+node:bee1a: *4* a
-               |content of B1a
-               |#@-others
-               |post1
-               |#@-leo""".stripMargin.lines).toYAML should be(
+          parse(file_with_nested_others_sections.lines).toYAML should be(
             """|id: name
                |heading: @thin node.cpp
                |body: "pre1\n@others\npost1\n"
@@ -564,41 +783,7 @@ package Viewpoint {
           )
         }
         it("a file with nested others sections with comments") {
-          parse(
-            """|#@+leo-ver=5-thin
-               |#@+node:name: * @thin node.cpp
-               |pre1
-               |#@+at
-               |# comment 1
-               |#@@c
-               |#@+others
-               |#@+node:ay: ** A
-               |content of A
-               |#@+at
-               |# comment A
-               |#@+node:ay1: *3* 1
-               |content of A1
-               |#@+at
-               |# comment A1
-               |#@+node:ay2: *3* 2
-               |content of A2
-               |#@+at
-               |# comment A2
-               |#@+node:bee: ** B
-               |content of B
-               |#@+at
-               |# comment B
-               |#@+node:bee1: *3* 1
-               |content of B1
-               |#@+at
-               |# comment B1
-               |#@+node:bee1a: *4* a
-               |content of B1a
-               |#@+at
-               |# comment B1a
-               |#@-others
-               |post1
-               |#@-leo""".stripMargin.lines).toYAML should be(
+          parse(file_with_nested_others_sections_with_comments.lines).toYAML should be(
             """|id: name
                |heading: @thin node.cpp
                |body: "pre1\n@\ncomment 1\n@c\n@others\npost1\n"
@@ -638,7 +823,35 @@ package Viewpoint {
           )
         }
       }
-
+      describe("The node tangler should correctly parse") {
+        it("an empty file") {
+          parse(empty_file.lines).writeToString should be(empty_file)
+        }
+        it("a single-node file with content") {
+          parse(single_node_file_with_content.lines).writeToString should be(single_node_file_with_content)
+        }
+        it("a single-node file with a comment ended by @c") {
+          parse(single_node_file_with_explicitly_ended_comment.lines).writeToString should be(single_node_file_with_explicitly_ended_comment)
+        }
+        it("a single-node file with a comment ended by the end of file") {
+          parse(single_node_file_with_comment_ended_by_end_of_file.lines).writeToString should be(single_node_file_with_comment_ended_by_end_of_file)
+        }
+        it("a single-node file with properties") {
+          parse(single_node_file_with_properties.lines).writeToString should be(single_node_file_with_properties)
+        }
+        it("a file with a single named section") {
+          parse(file_with_single_named_section.lines).writeToString should be(file_with_single_named_section)
+        }
+        it("a file with a single named section with properties") {
+          parse(file_with_single_named_section_with_properties.lines).writeToString should be(file_with_single_named_section_with_properties)
+        }
+        it("a file with nested others sections") {
+          parse(file_with_nested_others_sections.lines).writeToString should be(file_with_nested_others_sections)
+        }
+        it("a file with nested others sections with comments") {
+          parse(file_with_nested_others_sections_with_comments.lines).writeToString should be(file_with_nested_others_sections_with_comments)
+        }
+      }
     }
     object ParserSpecification extends org.scalacheck.Properties("Parser") {
       import org.scalacheck.Arbitrary
