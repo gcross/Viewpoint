@@ -96,6 +96,7 @@ package Viewpoint {
     object NodeNotFoundImmediatelyAfterBeginSection extends ParseError
     object UnexpectedEndOfFile extends ParseError
     object BadCommentSectionLine extends ParseError
+    object UnrecognizedSentinel extends ParseError
 
     case class ParseErrorWithContext(line_number: Int, line: String, problem: ParseError) extends Exception
 
@@ -158,6 +159,7 @@ package Viewpoint {
         property_regex.findPrefixMatchOf(line).map({m =>
           return PropertyLine(m.group(1),m.group(2))
         })
+        if(line.startsWith(sentinel)) throw UnrecognizedSentinel
         TextLine(line)
       }
 
