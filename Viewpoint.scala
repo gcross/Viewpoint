@@ -95,7 +95,8 @@ package Viewpoint {
     }
     object NodeNotFoundImmediatelyAfterBeginSection extends ParseError
     object UnexpectedEndOfFile extends ParseError
-    object BadCommentSectionLine extends ParseError
+    object UnmatchedBeginComment extends ParseError
+    object MismatchedEndComment extends ParseError
     object UnrecognizedSentinel extends ParseError
 
     case class ParseErrorWithContext(line_number: Int, line: String, problem: ParseError) extends Exception {
@@ -124,6 +125,7 @@ package Viewpoint {
     sealed abstract class Line
     case class NodeLine(id: String, level: Int, heading: String) extends Line
     object BeginCommentLine extends Line
+    object EndCommentLine extends Line
     case class BeginSectionLine(indentation: Int, section_name: String) extends Line
     case class EndSectionLine(section_name: String) extends Line
     object VerbatimLine extends Line
@@ -132,9 +134,10 @@ package Viewpoint {
 
     class LineParser(val comment_marker: String) {
       val quoted_comment_marker = "\\Q%s\\E".format(comment_marker)
+      val sentinel = comment_marker + "@"
       val node_regex = "%s@\\+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
       val begin_comment_regex = "%s@\\+at\\z".format(quoted_comment_marker).r
-      val comment_line_regex = "%s (.*)".format(quoted_comment_marker).r
+      val comment_line_starter = comment_marker + " "
       val end_comment_regex = "%s@@c\\z".format(quoted_comment_marker).r
       val begin_section_regex = "(\\s*)%s@\\+(.*)".format(quoted_comment_marker).r
       val end_section_regex = "%s@-(.*)".format(quoted_comment_marker).r
@@ -143,6 +146,9 @@ package Viewpoint {
       def apply(line: String) : Line = {
         begin_comment_regex.findPrefixMatchOf(line).map({m =>
           return BeginCommentLine
+        })
+        end_comment_regex.findPrefixMatchOf(line).map({m =>
+          return EndCommentLine
         })
         node_regex.findPrefixMatchOf(line).map({m =>
           return NodeLine(m.group(1),parseLevel(m.group(2)),m.group(3))
@@ -164,17 +170,11 @@ package Viewpoint {
         if(line.startsWith(sentinel)) throw UnrecognizedSentinel
         TextLine(line)
       }
-
-      def extractCommentFrom(line: String) : Option[String] = {
-        if(end_comment_regex.findPrefixMatchOf(line).isEmpty) return None
-        comment_line_regex.findPrefixMatchOf(line) match {
-          case Some(m) => {
-            if(m.group(1).length > 0) throw UnexpectedIndent
-            return Some(m.group(2))
-          }
-          case None => throw BadCommentSectionLine
-        }
-      }
+      def extractCommentLine(line: String): String =
+        if(line.startsWith(comment_line_starter))
+          line.substring(comment_line_starter.length)
+        else
+          throw UnmatchedBeginComment
     }
 
     def parse(lines: Iterator[String]) : Node = {
@@ -215,6 +215,7 @@ package Viewpoint {
       var current_section_indentation = 0
       var current_section_level = 2
       var current_section_name = "leo"
+      var currently_extracting_comment = false
 
       val body_stack = new Stack[StringBuilder]
       val node_stack = new Stack[Node]
@@ -244,6 +245,7 @@ package Viewpoint {
         val line = nextSectionLine
         try { parseLine(line) match {
           case NodeLine(id,level,heading) => {
+            currently_extracting_comment = false
             current_node.body = current_body.toString
             if(level < current_section_level) throw BadLevelNumber(level)
             while(level < current_level) {
@@ -263,6 +265,7 @@ package Viewpoint {
             current_parent_node.children.add(current_node)
           }
           case BeginSectionLine(indentation,section_name) => {
+            if(currently_extracting_comment) throw UnmatchedBeginComment
             for(_ <- 1 to indentation) current_body.append(' ')
             if(section_name.charAt(0) != '<')
               current_body.append('@')
@@ -294,6 +297,7 @@ package Viewpoint {
           }
           case EndSectionLine(section_name) => {
             if(section_name != current_section_name) throw MismatchedEndSection
+            currently_extracting_comment = false
             current_node.body = current_body.toString
             while(current_level > current_section_level) {
               current_node = current_parent_node
@@ -311,28 +315,22 @@ package Viewpoint {
             current_level -= 1
           }
           case BeginCommentLine => {
+            if(currently_extracting_comment) throw UnmatchedBeginComment
+            currently_extracting_comment = true
             current_body.append("@\n")
-            @tailrec def parseCommentBody : Unit = {
-              val line = nextSectionLine
-              parseLine.extractCommentFrom(line) match {
-                case Some(comment_line) => {
-                  current_body.append(comment_line)
-                  current_body.append('\n')
-                  parseCommentBody
-                }
-                case None => {
-                  current_body.append("@c\n")
-                  return
-                }
-              }
-            }
-            parseCommentBody
+          }
+          case EndCommentLine => {
+            if(!currently_extracting_comment) throw MismatchedEndComment
+            currently_extracting_comment = false
+            current_body.append("@c\n")
           }
           case VerbatimLine => {
+            if(currently_extracting_comment) throw UnmatchedBeginComment
             current_body.append("@verbatim\n")
             current_body.append(nextSectionLine)
           }
           case PropertyLine(name,value) => {
+            if(currently_extracting_comment) throw UnmatchedBeginComment
             current_node.setProperty(name,value)
             current_body.append('@')
             current_body.append(name)
@@ -341,7 +339,10 @@ package Viewpoint {
             current_body.append('\n')
           }
           case TextLine(text) => {
-            current_body.append(text)
+            if(currently_extracting_comment)
+              current_body.append(parseLine.extractCommentLine(text))
+            else
+              current_body.append(text)
             current_body.append('\n')
           }
         } } catch {
@@ -389,6 +390,44 @@ package Viewpoint {
             """|id: namegoeshere
                |heading: @thin node.cpp
                |body: "@first Hello,\n@first world!\nfoo\nBar\n"
+               |properties:
+               |children:
+               |""".stripMargin
+          )
+        }
+        it("a single-node file with a comment ended by @c") {
+          parse(
+            """|#@+leo-ver=5-thin
+               |#@+node:namegoeshere: * @thin node.cpp
+               |pre
+               |#@+at
+               |# comment
+               |# goes
+               |# here
+               |#@@c
+               |post
+               |#@-leo""".stripMargin.lines).toYAML should be(
+            """|id: namegoeshere
+               |heading: @thin node.cpp
+               |body: "pre\n@\ncomment\ngoes\nhere\n@c\npost\n"
+               |properties:
+               |children:
+               |""".stripMargin
+          )
+        }
+        it("a single-node file with a comment ended by the end of file") {
+          parse(
+            """|#@+leo-ver=5-thin
+               |#@+node:namegoeshere: * @thin node.cpp
+               |pre
+               |#@+at
+               |# comment
+               |# goes
+               |# here
+               |#@-leo""".stripMargin.lines).toYAML should be(
+            """|id: namegoeshere
+               |heading: @thin node.cpp
+               |body: "pre\n@\ncomment\ngoes\nhere\n"
                |properties:
                |children:
                |""".stripMargin
@@ -519,6 +558,80 @@ package Viewpoint {
                |          - id: bee1a
                |            heading: a
                |            body: "content of B1a\n"
+               |            properties:
+               |            children:
+               |""".stripMargin
+          )
+        }
+        it("a file with nested others sections with comments") {
+          parse(
+            """|#@+leo-ver=5-thin
+               |#@+node:name: * @thin node.cpp
+               |pre1
+               |#@+at
+               |# comment 1
+               |#@@c
+               |#@+others
+               |#@+node:ay: ** A
+               |content of A
+               |#@+at
+               |# comment A
+               |#@+node:ay1: *3* 1
+               |content of A1
+               |#@+at
+               |# comment A1
+               |#@+node:ay2: *3* 2
+               |content of A2
+               |#@+at
+               |# comment A2
+               |#@+node:bee: ** B
+               |content of B
+               |#@+at
+               |# comment B
+               |#@+node:bee1: *3* 1
+               |content of B1
+               |#@+at
+               |# comment B1
+               |#@+node:bee1a: *4* a
+               |content of B1a
+               |#@+at
+               |# comment B1a
+               |#@-others
+               |post1
+               |#@-leo""".stripMargin.lines).toYAML should be(
+            """|id: name
+               |heading: @thin node.cpp
+               |body: "pre1\n@\ncomment 1\n@c\n@others\npost1\n"
+               |properties:
+               |children:
+               |  - id: ay
+               |    heading: A
+               |    body: "content of A\n@\ncomment A\n"
+               |    properties:
+               |    children:
+               |      - id: ay1
+               |        heading: 1
+               |        body: "content of A1\n@\ncomment A1\n"
+               |        properties:
+               |        children:
+               |      - id: ay2
+               |        heading: 2
+               |        body: "content of A2\n@\ncomment A2\n"
+               |        properties:
+               |        children:
+               |  - id: bee
+               |    heading: B
+               |    body: "content of B\n@\ncomment B\n"
+               |    properties:
+               |    children:
+               |      - id: bee1
+               |        heading: 1
+               |        body: "content of B1\n@\ncomment B1\n"
+               |        properties:
+               |        children:
+               |          - id: bee1a
+               |            heading: a
+               |            body: "content of B1a\n@\ncomment B1a\n"
                |            properties:
                |            children:
                |""".stripMargin
