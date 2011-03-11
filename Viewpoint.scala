@@ -1,9 +1,9 @@
 package Viewpoint {
   import java.io.{PrintWriter,Writer}
-  import java.util.HashMap
-  import java.util.HashSet
   import java.util.LinkedList
   import scala.annotation.tailrec
+  import scala.collection.mutable.HashMap
+  import scala.collection.mutable.HashSet
 
   object Node {
     val section_regex = "(\\s*)(?:<<\\s*(.*?)\\s*>>|@others)\\s*\\z".r
@@ -34,8 +34,8 @@ package Viewpoint {
   class Parent {
     var children = new LinkedList[Node]
     var properties = new HashMap[String,String]
-    def getProperty(key: String) : String = properties.get(key)
-    def setProperty(key: String, value: String) : String = properties.put(key,value)
+    def getProperty(key: String) : Option[String] = properties.get(key)
+    def setProperty(key: String, value: String) : Unit = { properties(key) = value }
     def findChildWithSectionName(section_name: String): Node = {
       import scala.collection.JavaConversions._
       for(child <- children) {
@@ -57,13 +57,14 @@ package Viewpoint {
   class Node(val id: String, var heading: String, var body: String) extends Parent {
     import Node._
     var parents = new HashSet[Parent]
-    override def getProperty(key: String) : String = {
-      var value = properties.get(key)
-      val iterator = parents.iterator
-      while((value eq null) && iterator.hasNext) {
-        value = iterator.next.getProperty(key)
-      }
-      value
+    override def getProperty(key: String) : Option[String] = {
+      properties.get(key).orElse({
+        for {
+          parent <- parents
+          maybe_value = parent.getProperty(key)
+        } if(maybe_value.isDefined) return maybe_value
+        None
+      })
     }
     def toYAML: String = {
       val builder = new StringBuilder
@@ -93,14 +94,14 @@ package Viewpoint {
       builder.append(indentation)
       builder.append("properties:")
       builder.append('\n')
-      val keys : Array[String] = properties.keySet.toArray(Array[String]())
+      val keys : Array[String] = properties.keySet.toArray
       scala.util.Sorting.quickSort(keys)
       for(key <- keys) {
         builder.append(indentation)
         builder.append("    ")
         builder.append(key)
         builder.append(": ")
-        builder.append(properties.get(key))
+        builder.append(properties(key))
         builder.append('\n')
       }
 
@@ -122,7 +123,7 @@ package Viewpoint {
       import breaks.{break,breakable}
 
       val printer = new PrintWriter(writer)
-      val comment_marker = Option(getProperty("comment")).getOrElse("#")
+      val comment_marker = getProperty("comment").getOrElse("#")
       val lines = body.lines
       var number_of_first_lines = 0
       breakable {
