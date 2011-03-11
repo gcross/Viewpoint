@@ -52,20 +52,6 @@ package Viewpoint {
           if Node.named_section_regex.findPrefixMatchOf(child.heading).isEmpty
         ) child.writeTo(level,indentation,comment_marker,printer)
     }
-  }
-
-  class Node(val id: String, var heading: String, var body: String) extends Parent {
-    import Node._
-    var parents = new HashSet[Parent]
-    override def getProperty(key: String) : Option[String] = {
-      properties.get(key).orElse({
-        for {
-          parent <- parents
-          maybe_value = parent.getProperty(key)
-        } if(maybe_value.isDefined) return maybe_value
-        None
-      })
-    }
     def toYAML: String = {
       val builder = new StringBuilder
       appendYAML("",builder)
@@ -73,24 +59,6 @@ package Viewpoint {
     }
     def appendYAML(indentation: String, builder: StringBuilder): Unit = {
       import scala.collection.JavaConversions._
-      import org.apache.commons.lang.StringEscapeUtils
-
-      builder.append("id: ")
-      builder.append(id)
-      builder.append('\n')
-
-      builder.append(indentation)
-      builder.append("heading: ")
-      builder.append(heading)
-      builder.append('\n')
-
-      builder.append(indentation)
-      builder.append("body: ")
-      builder.append('"')
-      builder.append(StringEscapeUtils.escapeJavaScript(body))
-      builder.append('"')
-      builder.append('\n')
-
       builder.append(indentation)
       builder.append("properties:")
       builder.append('\n')
@@ -115,6 +83,41 @@ package Viewpoint {
         builder.append("  - ")
         child.appendYAML(child_indentation,builder)
       }
+    }
+  }
+
+  class Node(val id: String, var heading: String, var body: String) extends Parent {
+    import Node._
+    var parents = new HashSet[Parent]
+    override def getProperty(key: String) : Option[String] = {
+      properties.get(key).orElse({
+        for {
+          parent <- parents
+          maybe_value = parent.getProperty(key)
+        } if(maybe_value.isDefined) return maybe_value
+        None
+      })
+    }
+    override def appendYAML(indentation: String, builder: StringBuilder): Unit = {
+      import org.apache.commons.lang.StringEscapeUtils
+
+      builder.append("id: ")
+      builder.append(id)
+      builder.append('\n')
+
+      builder.append(indentation)
+      builder.append("heading: ")
+      builder.append(heading)
+      builder.append('\n')
+
+      builder.append(indentation)
+      builder.append("body: ")
+      builder.append('"')
+      builder.append(StringEscapeUtils.escapeJavaScript(body))
+      builder.append('"')
+      builder.append('\n')
+
+      super.appendYAML(indentation,builder)
     }
 
     def writeTo(writer: Writer): Unit = {
