@@ -523,6 +523,52 @@ package Viewpoint {
       current_node
     }
   }
+  object XMLParser {
+    import scala.collection.mutable.ListBuffer
+    class ParseError extends Exception
+    object NotALeoFile extends ParseError
+    case class TooManyHeadings(id: String,n: Int) extends ParseError
+    case class NodeDefinitionAppearsMultipleTimes(id: String) extends ParseError
+    case class UnmatchedTNode(id: String) extends ParseError
+
+    case class ParseResult(tree: Tree, expanded_nodes: List[String])
+
+    def parse(xml: scala.xml.Node): ParseResult = {
+      val tree = new Tree
+      val expanded_nodes_builder = new ListBuffer[String]
+      (xml \ "vnodes" \ "v").foreach(parseVNode(tree.nodemap,tree.root,expanded_nodes_builder))
+      for (tnode <- xml \ "tnodes" \ "t"; id = (tnode \ "@tx").text)
+        tree.nodemap.getOrElse(id,{throw UnmatchedTNode(id)}).body = tnode.text
+      ParseResult(tree,expanded_nodes_builder.result)
+    }
+
+    def parseVNode(nodemap: HashMap[String,Node], parent: Parent, expanded_nodes_builder: ListBuffer[String])(vnode: scala.xml.Node): Unit = {
+      val id = (vnode \ "@t").text
+      val maybe_heading = {
+        val heading_nodes = vnode \ "vh"
+        heading_nodes.size match {
+          case 0 => None
+          case 1 => Some(heading_nodes.text)
+          case _ => throw TooManyHeadings(id,heading_nodes.size)
+        }
+      }
+      val node = nodemap.getOrElseUpdate(id,{new Node(id,null,"")})
+      for(heading <- maybe_heading) {
+        if(node.heading ne null)
+          throw NodeDefinitionAppearsMultipleTimes(id)
+        else {
+          node.heading = heading
+          (vnode \ "v").foreach(parseVNode(nodemap,node,expanded_nodes_builder))
+        }
+      }
+      if((vnode \ "@a").text.contains('E'))
+        expanded_nodes_builder += id
+      for(child_id <- (vnode \ "@expanded").text.split(',') if child_id.nonEmpty)
+        expanded_nodes_builder += child_id
+      node.parents.add(parent)
+      parent.children.add(node)
+    }
+  }
   package Testing {
     class ParserSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
       import Parser._
@@ -884,6 +930,321 @@ package Viewpoint {
       property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) { (c,indentation:Int) => =?(BeginSectionLine(indentation,"others"),new LineParser(c)("%s%s@+others".format(" "*indentation,c))) }
       property("property") = forAll(arbitrary[Comment],alphaStr,alphaStr) { (c,key,value) => =?(PropertyLine(key,value),new LineParser(c)("%s@@%s %s".format(c,key,value))) }
       property("end section") = forAll(arbitrary[Comment],arbitrary[String]) { (c,section_name) => =?(EndSectionLine(section_name),new LineParser(c)("%s@-%s".format(c,section_name))) }
+    }
+    class XMLParserSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
+      import XMLParser._
+
+      describe("The xml parser should correctly parse") {
+        it("an empty file") {
+          val ParseResult(tree,expanded_nodes) = parse(<leo_file/>)
+          tree.root.toYAML should be(
+            """|properties:
+               |children:
+               |""".stripMargin
+          )
+          expanded_nodes should be (List())
+        }
+        it("a file with a single vnode") {
+          val ParseResult(tree,expanded_nodes) = parse(
+            <leo_file>
+            <vnodes>
+              <v t="id"><vh>heading</vh></v>
+            </vnodes>
+            </leo_file>
+          )
+          tree.root.toYAML should be(
+            """|properties:
+               |children:
+               |  - id: id
+               |    heading: heading
+               |    body: ""
+               |    properties:
+               |    children:
+               |""".stripMargin
+          )
+        }
+        it("a file with a single vnode with expanded nodes") {
+          val ParseResult(tree,expanded_nodes) = parse(
+            <leo_file>
+            <vnodes>
+              <v t="id" a="E" expanded="id2,id3,"><vh>heading</vh></v>
+            </vnodes>
+            </leo_file>
+          )
+          tree.root.toYAML should be(
+            """|properties:
+               |children:
+               |  - id: id
+               |    heading: heading
+               |    body: ""
+               |    properties:
+               |    children:
+               |""".stripMargin
+          )
+          expanded_nodes should be (List("id","id2","id3"))
+        }
+        it("a file with a single vnode with text") {
+          val ParseResult(tree,expanded_nodes) = parse(
+            <leo_file>
+            <vnodes>
+              <v t="id"><vh>heading</vh></v>
+            </vnodes>
+            <tnodes>
+              <t tx="id">Body goes here</t>
+            </tnodes>
+            </leo_file>
+          )
+          tree.root.toYAML should be(
+            """|properties:
+               |children:
+               |  - id: id
+               |    heading: heading
+               |    body: "Body goes here"
+               |    properties:
+               |    children:
+               |""".stripMargin
+          )
+        }
+        it("a file with two vnodes with text") {
+          val ParseResult(tree,expanded_nodes) = parse(
+            <leo_file>
+            <vnodes>
+              <v t="id1"><vh>heading1</vh></v>
+              <v t="id2"><vh>heading2</vh></v>
+            </vnodes>
+            <tnodes>
+              <t tx="id1">First body goes here</t>
+              <t tx="id2">Second body goes here</t>
+            </tnodes>
+            </leo_file>
+          )
+          tree.root.toYAML should be(
+            """|properties:
+               |children:
+               |  - id: id1
+               |    heading: heading1
+               |    body: "First body goes here"
+               |    properties:
+               |    children:
+               |  - id: id2
+               |    heading: heading2
+               |    body: "Second body goes here"
+               |    properties:
+               |    children:
+               |""".stripMargin
+          )
+          expanded_nodes should be (List())
+        }
+        it("a file with a single cloned vnode with text and definition before clone") {
+          val ParseResult(tree,expanded_nodes) = parse(
+            <leo_file>
+            <vnodes>
+              <v t="id"><vh>heading</vh></v>
+              <v t="id"></v>
+            </vnodes>
+            <tnodes>
+              <t tx="id">Body goes here</t>
+            </tnodes>
+            </leo_file>
+          )
+          tree.root.toYAML should be(
+            """|properties:
+               |children:
+               |  - id: id
+               |    heading: heading
+               |    body: "Body goes here"
+               |    properties:
+               |    children:
+               |  - id: id
+               |    heading: heading
+               |    body: "Body goes here"
+               |    properties:
+               |    children:
+               |""".stripMargin
+          )
+        }
+        it("a file with a single cloned vnode with text and definition after clone") {
+          val ParseResult(tree,expanded_nodes) = parse(
+            <leo_file>
+            <vnodes>
+              <v t="id"></v>
+              <v t="id"><vh>heading</vh></v>
+            </vnodes>
+            <tnodes>
+              <t tx="id">Body goes here</t>
+            </tnodes>
+            </leo_file>
+          )
+          tree.root.toYAML should be(
+            """|properties:
+               |children:
+               |  - id: id
+               |    heading: heading
+               |    body: "Body goes here"
+               |    properties:
+               |    children:
+               |  - id: id
+               |    heading: heading
+               |    body: "Body goes here"
+               |    properties:
+               |    children:
+               |""".stripMargin
+          )
+        }
+        it("a file with nested vnodes") {
+          val ParseResult(tree,expanded_nodes) = parse(
+            <leo_file>
+            <vnodes>
+              <v t="id1"><vh>heading1</vh></v>
+              <v t="id2"><vh>heading2</vh>
+                <v t="id2a"><vh>heading2a</vh>
+                  <v t="id2a1"><vh>heading2a1</vh></v>
+                  <v t="id2a2"><vh>heading2a2</vh></v>
+                </v>
+                <v t="id2b"><vh>heading2b</vh></v>
+              </v>
+            </vnodes>
+            <tnodes>
+              <t tx="id1">First body goes here</t>
+              <t tx="id2">Second body goes here</t>
+              <t tx="id2a2">Nested body goes here</t>
+            </tnodes>
+            </leo_file>
+          )
+          tree.root.toYAML should be(
+            """|properties:
+               |children:
+               |  - id: id1
+               |    heading: heading1
+               |    body: "First body goes here"
+               |    properties:
+               |    children:
+               |  - id: id2
+               |    heading: heading2
+               |    body: "Second body goes here"
+               |    properties:
+               |    children:
+               |      - id: id2a
+               |        heading: heading2a
+               |        body: ""
+               |        properties:
+               |        children:
+               |          - id: id2a1
+               |            heading: heading2a1
+               |            body: ""
+               |            properties:
+               |            children:
+               |          - id: id2a2
+               |            heading: heading2a2
+               |            body: "Nested body goes here"
+               |            properties:
+               |            children:
+               |      - id: id2b
+               |        heading: heading2b
+               |        body: ""
+               |        properties:
+               |        children:
+               |""".stripMargin
+          )
+          expanded_nodes should be (List())
+        }
+        it("a file with nested vnodes including clones") {
+          val ParseResult(tree,expanded_nodes) = parse(
+            <leo_file>
+            <vnodes>
+              <v t="id1"><vh>heading1</vh>
+                <v t="id2a"/>
+              </v>
+              <v t="id2"><vh>heading2</vh>
+                <v t="id2a"><vh>heading2a</vh>
+                  <v t="id2a1"><vh>heading2a1</vh></v>
+                  <v t="id2a2"><vh>heading2a2</vh></v>
+                </v>
+                <v t="id2b"><vh>heading2b</vh>
+                    <v t="id1"/>
+                </v>
+              </v>
+            </vnodes>
+            <tnodes>
+              <t tx="id1">First body goes here</t>
+              <t tx="id2">Second body goes here</t>
+              <t tx="id2a2">Nested body goes here</t>
+            </tnodes>
+            </leo_file>
+          )
+          tree.root.toYAML should be(
+            """|properties:
+               |children:
+               |  - id: id1
+               |    heading: heading1
+               |    body: "First body goes here"
+               |    properties:
+               |    children:
+               |      - id: id2a
+               |        heading: heading2a
+               |        body: ""
+               |        properties:
+               |        children:
+               |          - id: id2a1
+               |            heading: heading2a1
+               |            body: ""
+               |            properties:
+               |            children:
+               |          - id: id2a2
+               |            heading: heading2a2
+               |            body: "Nested body goes here"
+               |            properties:
+               |            children:
+               |  - id: id2
+               |    heading: heading2
+               |    body: "Second body goes here"
+               |    properties:
+               |    children:
+               |      - id: id2a
+               |        heading: heading2a
+               |        body: ""
+               |        properties:
+               |        children:
+               |          - id: id2a1
+               |            heading: heading2a1
+               |            body: ""
+               |            properties:
+               |            children:
+               |          - id: id2a2
+               |            heading: heading2a2
+               |            body: "Nested body goes here"
+               |            properties:
+               |            children:
+               |      - id: id2b
+               |        heading: heading2b
+               |        body: ""
+               |        properties:
+               |        children:
+               |          - id: id1
+               |            heading: heading1
+               |            body: "First body goes here"
+               |            properties:
+               |            children:
+               |              - id: id2a
+               |                heading: heading2a
+               |                body: ""
+               |                properties:
+               |                children:
+               |                  - id: id2a1
+               |                    heading: heading2a1
+               |                    body: ""
+               |                    properties:
+               |                    children:
+               |                  - id: id2a2
+               |                    heading: heading2a2
+               |                    body: "Nested body goes here"
+               |                    properties:
+               |                    children:
+               |""".stripMargin
+          )
+          expanded_nodes should be (List())
+        }
+      }
     }
   }
 }
