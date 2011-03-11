@@ -32,12 +32,12 @@ package Viewpoint {
   class Parent {
     var children : Buffer[Node] = new ListBuffer[Node]
     var properties = new HashMap[String,String]
-    def appendChild(node: Node): Unit = {
+    def appendChild(node: Node) {
       node.parents.add(this)
       children += node
     }
     def getProperty(key: String) : Option[String] = properties.get(key)
-    def setProperty(key: String, value: String) : Unit = { properties(key) = value }
+    def setProperty(key: String, value: String)  { properties(key) = value }
     def findChildWithSectionName(section_name: String): Node = {
       import scala.collection.JavaConversions._
       for(child <- children) {
@@ -59,7 +59,7 @@ package Viewpoint {
       appendYAML("",builder)
       builder.toString
     }
-    def appendYAML(indentation: String, builder: StringBuilder): Unit = {
+    def appendYAML(indentation: String, builder: StringBuilder) {
       import scala.collection.JavaConversions._
       builder.append(indentation)
       builder.append("properties:")
@@ -100,7 +100,7 @@ package Viewpoint {
         None
       })
     }
-    override def appendYAML(indentation: String, builder: StringBuilder): Unit = {
+    override def appendYAML(indentation: String, builder: StringBuilder) {
       import org.apache.commons.lang.StringEscapeUtils
 
       builder.append("id: ")
@@ -122,7 +122,7 @@ package Viewpoint {
       super.appendYAML(indentation,builder)
     }
 
-    def writeTo(writer: Writer): Unit = {
+    def writeTo(writer: Writer) {
       import scala.util.control.Breaks
       val breaks = new Breaks
       import breaks.{break,breakable}
@@ -147,7 +147,7 @@ package Viewpoint {
       printer.println("@-leo")
     }
 
-    def writeTo(level: Int, indentation: String, comment_marker: String, printer: PrintWriter, maybe_lines: Option[Iterator[String]]=None): Unit = {
+    def writeTo(level: Int, indentation: String, comment_marker: String, printer: PrintWriter, maybe_lines: Option[Iterator[String]]=None) {
       import scala.util.control.Breaks
 
       printer.print(indentation)
@@ -542,7 +542,7 @@ package Viewpoint {
       ParseResult(tree,expanded_nodes_builder.result)
     }
 
-    def parseVNode(nodemap: HashMap[String,Node], parent: Parent, expanded_nodes_builder: ListBuffer[String])(vnode: scala.xml.Node): Unit = {
+    def parseVNode(nodemap: HashMap[String,Node], parent: Parent, expanded_nodes_builder: ListBuffer[String])(vnode: scala.xml.Node) {
       val id = (vnode \ "@t").text
       val maybe_heading = {
         val heading_nodes = vnode \ "vh"
