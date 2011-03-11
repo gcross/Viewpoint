@@ -91,6 +91,7 @@ package Viewpoint {
   class Node(val id: String, var heading: String, var body: String) extends Parent {
     import Node._
     var parents = new HashSet[Parent]
+    def isPlaceholder: Boolean = heading eq null
     override def getProperty(key: String) : Option[String] = {
       properties.get(key).orElse({
         for {
@@ -554,7 +555,7 @@ package Viewpoint {
       }
       val node = nodemap.getOrElseUpdate(id,{new Node(id,null,"")})
       for(heading <- maybe_heading) {
-        if(node.heading ne null)
+        if(!node.isPlaceholder)
           throw NodeDefinitionAppearsMultipleTimes(id)
         else {
           node.heading = heading
