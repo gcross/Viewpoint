@@ -243,7 +243,7 @@ package Viewpoint {
 
   class Tree {
     val root = new Parent
-    val nodemap = new scala.collection.mutable.HashMap[String,Node]
+    val nodemap = new HashMap[String,Node]
   }
 
   object Parser {
