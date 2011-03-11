@@ -1,9 +1,7 @@
 package Viewpoint {
   import java.io.{PrintWriter,Writer}
-  import java.util.LinkedList
   import scala.annotation.tailrec
-  import scala.collection.mutable.HashMap
-  import scala.collection.mutable.HashSet
+  import scala.collection.mutable.{Buffer,HashMap,HashSet,ListBuffer}
 
   object Node {
     val section_regex = "(\\s*)(?:<<\\s*(.*?)\\s*>>|@others)\\s*\\z".r
@@ -32,8 +30,12 @@ package Viewpoint {
   }
 
   class Parent {
-    var children = new LinkedList[Node]
+    var children : Buffer[Node] = new ListBuffer[Node]
     var properties = new HashMap[String,String]
+    def appendChild(node: Node): Unit = {
+      node.parents.add(this)
+      children += node
+    }
     def getProperty(key: String) : Option[String] = properties.get(key)
     def setProperty(key: String, value: String) : Unit = { properties(key) = value }
     def findChildWithSectionName(section_name: String): Node = {
@@ -431,8 +433,7 @@ package Viewpoint {
             }
             current_body = new StringBuilder
             current_node = new Node(id,heading,"")
-            current_node.parents.add(current_parent_node)
-            current_parent_node.children.add(current_node)
+            current_parent_node.appendChild(current_node)
           }
           case BeginSectionLine(indentation,section_name) => {
             if(currently_extracting_comment) throw UnmatchedBeginComment
@@ -454,8 +455,7 @@ package Viewpoint {
             current_body = new StringBuilder
             current_level = level
             current_node = new Node(id,heading,"")
-            current_node.parents.add(current_parent_node)
-            current_parent_node.children.add(current_node)
+            current_parent_node.appendChild(current_node)
 
             section_indentation_stack.push(current_section_indentation)
             section_level_stack.push(current_section_level)
@@ -565,8 +565,7 @@ package Viewpoint {
         expanded_nodes_builder += id
       for(child_id <- (vnode \ "@expanded").text.split(',') if child_id.nonEmpty)
         expanded_nodes_builder += child_id
-      node.parents.add(parent)
-      parent.children.add(node)
+      parent.appendChild(node)
     }
   }
   package Testing {
