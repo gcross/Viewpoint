@@ -308,40 +308,27 @@ package Viewpoint {
     class LineParser(val comment_marker: String) {
       val quoted_comment_marker = "\\Q%s\\E".format(comment_marker)
       val sentinel = comment_marker + "@"
-      val node_regex = "%s@\\+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
-      val begin_comment_regex = "%s@\\+at\\z".format(quoted_comment_marker).r
+      val NodeRegex = "%s@\\+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
+      val BeginCommentRegex = "%s@\\+at\\z".format(quoted_comment_marker).r
       val comment_line_starter = comment_marker + " "
-      val end_comment_regex = "%s@@c\\z".format(quoted_comment_marker).r
-      val begin_section_regex = "(\\s*)%s@\\+(.*)".format(quoted_comment_marker).r
-      val end_section_regex = "%s@-(.*)".format(quoted_comment_marker).r
-      val property_regex = "%s@@([^\\s]*) (.*)\\z".format(quoted_comment_marker).r
-      val verbatim_text = "%s@verbatim".format(comment_marker)
-      def apply(line: String) : Line = {
-        begin_comment_regex.findPrefixMatchOf(line).map({m =>
-          return BeginCommentLine
-        })
-        end_comment_regex.findPrefixMatchOf(line).map({m =>
-          return EndCommentLine
-        })
-        node_regex.findPrefixMatchOf(line).map({m =>
-          return NodeLine(m.group(1),parseLevel(m.group(2)),m.group(3))
-        })
-        begin_section_regex.findPrefixMatchOf(line).map({m =>
-          val section_name = m.group(2)
-	  if(validSectionName(section_name))
-            return BeginSectionLine(m.group(1).length,section_name)
-	  else
-	    throw InvalidSectionName(section_name)
-        })
-        end_section_regex.findPrefixMatchOf(line).map({m =>
-          return EndSectionLine(m.group(1))
-        })
-        if(line == verbatim_text) return VerbatimLine
-        property_regex.findPrefixMatchOf(line).map({m =>
-          return PropertyLine(m.group(1),m.group(2))
-        })
-        if(line.startsWith(sentinel)) throw UnrecognizedSentinel
-        TextLine(line)
+      val EndCommentRegex = "%s@@c\\z".format(quoted_comment_marker).r
+      val BeginSectionRegex = "(\\s*)%s@\\+(.*)".format(quoted_comment_marker).r
+      val EndSectionRegex = "%s@-(.*)".format(quoted_comment_marker).r
+      val PropertyRegex = "%s@@([^\\s]*) (.*)\\z".format(quoted_comment_marker).r
+      val VerbatimText = "%s@verbatim".format(comment_marker)
+      def apply(line: String): Line = line match {
+        case BeginCommentRegex() => BeginCommentLine
+        case EndCommentRegex() => EndCommentLine
+        case NodeRegex(id,level,heading) => NodeLine(id,parseLevel(level),heading)
+        case BeginSectionRegex(whitespace,section_name) => BeginSectionLine(whitespace.length,section_name)
+        case EndSectionRegex(section_name) => EndSectionLine(section_name)
+        case VerbatimText => VerbatimLine
+        case PropertyRegex(key,value) => PropertyLine(key,value)
+        case line =>
+          if(line.startsWith(sentinel))
+            throw UnrecognizedSentinel
+          else
+            TextLine(line)
       }
       def extractCommentLine(line: String): String =
         if(line.startsWith(comment_line_starter))
