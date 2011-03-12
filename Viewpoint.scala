@@ -4,8 +4,26 @@ package Viewpoint {
   import scala.collection.mutable.{Buffer,HashMap,HashSet,ListBuffer}
 
   object Node {
-    val section_regex = "(\\s*)(?:<<\\s*(.*?)\\s*>>|@others)\\s*\\z".r
-    val named_section_regex = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
+    object Sentinel {
+      def unapply(line: String): Option[String] =
+        if(line(0) == '@')
+          Some(line.substring(1))
+        else
+          None
+    }
+    object SectionRegex {
+      val Regex = "(\\s*)((?:<<\\s*(.*?)\\s*>>|@others)\\s*)\\z".r
+      def unapply(line: String): Option[(String,String,Option[String])] =
+        line match {
+          case Regex(whitespace,given_section_name,section_name) =>
+            if(section_name eq null)
+              Some((whitespace,"others",None))
+            else
+              Some((whitespace,given_section_name,Some(section_name)))
+          case _ => None
+        }
+    }
+    val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
     val property_keys = new HashSet[String]
     property_keys.add("c")
     property_keys.add("comment")
@@ -30,6 +48,7 @@ package Viewpoint {
   }
 
   class Parent {
+    import Node.NamedSection
     var children : Buffer[Node] = new ListBuffer[Node]
     var properties = new HashMap[String,String]
     def appendChild(node: Node) {
@@ -38,21 +57,24 @@ package Viewpoint {
     }
     def getProperty(key: String) : Option[String] = properties.get(key)
     def setProperty(key: String, value: String)  { properties(key) = value }
-    def findChildWithSectionName(section_name: String): Node = {
+    def findChildWithSectionName(section_name: String): Option[Node] = {
       import scala.collection.JavaConversions._
-      for(child <- children) {
-        Node
-        .named_section_regex
-        .findPrefixMatchOf(child.heading)
-        .map({m => if(m.group(1) == section_name) return child})
+      for {
+        child <- children
+      } child.heading match {
+        case NamedSection(`section_name`) => return Some(child)
+        case _ =>
       }
-      return null
+      return None
     }
     def writeUnnamedChildrenTo(level: Int, indentation: String, comment_marker: String, printer: PrintWriter) {
       import scala.collection.JavaConversions._
-      for(child <- children
-          if Node.named_section_regex.findPrefixMatchOf(child.heading).isEmpty
-        ) child.writeTo(level,indentation,comment_marker,printer)
+      for {
+        child <- children
+      } child.heading match {
+        case NamedSection(_) =>
+        case _ => child.writeTo(level,indentation,comment_marker,printer)
+      }
     }
     def toYAML: String = {
       val builder = new StringBuilder
@@ -163,23 +185,16 @@ package Viewpoint {
       var seen_others = false
       val lines = maybe_lines.getOrElse({body.lines})
       while(lines.hasNext) {
-        val line = lines.next
-        section_regex.findPrefixMatchOf(line) match {
-            case Some(m) => {
-              val additional_indentation = m.group(1)
+        lines.next match {
+            case SectionRegex(additional_indentation,given_section_name,maybe_section_name) => {
               val section_indentation = indentation + additional_indentation
-              val given_section_name =
-                Option(m.group(2)) match {
-                  case Some(_) => line.substring(additional_indentation.length)
-                  case None => "others"
-                }
               printer.print(section_indentation)
               printer.print(comment_marker)
               printer.print("@+")
               printer.println(given_section_name)
-              Option(m.group(2)) match {
+              maybe_section_name match {
                 case Some(section_name) =>
-                  Option(findChildWithSectionName(section_name)).getOrElse({
+                  findChildWithSectionName(section_name).getOrElse({
                     throw NoSectionFound(section_name)
                   }).writeTo(level+1,section_indentation,comment_marker,printer)
                 case None => {
@@ -193,48 +208,47 @@ package Viewpoint {
               printer.print("@-")
               printer.println(given_section_name)
             }
-            case None => {
-              if(line.charAt(0) == '@') {
-                printer.print(indentation)
-                line.substring(1) match {
-                  case "" => {
-                    printer.print(comment_marker)
-                    printer.println("@+at")
-                    val breaks = new Breaks
-                    import breaks.{break,breakable}
-                    breakable {
-                      while(lines.hasNext) {
-                        printer.print(indentation)
-                        printer.print(comment_marker)
-                        val line = lines.next
-                        if(line == "@c") {
-                          printer.println("@@c")
-                          break
-                        } else {
-                          printer.print(' ')
-                          printer.println(line)
-                        }
+            case line @ Sentinel(sentinel) => {
+              printer.print(indentation)
+              sentinel match {
+                case "" => {
+                  printer.print(comment_marker)
+                  printer.println("@+at")
+                  val breaks = new Breaks
+                  import breaks.{break,breakable}
+                  breakable {
+                    while(lines.hasNext) {
+                      printer.print(indentation)
+                      printer.print(comment_marker)
+                      val line = lines.next
+                      if(line == "@c") {
+                        printer.println("@@c")
+                        break
+                      } else {
+                        printer.print(' ')
+                        printer.println(line)
                       }
                     }
                   }
-                  case "verbatim" => {
+                }
+                case "verbatim" => {
+                  printer.print(comment_marker)
+                  printer.println("@verbatim")
+                  printer.print(indentation)
+                  printer.println(lines.next)
+                }
+                case other => {
+                  if(isPropertyKey(other.takeWhile(!_.isSpaceChar))) {
                     printer.print(comment_marker)
-                    printer.println("@verbatim")
-                    printer.print(indentation)
-                    printer.println(lines.next)
-                  }
-                  case other => {
-                    if(isPropertyKey(other.takeWhile(!_.isSpaceChar))) {
-                      printer.print(comment_marker)
-                      printer.print('@')
-                      printer.println(line)
-                    } else {
-                      printer.println(line)
-                    }
+                    printer.print('@')
+                    printer.println(line)
+                  } else {
+                    printer.println(line)
                   }
                 }
-              } else printer.println(line)
+              }
             }
+          case line => printer.println(line)
         }
       }
       if(!seen_others)
@@ -276,7 +290,7 @@ package Viewpoint {
       override def toString = "Error encountered while parsing line %s:\n\"%s\"\n%s\n".format(line_number,line,problem)
     }
 
-    val header_regex = "(\\s*)(.*?)@\\+leo-ver=(.*)".r
+    val Header = "(\\s*)(.*?)@\\+leo-ver=(.*)".r
 
     def countIndentation(text: String) : Int = {
       val first_non_space = text.indexWhere(!_.isSpaceChar)
@@ -348,16 +362,13 @@ package Viewpoint {
 
       def parseHeader : (String,String) = {
         while(lines.hasNext) {
-          val line = nextLine
-          header_regex.findPrefixMatchOf(line) match {
-            case None => {
+          lines.next match {
+            case Header("",comment_marker,version) => return (comment_marker,version)
+            case Header(_,_,_) => throw UnexpectedIndent
+            case line => {
               current_body.append("@first ")
               current_body.append(line)
               current_body.append('\n')
-            }
-            case Some(m) => {
-              if(m.group(1).length > 0) throw UnexpectedIndent
-              return (m.group(2),m.group(3))
             }
           }
         }
