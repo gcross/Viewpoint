@@ -259,6 +259,25 @@ package Viewpoint {
       writeTo(writer)
       writer.toString
     }
+    def ===(other: Node): Boolean = {
+      compareAgainst(new HashSet[(Node,Node)],other)
+    }
+    def compareAgainst(examined_nodes: HashSet[(Node,Node)],other: Node): Boolean = {
+      import scala.collection.JavaConversions._
+      examined_nodes.contains((this,other)) ||
+      (
+        this.id == other.id &&
+        this.heading == other.heading &&
+        this.body == other.body &&
+        this.children.size == other.children.size &&
+        {
+          examined_nodes += ((this,other))
+          !this.children.zip(other.children).exists({case (this_child,other_child) =>
+            !this_child.compareAgainst(examined_nodes,other_child)
+          })
+        }
+      )
+    }
   }
 
   class Tree {
@@ -1241,6 +1260,250 @@ package Viewpoint {
                |""".stripMargin
           )
           expanded_nodes should be (List())
+        }
+      }
+    }
+    class NodeSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
+      describe("The node comparer should work for") {
+        def test(correct_result: Boolean, n1: scala.xml.Node, n2: scala.xml.Node) {
+          import XMLParser._
+          val ParseResult(tree1,_) = parse(n1)
+          val ParseResult(tree2,_) = parse(n2)
+          (tree1.root.children(0) === tree2.root.children(0)) should be (correct_result)
+        }
+        it("identical singletons") {
+          test(true,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>
+             )
+        }
+        it("singletons with different ids") {
+          test(false,
+               <leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id2"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>
+             )
+        }
+        it("singletons with different headings") {
+          test(false,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading1</vh></v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading2</vh></v>
+               </vnodes>
+               </leo_file>
+             )
+        }
+        it("singletons with different bodies") {
+          test(false,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               <tnodes>
+               <t tx="id">body1</t>
+               </tnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               <tnodes>
+               <t tx="id">body2</t>
+               </tnodes>
+               </leo_file>
+             )
+        }
+        it("identical nodes with identical children") {
+          test(true,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id2"><vh>heading2</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id2"><vh>heading2</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>
+             )
+        }
+        it("identical nodes with different children") {
+          test(false,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id2"><vh>heading2</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading2</vh></v>
+               <v t="id2"><vh>heading1</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>
+             )
+        }
+        it("identical nodes with identical clone children") {
+          test(true,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id1"/>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id1"/>
+               </v>
+               </vnodes>
+               </leo_file>
+             )
+        }
+        it("identical nodes with different clone children") {
+          test(false,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id1"/>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading2</vh></v>
+               <v t="id1"/>
+               </v>
+               </vnodes>
+               </leo_file>
+             )
+        }
+        it("identical cyclic nodes") {
+          test(true,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id"/>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id"/>
+               </v>
+               </vnodes>
+               </leo_file>
+             )
+        }
+        it("identical multiply nested nodes") {
+          test(true,
+               <leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id2a"/>
+               </v>
+               <v t="id2"><vh>heading2</vh>
+               <v t="id2a"><vh>heading2a</vh>
+               <v t="id2a1"><vh>heading2a1</vh></v>
+               <v t="id2a2"><vh>heading2a2</vh></v>
+               </v>
+               <v t="id2b"><vh>heading2b</vh>
+               <v t="id1"/>
+               </v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id2a"/>
+               </v>
+               <v t="id2"><vh>heading2</vh>
+               <v t="id2a"><vh>heading2a</vh>
+               <v t="id2a1"><vh>heading2a1</vh></v>
+               <v t="id2a2"><vh>heading2a2</vh></v>
+               </v>
+               <v t="id2b"><vh>heading2b</vh>
+               <v t="id1"/>
+               </v>
+               </v>
+               </vnodes>
+               </leo_file>
+             )
+        }
+        it("different multiply nested nodes") {
+          test(false,
+               <leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id2a"/>
+               </v>
+               <v t="id2"><vh>heading2</vh>
+               <v t="id2a"><vh>heading2a</vh>
+               <v t="id2a1"><vh>heading2a1</vh></v>
+               <v t="id2a2"><vh>heading2a2</vh></v>
+               </v>
+               <v t="id2b"><vh>heading2b</vh>
+               <v t="id1"/>
+               </v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id2a"/>
+               </v>
+               <v t="id2"><vh>heading2</vh>
+               <v t="id2a"><vh>heading2a</vh>
+               <v t="id2a1"><vh>heading2a2</vh></v>
+               <v t="id2a2"><vh>heading2a2</vh></v>
+               </v>
+               <v t="id2b"><vh>heading2b</vh>
+               <v t="id1"/>
+               </v>
+               </v>
+               </vnodes>
+               </leo_file>
+             )
         }
       }
     }
