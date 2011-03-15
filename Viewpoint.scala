@@ -108,12 +108,22 @@ package Viewpoint {
         child.appendYAML(child_indentation,builder)
       }
     }
+    def replaceChild(old_child: Node, new_child: Node) {
+      children = children.map({child =>
+        if(child == old_child) {
+          old_child.parents -= this
+          new_child.parents += this
+          new_child
+        } else child
+      })
+    }
   }
 
-  class Node(val id: String, var heading: String, var body: String) extends Parent {
+  class Node(var id: String, var heading: String, var body: String) extends Parent {
     import Node._
     var parents = new HashSet[Parent]
     def isPlaceholder: Boolean = heading eq null
+    def isStub: Boolean = children.isEmpty && body.isEmpty
     override def getProperty(key: String) : Option[String] = {
       properties.get(key).orElse({
         for {
@@ -278,11 +288,77 @@ package Viewpoint {
         }
       )
     }
+    def replaceWith(other: Node) {
+      for(parent <- parents) parent.replaceChild(this,other)
+      parents.clear
+    }
   }
 
   class Tree {
+    case class NodeIdAlreadyInTree(id: String) extends Exception
+    case class AttemptToReplaceNodeThatIsNotStub(old_node: Node) extends Exception
+
+    import scala.ref.WeakReference
     val root = new Parent
-    val nodemap = new HashMap[String,Node]
+    val nodemap = new HashMap[String,WeakReference[Node]]
+    def lookupNode(id: String): Option[Node] = {
+      nodemap.get(id).map(_.get) match {
+        case None => None
+        case Some(None) => {
+          nodemap -= id
+          None
+        }
+        case Some(Some(node)) => Some(node)
+      }
+    }
+    def containsNode(id: String): Boolean = lookupNode(id).isDefined
+    def addNode(node: Node): Node = {
+      lookupNode(node.id) match {
+        case Some(other_node) =>
+          throw NodeIdAlreadyInTree(node.id)
+        case None =>
+          nodemap(node.id) = new WeakReference(node)
+      }
+      node
+    }
+    def lookupOrElseAddNode(id: String, default: => Node): Node = {
+      lookupNode(id).getOrElse({addNode(default)})
+    }
+    def mergeAndReplaceStub(old_node: Node, new_unmerged_node: Node) {
+      if(!old_node.isStub) throw AttemptToReplaceNodeThatIsNotStub(old_node)
+      nodemap -= old_node.id
+      old_node.replaceWith(mergeNode(new_unmerged_node))
+    }
+    def mergeNode(node: Node): Node = {
+      import scala.collection.JavaConversions._
+      lookupNode(node.id).map({other_node =>
+        if(node == other_node) {
+          return node
+        } else if(other_node.isPlaceholder) {
+          other_node.replaceWith(node)
+          nodemap -= other_node.id
+        } else if(node === other_node) {
+          return other_node
+        } else {
+          var counter = 0
+          var newid = "%s.%s".format(node.id,counter)
+          while(containsNode(newid)) {
+            counter += 1
+            newid = "%s.%s".format(node.id,counter)
+          }
+          node.id = newid
+        }
+      })
+      node.children = node.children.map({old_child =>
+        val new_child = mergeNode(old_child)
+        if(new_child ne old_child) {
+          old_child.parents -= node
+          new_child.parents += node
+        }
+        new_child
+      })
+      addNode(node)
+    }
   }
 
   object Parser {
@@ -554,13 +630,13 @@ package Viewpoint {
     def parse(xml: scala.xml.Node): ParseResult = {
       val tree = new Tree
       val expanded_nodes_builder = new ListBuffer[String]
-      (xml \ "vnodes" \ "v").foreach(parseVNode(tree.nodemap,tree.root,expanded_nodes_builder))
+      (xml \ "vnodes" \ "v").foreach(parseVNode(tree,tree.root,expanded_nodes_builder))
       for (tnode <- xml \ "tnodes" \ "t"; id = (tnode \ "@tx").text)
-        tree.nodemap.getOrElse(id,{throw UnmatchedTNode(id)}).body = tnode.text
+        tree.lookupNode(id).getOrElse({throw UnmatchedTNode(id)}).body = tnode.text
       ParseResult(tree,expanded_nodes_builder.result)
     }
 
-    def parseVNode(nodemap: HashMap[String,Node], parent: Parent, expanded_nodes_builder: ListBuffer[String])(vnode: scala.xml.Node) {
+    def parseVNode(tree: Tree, parent: Parent, expanded_nodes_builder: ListBuffer[String])(vnode: scala.xml.Node) {
       val id = (vnode \ "@t").text
       val maybe_heading = {
         val heading_nodes = vnode \ "vh"
@@ -570,13 +646,13 @@ package Viewpoint {
           case _ => throw TooManyHeadings(id,heading_nodes.size)
         }
       }
-      val node = nodemap.getOrElseUpdate(id,{new Node(id,null,"")})
+      val node = tree.lookupOrElseAddNode(id,{new Node(id,null,"")})
       for(heading <- maybe_heading) {
         if(!node.isPlaceholder)
           throw NodeDefinitionAppearsMultipleTimes(id)
         else {
           node.heading = heading
-          (vnode \ "v").foreach(parseVNode(nodemap,node,expanded_nodes_builder))
+          (vnode \ "v").foreach(parseVNode(tree,node,expanded_nodes_builder))
         }
       }
       if((vnode \ "@a").text.contains('E'))
@@ -1504,6 +1580,190 @@ package Viewpoint {
                </vnodes>
                </leo_file>
              )
+        }
+      }
+    }
+    class TreeSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
+      describe("The merger should work for") {
+        def test(n1: scala.xml.Node, n2: scala.xml.Node, n3: scala.xml.Node) {
+          import scala.collection.mutable.HashMap
+          import XMLParser._
+          val ParseResult(tree1,_) = parse(n1)
+          val ParseResult(tree2,_) = parse(n2)
+          val ParseResult(tree3,_) = parse(n3)
+          val substitute = tree2.root.children(0)
+          tree1.mergeAndReplaceStub(tree1.lookupNode(substitute.id).get,substitute)
+          (tree1.root.children(0) === tree3.root.children(0)) should be (true)
+          def checkValidity(node: Node, seen: HashMap[String,Node] = new HashMap[String,Node]) {
+            seen.get(node.id) match {
+              case None =>
+                seen(node.id) = node
+              case Some(other_node) =>
+                other_node should be (node)
+            }
+            for(child <- node.children) checkValidity(child)
+          }
+          checkValidity(tree1.root.children(0))
+        }
+        it("an empty node.") {
+          test(
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>
+            )
+        }
+        it("a node with some children.") {
+          test(
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id2"><vh>heading2</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id2"><vh>heading2</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>
+            )
+        }
+        it("a cloned node.") {
+          test(
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id1"/>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id1a"><vh>heading1a</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id1a"><vh>heading1a</vh></v>
+               </v>
+               <v t="id1"/>
+               </v>
+               </vnodes>
+               </leo_file>
+            )
+        }
+        it("a cloned node outside the substituted node.") {
+          test(
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id1a"/>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id1a"><vh>heading1a</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id1a"><vh>heading1a</vh></v>
+               </v>
+               <v t="id1a"/>
+               </v>
+               </vnodes>
+               </leo_file>
+            )
+        }
+        it("an identical cloned node outside the substituted node.") {
+          test(
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id1a"><vh>heading1a</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id1a"><vh>heading1a</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id1a"><vh>heading1a</vh></v>
+               </v>
+               <v t="id1a"/>
+               </v>
+               </vnodes>
+               </leo_file>
+            )
+        }
+        it("a conflicting cloned node outside the substituted node.") {
+          test(
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id1a"><vh>heading1b</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id1a"><vh>heading1a</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id1a.0"><vh>heading1a</vh></v>
+               </v>
+               <v t="id1a"><vh>heading1b</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>
+            )
         }
       }
     }
