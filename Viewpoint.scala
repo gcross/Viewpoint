@@ -24,6 +24,8 @@ package Viewpoint {
         }
     }
     val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
+    val FileSentinel = "\\s*@(?:file|thin)\\s*(.*?)\\s*".r
+    val PathSentinel = "\\s*@path\\s*(.*?)\\s*".r
     val property_keys = new HashSet[String]
     property_keys.add("c")
     property_keys.add("comment")
@@ -296,12 +298,16 @@ package Viewpoint {
       parents.clear
     }
     override def accept(visitor: NodeVisitor) {
-      if(visitor.visit(this)) super.accept(visitor)
+      if(visitor.visit(this)) {
+        super.accept(visitor)
+        visitor.exit(this)
+      }
     }
   }
 
   trait NodeVisitor {
     def visit(node: Node): Boolean
+    def exit(node: Node) {}
   }
 
   trait NodeVisitorWithMemory extends NodeVisitor {
@@ -375,6 +381,50 @@ package Viewpoint {
         new_child
       })
       addNode(node)
+    }
+    def gatherFileNodesForExport(base: java.io.File): (Traversable[(java.io.File,Node)],scala.collection.Set[Node]) = {
+      import java.io.File
+      import scala.collection.mutable.{HashSet,ListBuffer,Stack}
+      val file_nodes = new ListBuffer[(File,Node)]
+      val placeholder_nodes = new HashSet[Node]
+      root.accept(new NodeVisitorWithMemory {
+        var current_directory = base
+        var current_directory_root: Node = null
+        var current_file_root: Option[Node] = None
+        val directory_stack = new Stack[File]
+        val directory_root_stack = new Stack[Node]
+        def visit(node: Node, seen: Boolean) = {
+          current_file_root match {
+            case Some(_) => placeholder_nodes += node
+            case None => {
+              node.heading match {
+                case Node.FileSentinel(filepath) => {
+                  current_file_root = Some(node)
+                  file_nodes += ((new File(current_directory,filepath),node))
+                  placeholder_nodes += node
+                }
+                case Node.PathSentinel(path) => {
+                  directory_stack.push(current_directory)
+                  directory_root_stack.push(current_directory_root)
+                  current_directory = new File(current_directory,path)
+                  current_directory_root = node
+                }
+                case _ =>
+              }
+            }
+          }
+          !seen
+        }
+        override def exit(node: Node) {
+          if(node == current_directory_root) {
+            current_directory = directory_stack.pop
+            current_directory_root = directory_root_stack.pop
+          } else if(Some(node) == current_file_root) {
+            current_file_root = None
+          }
+        }
+      })
+      (file_nodes,placeholder_nodes)
     }
   }
 
@@ -1781,6 +1831,81 @@ package Viewpoint {
                </vnodes>
                </leo_file>
             )
+        }
+      }
+      describe("The file node gatherer for export should work for") {
+        import java.io.File
+        def test(xml: scala.xml.Node, correct_file_nodes: Set[(File,String)], correct_placeholder_nodes: Set[String]) {
+          import XMLParser._
+          val ParseResult(tree,_) = parse(xml)
+          val (observed_file_nodes,observed_placeholder_nodes) = tree.gatherFileNodesForExport(new File("."))
+          (for((file,node) <- observed_file_nodes) yield (file,node.id)).toSet should be (correct_file_nodes)
+          observed_placeholder_nodes.map(_.id) should be (correct_placeholder_nodes)
+        }
+        it("a single non-file node") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>,
+               Set(),
+               Set()
+              )
+        }
+        it("a single file node") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh>@file foo.bar</vh></v>
+               </vnodes>
+               </leo_file>,
+               Set((new File("./foo.bar"),"id")),
+               Set("id")
+              )
+        }
+        it("a single thin node") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh> @thin  foo.bar </vh></v>
+               </vnodes>
+               </leo_file>,
+               Set((new File("./foo.bar"),"id")),
+               Set("id")
+              )
+        }
+        it("a single file node with children") {
+          test(<leo_file>
+               <vnodes>
+               <v t="idA"><vh>not a file A</vh></v>
+               <v t="id"><vh>@file foo.bar</vh>
+               <v t="id1"><vh>child 1</vh>
+               <v t="id1a"><vh>child 1a</vh></v>
+               <v t="id1b"><vh>child 1b</vh></v>
+               </v>
+               <v t="id2"><vh>child 2</vh></v>
+               </v>
+               <v t="idB"><vh>not a file B</vh></v>
+               </vnodes>
+               </leo_file>,
+               Set((new File("./foo.bar"),"id")),
+               Set("id","id1","id1a","id1b","id2")
+              )
+        }
+        it("file nodes nested under paths") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id1"><vh>@file foo1.bar</vh></v>
+               <v t="id2"><vh>@path dir</vh>
+               <v t="id2a"><vh>@file foo2a.bar</vh>
+               <v t="id2a1"><vh>blarg</vh></v>
+               </v>
+               <v t="id2b"><vh>@file foo2b.bar</vh></v>
+               </v>
+               <v t="id3"><vh>@file foo3.bar</vh></v>
+               </vnodes>
+               </leo_file>,
+               Set((new File("./foo1.bar"),"id1"),(new File("./dir/foo2a.bar"),"id2a"),(new File("./dir/foo2b.bar"),"id2b"),(new File("./foo3.bar"),"id3")),
+               Set("id1","id2a","id2b","id2a1","id3")
+              )
         }
       }
     }
