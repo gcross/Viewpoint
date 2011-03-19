@@ -117,6 +117,9 @@ package Viewpoint {
         } else child
       })
     }
+    def accept(visitor: NodeVisitor) {
+      for(child <- children) child.accept(visitor)
+    }
   }
 
   class Node(var id: String, var heading: String, var body: String) extends Parent {
@@ -292,6 +295,20 @@ package Viewpoint {
       for(parent <- parents) parent.replaceChild(this,other)
       parents.clear
     }
+    override def accept(visitor: NodeVisitor) {
+      if(visitor.visit(this)) super.accept(visitor)
+    }
+  }
+
+  trait NodeVisitor {
+    def visit(node: Node): Boolean
+  }
+
+  trait NodeVisitorWithMemory extends NodeVisitor {
+    val visited_nodes = new HashSet[Node]
+    def visit(node: Node, seen: Boolean): Boolean
+    def visit(node: Node): Boolean =
+      visit(node,!visited_nodes.add(node))
   }
 
   class Tree {
@@ -1764,6 +1781,160 @@ package Viewpoint {
                </vnodes>
                </leo_file>
             )
+        }
+      }
+    }
+    class NodeVisitorSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
+      describe("The visitor should work for") {
+        def test(xml: scala.xml.Node, correct_result: Array[String]) {
+          import scala.collection.mutable.ArrayBuilder
+          import XMLParser._
+          val ParseResult(tree,_) = parse(xml)
+          val builder = ArrayBuilder.make[String]
+          tree.root.accept(new NodeVisitor {
+            def visit(node: Node) = {
+              builder += node.id
+              true
+            }
+          })
+          builder.result should be (correct_result)
+        }
+        it("singleton") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>,
+               Array("id")
+             )
+        }
+        it("node with children") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id2"><vh>heading2</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               Array("id","id1","id2")
+             )
+        }
+        it("node with grandchildren") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id2"><vh>heading2</vh>
+               <v t="id2a"><vh>heading2a</vh>
+               <v t="id2a1"><vh>heading2a1</vh></v>
+               <v t="id2a2"><vh>heading2a2</vh></v>
+               </v>
+               <v t="id2b"><vh>heading2b</vh>
+               <v t="id2b1"><vh>heading2b1</vh></v>
+               <v t="id2b2"><vh>heading2b2</vh></v>
+               </v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               Array("id1","id2","id2a","id2a1","id2a2","id2b","id2b1","id2b2")
+             )
+        }
+        it("node with cloned grandchildren") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id2a"/>
+               </v>
+               <v t="id2"><vh>heading2</vh>
+               <v t="id2a"><vh>heading2a</vh>
+               <v t="id2a1"><vh>heading2a1</vh></v>
+               <v t="id2a2"><vh>heading2a2</vh></v>
+               </v>
+               <v t="id2b"><vh>heading2b</vh>
+               <v t="id1"/>
+               </v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               Array("id1","id2a","id2a1","id2a2","id2","id2a","id2a1","id2a2","id2b","id1","id2a","id2a1","id2a2")
+             )
+        }
+      }
+    }
+    class NodeVisitorWithMemorySpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
+      describe("The visitor should work for") {
+        def test(xml: scala.xml.Node, correct_result: Array[String]) {
+          import scala.collection.mutable.ArrayBuilder
+          import XMLParser._
+          val ParseResult(tree,_) = parse(xml)
+          val builder = ArrayBuilder.make[String]
+          tree.root.accept(new NodeVisitorWithMemory {
+            def visit(node: Node, seen: Boolean) = {
+              builder += node.id
+              !seen
+            }
+          })
+          builder.result should be (correct_result)
+        }
+        it("singleton") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>,
+               Array("id")
+             )
+        }
+        it("node with children") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id2"><vh>heading2</vh></v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               Array("id","id1","id2")
+             )
+        }
+        it("node with grandchildren") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh></v>
+               <v t="id2"><vh>heading2</vh>
+               <v t="id2a"><vh>heading2a</vh>
+               <v t="id2a1"><vh>heading2a1</vh></v>
+               <v t="id2a2"><vh>heading2a2</vh></v>
+               </v>
+               <v t="id2b"><vh>heading2b</vh>
+               <v t="id2b1"><vh>heading2b1</vh></v>
+               <v t="id2b2"><vh>heading2b2</vh></v>
+               </v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               Array("id1","id2","id2a","id2a1","id2a2","id2b","id2b1","id2b2")
+             )
+        }
+        it("node with cloned grandchildren") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id1"><vh>heading1</vh>
+               <v t="id2a"/>
+               </v>
+               <v t="id2"><vh>heading2</vh>
+               <v t="id2a"><vh>heading2a</vh>
+               <v t="id2a1"><vh>heading2a1</vh></v>
+               <v t="id2a2"><vh>heading2a2</vh></v>
+               </v>
+               <v t="id2b"><vh>heading2b</vh>
+               <v t="id1"/>
+               </v>
+               </v>
+               </vnodes>
+               </leo_file>,
+               Array("id1","id2a","id2a1","id2a2","id2","id2a","id2b","id1")
+             )
         }
       }
     }
