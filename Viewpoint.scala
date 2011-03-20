@@ -26,6 +26,7 @@ package Viewpoint {
     val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
     val FileSentinel = "\\s*@(?:file|thin)\\s*(.*?)\\s*".r
     val PathSentinel = "\\s*@path\\s*(.*?)\\s*".r
+    val IgnoreSentinel = "(?m).*^@ignore(?:\\s|$)".r
     val property_keys = new HashSet[String]
     property_keys.add("c")
     property_keys.add("comment")
@@ -318,6 +319,9 @@ package Viewpoint {
   }
 
   class Tree {
+    import java.io.File
+    import scala.collection.{Map,Set}
+
     case class NodeIdAlreadyInTree(id: String) extends Exception
     case class AttemptToReplaceNodeThatIsNotStub(old_node: Node) extends Exception
 
@@ -382,49 +386,48 @@ package Viewpoint {
       })
       addNode(node)
     }
-    def gatherFileNodesForExport(base: java.io.File): (Traversable[(java.io.File,Node)],scala.collection.Set[Node]) = {
-      import java.io.File
-      import scala.collection.mutable.{HashSet,ListBuffer,Stack}
-      val file_nodes = new ListBuffer[(File,Node)]
-      val placeholder_nodes = new HashSet[Node]
+    def findFileNodes(base: File): Map[Node,Set[File]] = {
+      import scala.collection.mutable.{HashMap,Stack}
+      val file_nodes = new HashMap[Node,Set[File]]
       root.accept(new NodeVisitorWithMemory {
         var current_directory = base
         var current_directory_root: Node = null
-        var current_file_root: Option[Node] = None
         val directory_stack = new Stack[File]
         val directory_root_stack = new Stack[Node]
-        def visit(node: Node, seen: Boolean) = {
-          current_file_root match {
-            case Some(_) => placeholder_nodes += node
-            case None => {
-              node.heading match {
-                case Node.FileSentinel(filepath) => {
-                  current_file_root = Some(node)
-                  file_nodes += ((new File(current_directory,filepath),node))
-                  placeholder_nodes += node
+        def visit(node: Node, seen: Boolean) =
+          node.heading match {
+            case Node.FileSentinel(filepath) => {
+              if(seen) {
+                file_nodes.get(node).map({old_files => file_nodes(node) = old_files + new File(current_directory,filepath)})
+              } else {
+                node.body match {
+                  case Node.IgnoreSentinel() =>
+                  case _ => file_nodes(node) = Set(new File(current_directory,filepath))
                 }
-                case Node.PathSentinel(path) => {
-                  directory_stack.push(current_directory)
-                  directory_root_stack.push(current_directory_root)
-                  current_directory = new File(current_directory,path)
-                  current_directory_root = node
-                }
-                case _ =>
+              }
+              false
+            }
+            case Node.PathSentinel(path) => {
+              if(seen) {
+                false
+              } else {
+                directory_stack.push(current_directory)
+                directory_root_stack.push(current_directory_root)
+                current_directory = new File(current_directory,path)
+                current_directory_root = node
+                true
               }
             }
+            case _ => !seen
           }
-          !seen
-        }
         override def exit(node: Node) {
           if(node == current_directory_root) {
             current_directory = directory_stack.pop
             current_directory_root = directory_root_stack.pop
-          } else if(Some(node) == current_file_root) {
-            current_file_root = None
           }
         }
       })
-      (file_nodes,placeholder_nodes)
+      file_nodes.toMap
     }
   }
 
@@ -1833,14 +1836,14 @@ package Viewpoint {
             )
         }
       }
-      describe("The file node gatherer for export should work for") {
+      describe("The file node finder should work for") {
         import java.io.File
-        def test(xml: scala.xml.Node, correct_file_nodes: Set[(File,String)], correct_placeholder_nodes: Set[String]) {
+        import scala.collection.{Map,Set}
+        def test(xml: scala.xml.Node, correct_file_nodes: Map[String,Set[File]]) {
           import XMLParser._
           val ParseResult(tree,_) = parse(xml)
-          val (observed_file_nodes,observed_placeholder_nodes) = tree.gatherFileNodesForExport(new File("."))
-          (for((file,node) <- observed_file_nodes) yield (file,node.id)).toSet should be (correct_file_nodes)
-          observed_placeholder_nodes.map(_.id) should be (correct_placeholder_nodes)
+          val observed_file_nodes = tree.findFileNodes(new File("."))
+          observed_file_nodes.map({case (node,files) => (node.id,files)}) should be (correct_file_nodes)
         }
         it("a single non-file node") {
           test(<leo_file>
@@ -1848,8 +1851,7 @@ package Viewpoint {
                <v t="id"><vh>heading</vh></v>
                </vnodes>
                </leo_file>,
-               Set(),
-               Set()
+               Map()
               )
         }
         it("a single file node") {
@@ -1858,8 +1860,7 @@ package Viewpoint {
                <v t="id"><vh>@file foo.bar</vh></v>
                </vnodes>
                </leo_file>,
-               Set((new File("./foo.bar"),"id")),
-               Set("id")
+               Map("id" -> Set(new File("./foo.bar")))
               )
         }
         it("a single thin node") {
@@ -1868,8 +1869,54 @@ package Viewpoint {
                <v t="id"><vh> @thin  foo.bar </vh></v>
                </vnodes>
                </leo_file>,
-               Set((new File("./foo.bar"),"id")),
-               Set("id")
+               Map("id" -> Set(new File("./foo.bar")))
+              )
+        }
+        it("an ignored file node") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh>@file foo.bar</vh></v>
+               </vnodes>
+               <tnodes>
+               <t tx="id">@ignore</t>
+               </tnodes>
+               </leo_file>,
+               Map()
+              )
+        }
+        it("a cloned file node") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh>@file foo.bar</vh></v>
+               <v t="id"/>
+               </vnodes>
+               </leo_file>,
+               Map("id" -> Set(new File("./foo.bar")))
+              )
+        }
+        it("a cloned ignoed file node") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh>@file foo.bar</vh></v>
+               <v t="id"/>
+               </vnodes>
+               <tnodes>
+               <t tx="id">@ignore</t>
+               </tnodes>
+               </leo_file>,
+               Map()
+              )
+        }
+        it("a cloned file node in another directory") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id"><vh>@file foo.bar</vh></v>
+               <v t="id1"><vh>@path dir</vh>
+               <v t="id"/>
+               </v>
+               </vnodes>
+               </leo_file>,
+               Map("id" -> Set(new File("./foo.bar"),new File("./dir/foo.bar")))
               )
         }
         it("a single file node with children") {
@@ -1886,8 +1933,7 @@ package Viewpoint {
                <v t="idB"><vh>not a file B</vh></v>
                </vnodes>
                </leo_file>,
-               Set((new File("./foo.bar"),"id")),
-               Set("id","id1","id1a","id1b","id2")
+               Map("id" -> Set(new File("./foo.bar")))
               )
         }
         it("file nodes nested under paths") {
@@ -1903,8 +1949,11 @@ package Viewpoint {
                <v t="id3"><vh>@file foo3.bar</vh></v>
                </vnodes>
                </leo_file>,
-               Set((new File("./foo1.bar"),"id1"),(new File("./dir/foo2a.bar"),"id2a"),(new File("./dir/foo2b.bar"),"id2b"),(new File("./foo3.bar"),"id3")),
-               Set("id1","id2a","id2b","id2a1","id3")
+               Map("id1" -> Set(new File("./foo1.bar")),
+                   "id2a" -> Set(new File("./dir/foo2a.bar")),
+                   "id2b" -> Set(new File("./dir/foo2b.bar")),
+                   "id3" -> Set(new File("./foo3.bar"))
+                  )
               )
         }
       }
