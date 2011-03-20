@@ -396,6 +396,7 @@ package Viewpoint {
         val directory_root_stack = new Stack[Node]
         def visit(node: Node, seen: Boolean) =
           node.heading match {
+            case Node.IgnoreSentinel() => false
             case Node.FileSentinel(filepath) => {
               if(seen) {
                 file_nodes.get(node).map({old_files => file_nodes(node) = old_files + new File(current_directory,filepath)})
@@ -1880,6 +1881,17 @@ package Viewpoint {
                <tnodes>
                <t tx="id">@ignore</t>
                </tnodes>
+               </leo_file>,
+               Map()
+              )
+        }
+        it("an ignored root") {
+          test(<leo_file>
+               <vnodes>
+               <v t="root"><vh>@ignore</vh>
+               <v t="id"><vh>@file foo.bar</vh></v>
+               </v>
+               </vnodes>
                </leo_file>,
                Map()
               )
