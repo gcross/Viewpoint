@@ -428,7 +428,7 @@ package Viewpoint {
           }
         }
       })
-      file_nodes.toMap
+      file_nodes
     }
   }
 
