@@ -1,6 +1,7 @@
 package Viewpoint {
   import java.io.{PrintWriter,Writer}
   import scala.annotation.tailrec
+  import scala.collection.{Map,Set}
   import scala.collection.mutable.{Buffer,HashMap,HashSet,ListBuffer}
 
   object Node {
@@ -122,6 +123,13 @@ package Viewpoint {
     }
     def accept(visitor: NodeVisitor) {
       for(child <- children) child.accept(visitor)
+    }
+    def gatherChildren: Set[Node] = {
+      val visitor = new NodeVisitorWithMemory {
+        def visit(node: Node, seen: Boolean) = !seen
+      }
+      accept(visitor)
+      visitor.visited_nodes
     }
   }
 
@@ -320,7 +328,6 @@ package Viewpoint {
 
   class Tree {
     import java.io.File
-    import scala.collection.{Map,Set}
 
     case class NodeIdAlreadyInTree(id: String) extends Exception
     case class AttemptToReplaceNodeThatIsNotStub(old_node: Node) extends Exception
