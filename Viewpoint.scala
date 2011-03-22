@@ -393,24 +393,31 @@ package Viewpoint {
       })
       addNode(node)
     }
-    def findFileNodes(base: File): Map[Node,Set[File]] = {
-      import scala.collection.mutable.{HashMap,Stack}
-      val file_nodes = new HashMap[Node,Set[File]]
+    def findFileNodes(base: File): (Map[Node,Set[File]],Map[File,Set[Node]]) = {
+      import scala.collection.mutable.{HashMap,HashSet,MultiMap,Set,Stack}
+      val files_associated_with_node = new HashMap[Node,Set[File]] with MultiMap[Node,File]
+      val nodes_associated_with_file = new HashMap[File,Set[Node]] with MultiMap[File,Node]
       root.accept(new NodeVisitorWithMemory {
         var current_directory = base
         var current_directory_root: Node = null
         val directory_stack = new Stack[File]
         val directory_root_stack = new Stack[Node]
+        val ignored_nodes = new HashSet[Node]
         def visit(node: Node, seen: Boolean) =
           node.heading match {
             case Node.IgnoreSentinel() => false
-            case Node.FileSentinel(filepath) => {
+            case Node.FileSentinel(filename) => {
+              def registerFileNode {
+                val filepath = new File(current_directory,filename)
+                files_associated_with_node.addBinding(node,filepath)
+                nodes_associated_with_file.addBinding(filepath,node)
+              }
               if(seen) {
-                file_nodes.get(node).map({old_files => file_nodes(node) = old_files + new File(current_directory,filepath)})
+                if(!ignored_nodes.contains(node)) registerFileNode
               } else {
                 node.body match {
-                  case Node.IgnoreSentinel() =>
-                  case _ => file_nodes(node) = Set(new File(current_directory,filepath))
+                  case Node.IgnoreSentinel() => ignored_nodes += node
+                  case _ => registerFileNode
                 }
               }
               false
@@ -435,7 +442,7 @@ package Viewpoint {
           }
         }
       })
-      file_nodes
+      (files_associated_with_node,nodes_associated_with_file)
     }
   }
 
@@ -1847,11 +1854,12 @@ package Viewpoint {
       describe("The file node finder should work for") {
         import java.io.File
         import scala.collection.{Map,Set}
-        def test(xml: scala.xml.Node, correct_file_nodes: Map[String,Set[File]]) {
+        def test(xml: scala.xml.Node, correct_files_associated_with_node: Map[String,Set[File]], correct_nodes_associated_with_file: Map[File,Set[String]]) {
           import XMLParser._
           val ParseResult(tree,_) = parse(xml)
-          val observed_file_nodes = tree.findFileNodes(new File("."))
-          observed_file_nodes.map({case (node,files) => (node.id,files)}) should be (correct_file_nodes)
+          val (observed_files_associated_with_node,observed_nodes_associated_with_file) = tree.findFileNodes(new File("."))
+          observed_files_associated_with_node.map({case (node,files) => (node.id,files)}) should be (correct_files_associated_with_node)
+          observed_nodes_associated_with_file.map({case (file,nodes) => (file,nodes.map(_.id))}) should be (correct_nodes_associated_with_file)
         }
         it("a single non-file node") {
           test(<leo_file>
@@ -1859,6 +1867,7 @@ package Viewpoint {
                <v t="id"><vh>heading</vh></v>
                </vnodes>
                </leo_file>,
+               Map(),
                Map()
               )
         }
@@ -1868,7 +1877,8 @@ package Viewpoint {
                <v t="id"><vh>@file foo.bar</vh></v>
                </vnodes>
                </leo_file>,
-               Map("id" -> Set(new File("./foo.bar")))
+               Map("id" -> Set(new File("./foo.bar"))),
+               Map(new File("./foo.bar") -> Set("id"))
               )
         }
         it("a single thin node") {
@@ -1877,7 +1887,8 @@ package Viewpoint {
                <v t="id"><vh> @thin  foo.bar </vh></v>
                </vnodes>
                </leo_file>,
-               Map("id" -> Set(new File("./foo.bar")))
+               Map("id" -> Set(new File("./foo.bar"))),
+               Map(new File("./foo.bar") -> Set("id"))
               )
         }
         it("an ignored file node") {
@@ -1889,6 +1900,7 @@ package Viewpoint {
                <t tx="id">@ignore</t>
                </tnodes>
                </leo_file>,
+               Map(),
                Map()
               )
         }
@@ -1900,6 +1912,7 @@ package Viewpoint {
                </v>
                </vnodes>
                </leo_file>,
+               Map(),
                Map()
               )
         }
@@ -1910,10 +1923,24 @@ package Viewpoint {
                <v t="id"/>
                </vnodes>
                </leo_file>,
-               Map("id" -> Set(new File("./foo.bar")))
+               Map("id" -> Set(new File("./foo.bar"))),
+               Map(new File("./foo.bar") -> Set("id"))
               )
         }
-        it("a cloned ignoed file node") {
+        it("an aliased file node") {
+          test(<leo_file>
+               <vnodes>
+               <v t="id1"><vh>@file foo.bar</vh></v>
+               <v t="id2"><vh>@file foo.bar</vh></v>
+               </vnodes>
+               </leo_file>,
+               Map("id1" -> Set(new File("./foo.bar")),
+                   "id2" -> Set(new File("./foo.bar"))
+                  ),
+               Map(new File("./foo.bar") -> Set("id1","id2"))
+              )
+        }
+        it("a cloned ignored file node") {
           test(<leo_file>
                <vnodes>
                <v t="id"><vh>@file foo.bar</vh></v>
@@ -1923,6 +1950,7 @@ package Viewpoint {
                <t tx="id">@ignore</t>
                </tnodes>
                </leo_file>,
+               Map(),
                Map()
               )
         }
@@ -1935,7 +1963,8 @@ package Viewpoint {
                </v>
                </vnodes>
                </leo_file>,
-               Map("id" -> Set(new File("./foo.bar"),new File("./dir/foo.bar")))
+               Map("id" -> Set(new File("./foo.bar"),new File("./dir/foo.bar"))),
+               Map(new File("./foo.bar") -> Set("id"),new File("./dir/foo.bar") -> Set("id"))
               )
         }
         it("a single file node with children") {
@@ -1952,7 +1981,8 @@ package Viewpoint {
                <v t="idB"><vh>not a file B</vh></v>
                </vnodes>
                </leo_file>,
-               Map("id" -> Set(new File("./foo.bar")))
+               Map("id" -> Set(new File("./foo.bar"))),
+               Map(new File("./foo.bar") -> Set("id"))
               )
         }
         it("file nodes nested under paths") {
@@ -1972,6 +2002,11 @@ package Viewpoint {
                    "id2a" -> Set(new File("./dir/foo2a.bar")),
                    "id2b" -> Set(new File("./dir/foo2b.bar")),
                    "id3" -> Set(new File("./foo3.bar"))
+                  ),
+               Map(new File("./foo1.bar") -> Set("id1"),
+                   new File("./dir/foo2a.bar") -> Set("id2a"),
+                   new File("./dir/foo2b.bar") -> Set("id2b"),
+                   new File("./foo3.bar") -> Set("id3")
                   )
               )
         }
