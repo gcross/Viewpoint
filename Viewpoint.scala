@@ -1,7 +1,7 @@
 package Viewpoint {
   import java.io.{PrintWriter,Writer}
   import scala.annotation.tailrec
-  import scala.collection.{Map,Set}
+  import scala.collection.{Iterable,Map,Set}
   import scala.collection.mutable.{Buffer,HashMap,HashSet,ListBuffer}
 
   object Node {
@@ -328,6 +328,7 @@ package Viewpoint {
 
   class Tree {
     import java.io.File
+    import Parser.ParseResult
 
     case class NodeIdAlreadyInTree(id: String) extends Exception
     case class AttemptToReplaceNodeThatIsNotStub(old_node: Node) extends Exception
@@ -357,6 +358,12 @@ package Viewpoint {
     }
     def lookupOrElseAddNode(id: String, default: => Node): Node = {
       lookupNode(id).getOrElse({addNode(default)})
+    }
+    def mergeParseResultWithStub(old_node: Node, result: ParseResult) {
+      result match {
+        case Left(e) => old_node.body = "@ignore\n@\nError parsing file:\n\n%s\n@c\n%s".format(e,old_node.body)
+        case Right(node) => mergeAndReplaceStub(old_node,node)
+      }
     }
     def mergeAndReplaceStub(old_node: Node, new_unmerged_node: Node) {
       if(!old_node.isStub) throw AttemptToReplaceNodeThatIsNotStub(old_node)
@@ -531,7 +538,7 @@ package Viewpoint {
           throw UnmatchedBeginComment
     }
 
-    def parse(lines: Iterator[String]) : Node = {
+    def parseOrThrow(lines: Iterator[String]) : Node = {
       var line_number = 0
       def nextLine : String = {
         line_number = line_number + 1
@@ -701,6 +708,52 @@ package Viewpoint {
       if(current_level > 0) throw UnexpectedEndOfFile
       current_node
     }
+    type ParseResult = Either[Exception,Node]
+    def parse(lines: Iterator[String]) : ParseResult =
+      try{
+        Right(parseOrThrow(lines))
+      } catch {
+        case e: Exception => Left(e)
+      }
+    object TerminateParseAll {}
+    sealed abstract class ParseCompletionMessage[T]
+    case class CompletedParse[T](id: T) extends ParseCompletionMessage[T]
+    case class CompletedParseAll[T](results: Iterable[(T,ParseResult)]) extends ParseCompletionMessage[T]
+    case class TerminatedParseAll[T](results: Iterable[(T,ParseResult)]) extends ParseCompletionMessage[T]
+    def parseAllAsynchronously[T](node_sources: Iterator[(T,() => Iterator[String])], receiver: scala.actors.OutputChannel[ParseCompletionMessage[T]]): scala.actors.Actor = {
+      import scala.actors.Actor.{actor,exit,loop,react,self}
+      actor {
+        var number_remaining = 0
+        val master = self
+        case class Done(id: T, result: ParseResult)
+        for((id,getLines) <- node_sources) {
+          val slave = actor {
+            self.link(master)
+            master ! Done(id,parse(getLines()))
+          }
+          number_remaining += 1
+        }
+        val results = new ListBuffer[(T,ParseResult)]
+        loop {
+          if(number_remaining == 0) {
+            receiver ! CompletedParseAll(results)
+            exit
+          } else {
+            react {
+              case TerminateParseAll => {
+                receiver ! TerminatedParseAll(results)
+                exit
+              }
+              case Done(id,result) => {
+                results += ((id,result))
+                receiver ! CompletedParse(id)
+                number_remaining -= 1
+              }
+            }
+          }
+        }
+      }
+    }
   }
   object XMLParser {
     import scala.collection.mutable.ListBuffer
@@ -748,16 +801,7 @@ package Viewpoint {
     }
   }
   package Testing {
-    class ParserSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
-      import Parser._
-
-      describe("The level parser should correctly parse") {
-        it("*") { parseLevel("*") should be (1) }
-        it("**") { parseLevel("**") should be (2) }
-        it("*3*") { parseLevel("*3*") should be (3) }
-        it("*4*") { parseLevel("*4*") should be (4) }
-      }
-
+    object ParserExamples {
       val empty_file =
         """|#@+leo-ver=5-thin
            |#@+node:gcross.20101205182001.1356: * @thin node.cpp
@@ -884,10 +928,21 @@ package Viewpoint {
            |post1
            |#@-leo
            |""".stripMargin
+    }
+    class ParserSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
+      import Parser._
+      import ParserExamples._
+
+      describe("The level parser should correctly parse") {
+        it("*") { parseLevel("*") should be (1) }
+        it("**") { parseLevel("**") should be (2) }
+        it("*3*") { parseLevel("*3*") should be (3) }
+        it("*4*") { parseLevel("*4*") should be (4) }
+      }
 
       describe("The node parser should correctly parse") {
         it("an empty file") {
-          parse(empty_file.lines).toYAML should be(
+          parseOrThrow(empty_file.lines).toYAML should be(
             """|id: gcross.20101205182001.1356
                |heading: @thin node.cpp
                |body: ""
@@ -897,7 +952,7 @@ package Viewpoint {
           )
         }
         it("a single-node file with content") {
-          parse(single_node_file_with_content.lines).toYAML should be(
+          parseOrThrow(single_node_file_with_content.lines).toYAML should be(
             """|id: namegoeshere
                |heading: @thin node.cpp
                |body: "@first Hello,\n@first world!\nfoo\nBar\n"
@@ -907,7 +962,7 @@ package Viewpoint {
           )
         }
         it("a single-node file with a comment ended by @c") {
-          parse(single_node_file_with_explicitly_ended_comment.lines).toYAML should be(
+          parseOrThrow(single_node_file_with_explicitly_ended_comment.lines).toYAML should be(
             """|id: namegoeshere
                |heading: @thin node.cpp
                |body: "pre\n@\ncomment\ngoes\nhere\n@c\npost\n"
@@ -917,7 +972,7 @@ package Viewpoint {
           )
         }
         it("a single-node file with a comment ended by the end of file") {
-          parse(single_node_file_with_comment_ended_by_end_of_file.lines).toYAML should be(
+          parseOrThrow(single_node_file_with_comment_ended_by_end_of_file.lines).toYAML should be(
             """|id: namegoeshere
                |heading: @thin node.cpp
                |body: "pre\n@\ncomment\ngoes\nhere\n"
@@ -927,7 +982,7 @@ package Viewpoint {
           )
         }
         it("a single-node file with properties") {
-          parse(single_node_file_with_properties.lines).toYAML should be(
+          parseOrThrow(single_node_file_with_properties.lines).toYAML should be(
             """|id: namegoeshere
                |heading: @thin node.cpp
                |body: "A\n@language value1\n@tabwidth value2\nB\n"
@@ -939,7 +994,7 @@ package Viewpoint {
           )
         }
         it("a file with a single named section") {
-          parse(file_with_single_named_section.lines).toYAML should be(
+          parseOrThrow(file_with_single_named_section.lines).toYAML should be(
             """|id: name
                |heading: @thin node.cpp
                |body: "foo\n<< Section >>\nbar\n"
@@ -954,7 +1009,7 @@ package Viewpoint {
           )
         }
         it("a file with a single named section with properties") {
-          parse(file_with_single_named_section_with_properties.lines).toYAML should be(
+          parseOrThrow(file_with_single_named_section_with_properties.lines).toYAML should be(
             """|id: name
                |heading: @thin node.cpp
                |body: "foo\n@language value\n<< Section >>\nbar\n"
@@ -971,7 +1026,7 @@ package Viewpoint {
           )
         }
         it("a file with nested others sections") {
-          parse(file_with_nested_others_sections.lines).toYAML should be(
+          parseOrThrow(file_with_nested_others_sections.lines).toYAML should be(
             """|id: name
                |heading: @thin node.cpp
                |body: "pre1\n@others\npost1\n"
@@ -1011,7 +1066,7 @@ package Viewpoint {
           )
         }
         it("a file with nested others sections with comments") {
-          parse(file_with_nested_others_sections_with_comments.lines).toYAML should be(
+          parseOrThrow(file_with_nested_others_sections_with_comments.lines).toYAML should be(
             """|id: name
                |heading: @thin node.cpp
                |body: "pre1\n@\ncomment 1\n@c\n@others\npost1\n"
@@ -1053,31 +1108,31 @@ package Viewpoint {
       }
       describe("The node tangler should correctly parse") {
         it("an empty file") {
-          parse(empty_file.lines).writeToString should be(empty_file)
+          parseOrThrow(empty_file.lines).writeToString should be(empty_file)
         }
         it("a single-node file with content") {
-          parse(single_node_file_with_content.lines).writeToString should be(single_node_file_with_content)
+          parseOrThrow(single_node_file_with_content.lines).writeToString should be(single_node_file_with_content)
         }
         it("a single-node file with a comment ended by @c") {
-          parse(single_node_file_with_explicitly_ended_comment.lines).writeToString should be(single_node_file_with_explicitly_ended_comment)
+          parseOrThrow(single_node_file_with_explicitly_ended_comment.lines).writeToString should be(single_node_file_with_explicitly_ended_comment)
         }
         it("a single-node file with a comment ended by the end of file") {
-          parse(single_node_file_with_comment_ended_by_end_of_file.lines).writeToString should be(single_node_file_with_comment_ended_by_end_of_file)
+          parseOrThrow(single_node_file_with_comment_ended_by_end_of_file.lines).writeToString should be(single_node_file_with_comment_ended_by_end_of_file)
         }
         it("a single-node file with properties") {
-          parse(single_node_file_with_properties.lines).writeToString should be(single_node_file_with_properties)
+          parseOrThrow(single_node_file_with_properties.lines).writeToString should be(single_node_file_with_properties)
         }
         it("a file with a single named section") {
-          parse(file_with_single_named_section.lines).writeToString should be(file_with_single_named_section)
+          parseOrThrow(file_with_single_named_section.lines).writeToString should be(file_with_single_named_section)
         }
         it("a file with a single named section with properties") {
-          parse(file_with_single_named_section_with_properties.lines).writeToString should be(file_with_single_named_section_with_properties)
+          parseOrThrow(file_with_single_named_section_with_properties.lines).writeToString should be(file_with_single_named_section_with_properties)
         }
         it("a file with nested others sections") {
-          parse(file_with_nested_others_sections.lines).writeToString should be(file_with_nested_others_sections)
+          parseOrThrow(file_with_nested_others_sections.lines).writeToString should be(file_with_nested_others_sections)
         }
         it("a file with nested others sections with comments") {
-          parse(file_with_nested_others_sections_with_comments.lines).writeToString should be(file_with_nested_others_sections_with_comments)
+          parseOrThrow(file_with_nested_others_sections_with_comments.lines).writeToString should be(file_with_nested_others_sections_with_comments)
         }
       }
     }
@@ -1085,9 +1140,10 @@ package Viewpoint {
       import org.scalacheck.Arbitrary
       import org.scalacheck.Arbitrary.arbitrary
       import org.scalacheck.Gen
-      import org.scalacheck.Gen.{alphaStr,choose,listOf1,oneOf,posNum}
-      import org.scalacheck.Prop.{=?,forAll}
+      import org.scalacheck.Gen.{alphaStr,choose,listOf,listOf1,oneOf,posNum}
+      import org.scalacheck.Prop.{=?,all,forAll}
       import Parser._
+      import ParserExamples._
 
       case class Comment(val string: String) { override def toString = string }
       implicit def unwrapComment(c: Comment) : String = c.string
@@ -1108,6 +1164,45 @@ package Viewpoint {
       property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) { (c,indentation:Int) => =?(BeginSectionLine(indentation,"others"),new LineParser(c)("%s%s@+others".format(" "*indentation,c))) }
       property("property") = forAll(arbitrary[Comment],alphaStr,alphaStr) { (c,key,value) => =?(PropertyLine(key,value),new LineParser(c)("%s@@%s %s".format(c,key,value))) }
       property("end section") = forAll(arbitrary[Comment],arbitrary[String]) { (c,section_name) => =?(EndSectionLine(section_name),new LineParser(c)("%s@-%s".format(c,section_name))) }
+      property("parseAllAsynchronously") = forAll(
+        listOf(oneOf(
+          arbitrary[String],
+          oneOf(Array(
+            empty_file,
+            single_node_file_with_content,
+            single_node_file_with_explicitly_ended_comment,
+            single_node_file_with_comment_ended_by_end_of_file,
+            single_node_file_with_properties,
+            file_with_single_named_section,
+            file_with_single_named_section_with_properties,
+            file_with_nested_others_sections,
+            file_with_nested_others_sections_with_comments
+          ))
+        )).map(_.toArray)
+      ) { sources =>
+        val parse_list = (0 until sources.size) zip (sources.map(source => {() => source.lines}))
+        val result_channel = new scala.actors.Channel[Parser.ParseCompletionMessage[Int]]
+        Parser.parseAllAsynchronously[Int](parse_list.iterator,result_channel)
+        val results = result_channel receive { case Parser.CompletedParseAll(results) => results }
+        val seen = new HashSet[Int]
+        def convertCorrectResultToString(result: Either[Exception,Node]) =
+          result match {
+            case Left(e) => Left(e)
+            case Right(node) => Right(node.toYAML)
+          }
+        all(
+          =?(sources.size,results.size),
+          all(results.map({case (id,result) =>
+            all(
+              seen.add(id),
+              =?(
+                convertCorrectResultToString(parse(sources(id).lines)),
+                convertCorrectResultToString(result)
+              )
+            )
+          }).toSeq : _*)
+        )
+      }
     }
     class XMLParserSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
       import XMLParser._
@@ -1847,6 +1942,72 @@ package Viewpoint {
                <v t="id1a"><vh>heading1b</vh></v>
                </v>
                </vnodes>
+               </leo_file>
+            )
+        }
+      }
+      describe("The parse result merger should work for") {
+        def test(n1: scala.xml.Node, n2: Either[Exception,scala.xml.Node], n3: scala.xml.Node) {
+          import scala.collection.mutable.HashMap
+          import XMLParser._
+          val ParseResult(tree1,_) = parse(n1)
+          val result: Parser.ParseResult =
+            n2 match {
+              case Left(e) => Left(e)
+              case Right(node) => {
+                val ParseResult(tree2,_) = parse(node)
+                Right(tree2.root.children(0))
+              }
+            }
+          val ParseResult(tree3,_) = parse(n3)
+          tree1.mergeParseResultWithStub(tree1.lookupNode("id").get,result)
+          tree1.root.children(0).toYAML should be (tree3.root.children(0).toYAML)
+        }
+        it("a successful parse.") {
+          test(
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>,
+               Right(
+                 <leo_file>
+                 <vnodes>
+                 <v t="id"><vh>heading</vh></v>
+                 </vnodes>
+                 </leo_file>
+               ),
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               </leo_file>
+            )
+        }
+        it("a failed parse.") {
+          test(
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               <tnodes>
+               <t tx="id">old body</t>
+               </tnodes>
+               </leo_file>,
+               Left(new Exception("Hello, world!")),
+               <leo_file>
+               <vnodes>
+               <v t="id"><vh>heading</vh></v>
+               </vnodes>
+               <tnodes>
+               <t tx="id">@ignore
+@
+Error parsing file:
+
+java.lang.Exception: Hello, world!
+@c
+old body</t>
+               </tnodes>
                </leo_file>
             )
         }
