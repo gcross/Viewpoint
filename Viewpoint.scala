@@ -454,6 +454,8 @@ package Viewpoint {
   }
 
   object Parser {
+    import java.io.Writer
+
     object NoHeaderFound extends Exception
     case class UnsupportedFileVersion(version: String) extends Exception
 
@@ -748,6 +750,61 @@ package Viewpoint {
                 results += ((id,result))
                 receiver ! CompletedParse(id)
                 number_remaining -= 1
+              }
+            }
+          }
+        }
+      }
+    }
+    object TerminateWriteAll {}
+    sealed abstract class WriteCompletionMessage
+    case class CompletedWrite(node: Node, writer: Writer) extends WriteCompletionMessage
+    case class FailedWrite(node: Node, writer: Writer, problem: Exception) extends WriteCompletionMessage
+    case class CompletedWriteAll(results: Iterable[(Node,Writer,Option[Exception])]) extends WriteCompletionMessage
+    case class TerminatedWriteAll(results: Iterable[(Node,Writer,Option[Exception])]) extends WriteCompletionMessage
+    def writeAllAsynchronously(nodes: Iterator[(Node,() => Writer)],receiver: scala.actors.OutputChannel[WriteCompletionMessage]): scala.actors.Actor = {
+      import scala.actors.Actor.{actor,exit,loop,react,self}
+      import scala.actors.Exit
+      actor {
+        var number_remaining = 0
+        val master = self
+        case class Done(node: Node, writer: Writer, problem: Option[Exception])
+        master.trapExit = true
+        for((node,getWriter) <- nodes) {
+          val slave = actor {
+            self.link(master)
+            val writer = getWriter()
+            val maybe_problem =
+              try {
+                node.writeTo(writer)
+                None
+              } catch {
+                case problem: Exception => Some(problem)
+              }
+            master ! Done(node,writer,maybe_problem)
+          }
+          master.link(slave)
+          number_remaining += 1
+        }
+        val results = new ListBuffer[(Node,Writer,Option[Exception])]
+        loop {
+          if(number_remaining == 0) {
+            receiver ! CompletedWriteAll(results)
+            exit
+          } else {
+            react {
+              case Done(node,writer,maybe_problem) => {
+                results += ((node,writer,maybe_problem))
+                receiver !
+                  (maybe_problem match {
+                    case None => CompletedWrite(node,writer)
+                    case Some(problem) => FailedWrite(node,writer,problem)
+                  })
+                number_remaining -= 1
+              }
+              case TerminateWriteAll => {
+                receiver ! TerminatedWriteAll(results)
+                exit
               }
             }
           }
@@ -1201,6 +1258,34 @@ package Viewpoint {
               )
             )
           }).toSeq : _*)
+        )
+      }
+      property("writeAllAsynchronously") = forAll { (bodies_and_flags : List[(String,Boolean)]) =>
+        val write_list =
+          for((body,flag) <- bodies_and_flags)
+          yield (
+            new Node("id","heading",body + (if(flag) "\n<< Bad >>\n" else "")),
+            { () => new java.io.StringWriter }
+          )
+        val result_channel = new scala.actors.Channel[Parser.WriteCompletionMessage]
+        Parser.writeAllAsynchronously(write_list.iterator,result_channel)
+        val results = result_channel receive { case Parser.CompletedWriteAll(results) => results }
+        all(
+          =?(write_list.size,results.size),
+          all(results.map({case (node,writer,maybe_problem) => {
+            val actual_result =
+              maybe_problem match {
+                case None => Right(writer.toString)
+                case Some(problem) => Left(problem.toString)
+              }
+            val correct_result =
+              try {
+                Right(node.writeToString)
+              } catch {
+                case e: Exception => Left(e.toString)
+              }
+            =?(correct_result,actual_result)
+          }}).toSeq : _*)
         )
       }
     }
