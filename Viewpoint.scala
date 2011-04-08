@@ -1,9 +1,17 @@
+//@+leo-ver=5-thin
+//@+node:gcross.20110408155929.1284: * @file Viewpoint.scala
+//@@language scala
+//@@tabwidth -2
 package Viewpoint {
+  //@+<< Imports >>
+  //@+node:gcross.20110408155929.1286: ** << Imports >>
   import java.io.{PrintWriter,Writer}
   import scala.annotation.tailrec
   import scala.collection.{Iterable,Map,Set}
   import scala.collection.mutable.{Buffer,HashMap,HashSet,ListBuffer}
-
+  //@-<< Imports >>
+  //@+others
+  //@+node:gcross.20110408155929.1285: ** object Node
   object Node {
     object Sentinel {
       def unapply(line: String): Option[String] =
@@ -13,6 +21,7 @@ package Viewpoint {
           None
     }
     object SectionRegex {
+  //@verbatim
       val Regex = "(\\s*)((?:<<\\s*(.*?)\\s*>>|@others)\\s*)\\z".r
       def unapply(line: String): Option[(String,String,Option[String])] =
         line match {
@@ -24,6 +33,7 @@ package Viewpoint {
           case _ => None
         }
     }
+  //@verbatim
     val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
     val FileSentinel = "\\s*@(?:file|thin)\\s*(.*?)\\s*".r
     val PathSentinel = "\\s*@path\\s*(.*?)\\s*".r
@@ -50,7 +60,7 @@ package Viewpoint {
       }
     }
   }
-
+  //@+node:gcross.20110408155929.1287: ** class Parent
   class Parent {
     import Node.NamedSection
     var children : Buffer[Node] = new ListBuffer[Node]
@@ -132,7 +142,7 @@ package Viewpoint {
       visitor.visited_nodes
     }
   }
-
+  //@+node:gcross.20110408155929.1288: ** class Node
   class Node(var id: String, var heading: String, var body: String) extends Parent {
     import Node._
     var parents = new HashSet[Parent]
@@ -313,7 +323,7 @@ package Viewpoint {
       }
     }
   }
-
+  //@+node:gcross.20110408155929.1289: ** trait NodeVisitor*
   trait NodeVisitor {
     def visit(node: Node): Boolean
     def exit(node: Node) {}
@@ -325,7 +335,7 @@ package Viewpoint {
     def visit(node: Node): Boolean =
       visit(node,!visited_nodes.add(node))
   }
-
+  //@+node:gcross.20110408155929.1290: ** class Tree
   class Tree {
     import java.io.File
     import Parser.ParseResult
@@ -452,7 +462,7 @@ package Viewpoint {
       (files_associated_with_node,nodes_associated_with_file)
     }
   }
-
+  //@+node:gcross.20110408155929.1291: ** object Parser
   object Parser {
     import java.io.Writer
 
@@ -496,6 +506,7 @@ package Viewpoint {
     }
 
     def validSectionName(text: String) : Boolean =
+  //@verbatim
       text == "others" || text.substring(0,2) == "<<" && text.substring(text.length-2) == ">>"
 
     sealed abstract class Line
@@ -599,7 +610,7 @@ package Viewpoint {
         }
         case _ => throw NodeNotFoundImmediatelyAfterBeginSection
       }
-      
+
       while(lines.hasNext) {
         if(current_section_level == 0) throw ContentAfterEndOfFileSentinel
         val line = nextSectionLine
@@ -812,6 +823,7 @@ package Viewpoint {
       }
     }
   }
+  //@+node:gcross.20110408155929.1292: ** object XMLParser
   object XMLParser {
     import scala.collection.mutable.ListBuffer
     class ParseError extends Exception
@@ -857,7 +869,10 @@ package Viewpoint {
       parent.appendChild(node)
     }
   }
+  //@+node:gcross.20110408155929.1293: ** package Testing
   package Testing {
+    //@+others
+    //@+node:gcross.20110408155929.1294: *3* ParserExamples
     object ParserExamples {
       val empty_file =
         """|#@+leo-ver=5-thin
@@ -904,30 +919,32 @@ package Viewpoint {
            |B
            |#@-leo
            |""".stripMargin
-      val file_with_single_named_section =
-        """|#@+leo-ver=5-thin
-           |#@+node:name: * @thin node.cpp
-           |foo
-           |#@+<< Section >>
-           |#@+node:nodeid: ** << Section >>
-           |content
-           |#@-<< Section >>
-           |bar
-           |#@-leo
-           |""".stripMargin
-      val file_with_single_named_section_with_properties =
-        """|#@+leo-ver=5-thin
-           |#@+node:name: * @thin node.cpp
-           |foo
-           |#@@language value
-           |#@+<< Section >>
-           |#@+node:nodeid: ** << Section >>
-           |#@@language value
-           |content
-           |#@-<< Section >>
-           |bar
-           |#@-leo
-           |""".stripMargin
+    //@@raw
+  val file_with_single_named_section =
+    """|#@+leo-ver=5-thin
+       |#@+node:name: * @thin node.cpp
+       |foo
+       |#@+<< Section >>
+       |#@+node:nodeid: ** << Section >>
+       |content
+       |#@-<< Section >>
+       |bar
+       |#@-leo
+       |""".stripMargin
+  val file_with_single_named_section_with_properties =
+    """|#@+leo-ver=5-thin
+       |#@+node:name: * @thin node.cpp
+       |foo
+       |#@@language value
+       |#@+<< Section >>
+       |#@+node:nodeid: ** << Section >>
+       |#@@language value
+       |content
+       |#@-<< Section >>
+       |bar
+       |#@-leo
+       |""".stripMargin
+    //@@end_raw
       val file_with_nested_others_sections =
         """|#@+leo-ver=5-thin
            |#@+node:name: * @thin node.cpp
@@ -986,6 +1003,7 @@ package Viewpoint {
            |#@-leo
            |""".stripMargin
     }
+    //@+node:gcross.20110408155929.1295: *3* ParserSpecification
     class ParserSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
       import Parser._
       import ParserExamples._
@@ -1050,38 +1068,40 @@ package Viewpoint {
                |""".stripMargin
           )
         }
-        it("a file with a single named section") {
-          parseOrThrow(file_with_single_named_section.lines).toYAML should be(
-            """|id: name
-               |heading: @thin node.cpp
-               |body: "foo\n<< Section >>\nbar\n"
-               |properties:
-               |children:
-               |  - id: nodeid
-               |    heading: << Section >>
-               |    body: "content\n"
-               |    properties:
-               |    children:
-               |""".stripMargin
-          )
-        }
-        it("a file with a single named section with properties") {
-          parseOrThrow(file_with_single_named_section_with_properties.lines).toYAML should be(
-            """|id: name
-               |heading: @thin node.cpp
-               |body: "foo\n@language value\n<< Section >>\nbar\n"
-               |properties:
-               |    language: value
-               |children:
-               |  - id: nodeid
-               |    heading: << Section >>
-               |    body: "@language value\ncontent\n"
-               |    properties:
-               |        language: value
-               |    children:
-               |""".stripMargin
-          )
-        }
+    //@@raw
+    it("a file with a single named section") {
+      parseOrThrow(file_with_single_named_section.lines).toYAML should be(
+        """|id: name
+           |heading: @thin node.cpp
+           |body: "foo\n<< Section >>\nbar\n"
+           |properties:
+           |children:
+           |  - id: nodeid
+           |    heading: << Section >>
+           |    body: "content\n"
+           |    properties:
+           |    children:
+           |""".stripMargin
+      )
+    }
+    it("a file with a single named section with properties") {
+      parseOrThrow(file_with_single_named_section_with_properties.lines).toYAML should be(
+        """|id: name
+           |heading: @thin node.cpp
+           |body: "foo\n@language value\n<< Section >>\nbar\n"
+           |properties:
+           |    language: value
+           |children:
+           |  - id: nodeid
+           |    heading: << Section >>
+           |    body: "@language value\ncontent\n"
+           |    properties:
+           |        language: value
+           |    children:
+           |""".stripMargin
+      )
+    }
+    //@@end_raw
         it("a file with nested others sections") {
           parseOrThrow(file_with_nested_others_sections.lines).toYAML should be(
             """|id: name
@@ -1217,6 +1237,7 @@ package Viewpoint {
       property("begin comment") = forAll { (c: Comment) => =?(BeginCommentLine,new LineParser(c)("%s@+at".format(c))) }
       property("verbatim") = forAll { (c: Comment) => =?(VerbatimLine,new LineParser(c)("%s@verbatim".format(c))) }
       property("node") = forAll(arbitrary[Comment],alphaStr,choose(3,20),arbitrary[String]) { (c,name,level:Int,heading) => =?(NodeLine(name,level,heading),new LineParser(c)("%s@+node:%s: *%s* %s".format(c,name,level,heading))) }
+    //@verbatim
       property("begin section (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),arbitrary[String]) { (c,indentation:Int,section_name) => =?(BeginSectionLine(indentation,"<<%s>>".format(section_name)),new LineParser(c)("%s%s@+<<%s>>".format(" "*indentation,c,section_name))) }
       property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) { (c,indentation:Int) => =?(BeginSectionLine(indentation,"others"),new LineParser(c)("%s%s@+others".format(" "*indentation,c))) }
       property("property") = forAll(arbitrary[Comment],alphaStr,alphaStr) { (c,key,value) => =?(PropertyLine(key,value),new LineParser(c)("%s@@%s %s".format(c,key,value))) }
@@ -1264,6 +1285,7 @@ package Viewpoint {
         val write_list =
           for((body,flag) <- bodies_and_flags)
           yield (
+    //@verbatim
             new Node("id","heading",body + (if(flag) "\n<< Bad >>\n" else "")),
             { () => new java.io.StringWriter }
           )
@@ -1289,6 +1311,7 @@ package Viewpoint {
         )
       }
     }
+    //@+node:gcross.20110408155929.1296: *3* XMLParserSpecification
     class XMLParserSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
       import XMLParser._
 
@@ -1604,6 +1627,7 @@ package Viewpoint {
         }
       }
     }
+    //@+node:gcross.20110408155929.1297: *3* NodeSpecification
     class NodeSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
       describe("The node comparer should work for") {
         def test(correct_result: Boolean, n1: scala.xml.Node, n2: scala.xml.Node) {
@@ -1848,6 +1872,7 @@ package Viewpoint {
         }
       }
     }
+    //@+node:gcross.20110408155929.1298: *3* TreeSpecification
     class TreeSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
       describe("The merger should work for") {
         def test(n1: scala.xml.Node, n2: scala.xml.Node, n3: scala.xml.Node) {
@@ -2085,17 +2110,20 @@ package Viewpoint {
                <v t="id"><vh>heading</vh></v>
                </vnodes>
                <tnodes>
-               <t tx="id">@ignore
-@
-Error parsing file:
-
-java.lang.Exception: Hello, world!
-@c
-old body</t>
+               <t tx="id">{
+               """|@ignore
+                  |@
+                  |Error parsing file:
+                  |
+                  |java.lang.Exception: Hello, world!
+                  |@c
+                  |old body""".stripMargin('|')
+               }</t>
                </tnodes>
                </leo_file>
             )
         }
+    //@@end_raw
       }
       describe("The file node finder should work for") {
         import java.io.File
@@ -2258,6 +2286,7 @@ old body</t>
         }
       }
     }
+    //@+node:gcross.20110408155929.1299: *3* NodeVisitorSpecification
     class NodeVisitorSpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
       describe("The visitor should work for") {
         def test(xml: scala.xml.Node, correct_result: Array[String]) {
@@ -2335,6 +2364,7 @@ old body</t>
         }
       }
     }
+    //@+node:gcross.20110408155929.1300: *3* NodeVisitorWithMemorySpecification
     class NodeVisitorWithMemorySpecification extends org.scalatest.Spec with org.scalatest.matchers.ShouldMatchers {
       describe("The visitor should work for") {
         def test(xml: scala.xml.Node, correct_result: Array[String]) {
@@ -2412,5 +2442,8 @@ old body</t>
         }
       }
     }
+    //@-others
   }
+  //@-others
 }
+//@-leo
