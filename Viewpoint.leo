@@ -11,14 +11,14 @@
 <v t="gcross.20110410082044.1312"><vh>@path java</vh>
 <v t="gcross.20110410073838.1274"><vh>@path viewpoint</vh>
 <v t="gcross.20110410082044.1289"><vh>@path event</vh>
-<v t="gcross.20110410082044.1287"><vh>@file TreeChangeEvent.java</vh></v>
-<v t="gcross.20110410082044.1291"><vh>@file NodeChangeEvent.java</vh></v>
 <v t="gcross.20110410082044.1299"><vh>@file NodeBodyChangeEvent.java</vh></v>
+<v t="gcross.20110410082044.1291"><vh>@file NodeChangeEvent.java</vh></v>
 <v t="gcross.20110410082044.1305"><vh>@file NodeChildChangeEvent.java</vh></v>
 <v t="gcross.20110410082044.1301"><vh>@file NodeChildInsertedChangeEvent.java</vh></v>
 <v t="gcross.20110410082044.1303"><vh>@file NodeChildRemovedChangeEvent.java</vh></v>
 <v t="gcross.20110410082044.1297"><vh>@file NodeHeadingChangeEvent.java</vh></v>
 <v t="gcross.20110410082044.1309"><vh>@file NodeStructureChangeEvent.java</vh></v>
+<v t="gcross.20110410082044.1287"><vh>@file TreeChangeEvent.java</vh></v>
 </v>
 <v t="gcross.20110410082044.1288"><vh>@path model</vh>
 <v t="gcross.20110410082044.1281"><vh>@file Node.java</vh></v>
