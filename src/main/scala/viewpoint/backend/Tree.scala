@@ -3,6 +3,8 @@
 //@@language Scala
 package viewpoint.backend.crosswhite.model
 
+import viewpoint.{model => interface}
+
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1411: ** << Imports >>
 import java.io.File
@@ -16,6 +18,10 @@ import viewpoint.backend.crosswhite.parser.Parser.ParseResult
 //@+others
 //@+node:gcross.20110412144451.1354: ** class Tree
 class Tree {
+  //@+<< Imports >>
+  //@+node:gcross.20110412230649.1471: *3* << Imports >>
+  import Tree._
+  //@-<< Imports >>
   //@+<< Errors >>
   //@+node:gcross.20110412144451.1412: *3* << Errors >>
   case class NodeIdAlreadyInTree(id: String) extends Exception
@@ -23,8 +29,9 @@ class Tree {
   //@-<< Errors >>
   //@+<< Fields >>
   //@+node:gcross.20110412144451.1413: *3* << Fields >>
-  val root = new Parent
+  val delegate = new Delegate(this)
   val nodemap = new HashMap[String,WeakReference[Node]]
+  val root = new Parent
   //@-<< Fields >>
   //@+others
   //@+node:gcross.20110412144451.1416: *3* addNode
@@ -151,6 +158,20 @@ class Tree {
     }
   }
   //@-others
+}
+//@+node:gcross.20110412230649.1470: ** object Tree
+object Tree {
+  //@+<< Delegate >>
+  //@+node:gcross.20110412230649.1472: *3* << Delegate >>
+  class Delegate(tree: Tree) extends interface.Tree {
+    //@+others
+    //@+node:gcross.20110412230649.1473: *4* getRoot
+    def getRoot = tree.root.delegate
+    //@+node:gcross.20110412230649.1474: *4* lookupNode
+    def lookupNode(id: String) = tree.lookupNode(id).map(_.delegate).orNull
+    //@-others
+  }
+  //@-<< Delegate >>
 }
 //@-others
 //@-leo

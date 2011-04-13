@@ -3,19 +3,12 @@
 //@@language Java
 package viewpoint.model;
 
-public interface Node {
+import java.util.Iterator;
+
+public interface Node extends Parent {
     public String getBody();
-    public Node getChild(int index);
-    public int getChildCount();
-    public int getIndexOfChild(Node node);
     public String getHeading();
-    public Node[] getParents();
+    public Iterator<Parent> getParents();
     public String getId();
-
-    public void insertChild(int index, Node node);
-    public void removeChild(int index, Node node);
-
-    public void setBody();
-    public void setHeading();
 }
 //@-leo

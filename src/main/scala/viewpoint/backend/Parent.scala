@@ -9,15 +9,22 @@ import java.io.PrintWriter
 import scala.collection.Set
 import scala.collection.mutable.{Buffer,HashMap,ListBuffer}
 
+import viewpoint.{model => interface}
+
 import Node.NamedSection
 //@-<< Imports >>
 
 //@+others
 //@+node:gcross.20110412144451.1377: ** class Parent
 class Parent {
+  //@+<< Imports >>
+  //@+node:gcross.20110412230649.1458: *3* << Imports >>
+  import Parent._
+  //@-<< Imports >>
   //@+<< Fields >>
   //@+node:gcross.20110412144451.1364: *3* << Fields >>
   var children : Buffer[Node] = new ListBuffer[Node]
+  val delegate = new Delegate(this)
   var properties = new HashMap[String,String]
   //@-<< Fields >>
   //@+others
@@ -108,6 +115,28 @@ class Parent {
     }
   }
   //@-others
+}
+//@+node:gcross.20110412230649.1448: ** object Parent
+object Parent {
+  //@+<< Delegate >>
+  //@+node:gcross.20110412230649.1454: *3* << Delegate >>
+  class Delegate(parent: Parent) extends interface.Parent {
+    private[this] val children = parent.children
+    //@+others
+    //@+node:gcross.20110412230649.1455: *4* getChild
+    def getChild(index: Int): interface.Node = children(index).delegate
+    //@+node:gcross.20110412230649.1456: *4* getChildCount
+    def getChildCount: Int = children.size
+    //@+node:gcross.20110412230649.1457: *4* getIndexOfChild
+    def getIndexOfChild(node: interface.Node): Int =
+      node match {
+        case Node.Delegate(n) => children.indexOf(n)
+        case _ => children.iterator.map(_.id).indexOf(node.getId)
+      }
+    //@-others
+  }
+
+  //@-<< Delegate >>
 }
 //@-others
 //@-leo

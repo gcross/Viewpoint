@@ -4,8 +4,7 @@
 package viewpoint.model;
 
 public interface Tree {
-    public Node getRoot();
-
+    public Parent getRoot();
     public Node lookupNode(String id);
 }
 //@-leo
