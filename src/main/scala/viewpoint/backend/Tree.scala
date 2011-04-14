@@ -31,7 +31,7 @@ class Tree {
   //@+node:gcross.20110412144451.1413: *3* << Fields >>
   val delegate = new Delegate(this)
   val nodemap = new HashMap[String,WeakReference[Node]]
-  val root = new Parent
+  val root = new Root(this)
   //@-<< Fields >>
   //@+others
   //@+node:gcross.20110412144451.1416: *3* addNode

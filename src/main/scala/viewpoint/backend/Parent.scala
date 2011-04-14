@@ -16,7 +16,7 @@ import Node.NamedSection
 
 //@+others
 //@+node:gcross.20110412144451.1377: ** class Parent
-class Parent {
+abstract class Parent {
   //@+<< Imports >>
   //@+node:gcross.20110412230649.1458: *3* << Imports >>
   import Parent._
@@ -24,8 +24,8 @@ class Parent {
   //@+<< Fields >>
   //@+node:gcross.20110412144451.1364: *3* << Fields >>
   var children : Buffer[Node] = new ListBuffer[Node]
-  val delegate = new Delegate(this)
   var properties = new HashMap[String,String]
+  val delegate: Delegate
   //@-<< Fields >>
   //@+others
   //@+node:gcross.20110412144451.1373: *3* accept
@@ -120,16 +120,9 @@ class Parent {
 object Parent {
   //@+<< Delegate >>
   //@+node:gcross.20110412230649.1454: *3* << Delegate >>
-  class Delegate(parent: Parent) extends interface.Parent {
+  abstract class Delegate(parent: Parent) extends interface.Parent {
     private[this] val children = parent.children
     //@+others
-    //@+node:gcross.20110413143734.1439: *4* equals
-    override def equals(other: Any): Boolean =
-      other match {
-        case (_ : Node.Delegate) => false
-        case (_ : Delegate) => true
-        case _ => false
-      }
     //@+node:gcross.20110412230649.1455: *4* getChild
     def getChild(index: Int): interface.Node = children(index).delegate
     //@+node:gcross.20110412230649.1456: *4* getChildCount
@@ -140,11 +133,8 @@ object Parent {
         case Node.Delegate(n) => children.indexOf(n)
         case _ => children.iterator.map(_.id).indexOf(node.getId)
       }
-    //@+node:gcross.20110413143734.1437: *4* hashCode
-    override def hashCode: Int = 0
     //@-others
   }
-
   //@-<< Delegate >>
 }
 //@-others
