@@ -7,7 +7,7 @@ package viewpoint.backend.crosswhite.model
 //@+node:gcross.20110412144451.1376: ** << Imports >>
 import java.io.PrintWriter
 import scala.collection.Set
-import scala.collection.mutable.{Buffer,HashMap,ListBuffer}
+import scala.collection.mutable.{ArrayBuffer,Buffer,HashMap}
 
 import viewpoint.{model => interface}
 
@@ -23,7 +23,7 @@ abstract class Parent {
   //@-<< Imports >>
   //@+<< Fields >>
   //@+node:gcross.20110412144451.1364: *3* << Fields >>
-  var children : Buffer[Node] = new ListBuffer[Node]
+  var children : Buffer[Node] = new ArrayBuffer[Node]
   var properties = new HashMap[String,String]
   val delegate: Delegate
   //@-<< Fields >>
