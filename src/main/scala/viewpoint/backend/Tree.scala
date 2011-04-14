@@ -3,16 +3,17 @@
 //@@language Scala
 package viewpoint.backend.crosswhite.model
 
-import viewpoint.{model => interface}
-
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1411: ** << Imports >>
 import java.io.File
+import java.util.UUID
 import scala.collection.{Map,Set}
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.{HashMap,HashSet}
 import scala.ref.WeakReference
 
 import viewpoint.backend.crosswhite.parser.Parser.ParseResult
+import viewpoint.event
+import viewpoint.{model => interface}
 //@-<< Imports >>
 
 //@+others
@@ -112,8 +113,8 @@ class Tree {
   //@+node:gcross.20110412144451.1417: *3* lookupOrElseAddNode
   def lookupOrElseAddNode(id: String, default: => (String,String)): Node =
     lookupNode(id).getOrElse({
-      val (body,heading) = default ()
-      addNode(new Node(id,body,heading))
+      val (heading,body) = default
+      addNode(new Node(id,heading,body))
     })
   //@+node:gcross.20110412144451.1419: *3* mergeAndReplaceStub
   def mergeAndReplaceStub(old_node: Node, new_unmerged_node: Node) {
@@ -166,14 +167,106 @@ object Tree {
   //@+<< Delegate >>
   //@+node:gcross.20110412230649.1472: *3* << Delegate >>
   class Delegate(tree: Tree) extends interface.Tree {
+    //@+<< Fields >>
+    //@+node:gcross.20110413224016.2035: *4* << Fields >>
+    val listeners = new HashSet[event.TreeChangeListener]
+    //@-<< Fields >>
     //@+others
+    //@+node:gcross.20110413224016.2034: *4* addTreeChangeListener
+    def addTreeChangeListener(listener: event.TreeChangeListener) {
+      listeners += listener
+    }
+    //@+node:gcross.20110414143741.1454: *4* createNode
+    def createNode(heading: String, body: String): interface.Node =
+      Tree.createNode(heading,body).delegate
+    //@+node:gcross.20110414143741.1453: *4* fetchNode
+    def fetchNode(inode: interface.Node): Node =
+      inode match {
+        case Node.Delegate(node) => node
+        case _ =>
+          tree.lookupNode(inode.getId) match {
+            case Some(node) => node
+            case None => throw new interface.UnknownNodeException(this,inode)
+          }
+      }
+    //@+node:gcross.20110414143741.1456: *4* fetchParent
+    def fetchParent(iparent: interface.Parent): Parent =
+      iparent match {
+        case Node.Delegate(node) => node
+        case Root.Delegate(root) => root
+        case (inode : interface.Node) =>
+          tree.lookupNode(inode.getId) match {
+            case Some(node) => node
+            case None => throw new interface.UnknownParentException(this,iparent)
+          }
+      }
+    //@+node:gcross.20110414153139.1460: *4* fireChildInserted
+    def fireChildInserted(parent: interface.Parent, index: Int, child: interface.Node) {
+      listeners.foreach(_.treeNodeChildInserted(
+        new event.ChildInsertedEvent(this,parent,index,child)
+      ))
+    }
+    //@+node:gcross.20110414153139.1462: *4* fireChildRemoved
+    def fireChildRemoved(parent: interface.Parent, index: Int, child: interface.Node) {
+      listeners.foreach(_.treeNodeChildRemoved(
+        new event.ChildRemovedEvent(this,parent,index,child)
+      ))
+    }
+    //@+node:gcross.20110414124800.1604: *4* fireNodeBodyChanged
+    def fireNodeBodyChanged(node: interface.Node) {
+      listeners.foreach(_.treeNodeBodyChanged(
+        new event.NodeBodyChangedEvent(this,node)
+      ))
+    }
+    //@+node:gcross.20110414143741.1444: *4* fireNodeHeadingChanged
+    def fireNodeHeadingChanged(node: interface.Node) {
+      listeners.foreach(_.treeNodeHeadingChanged(
+        new event.NodeHeadingChangedEvent(this,node)
+      ))
+    }
+    //@+node:gcross.20110414153139.1465: *4* fireStructureChanged
+    def fireStructureChanged(parent: interface.Parent) {
+      listeners.foreach(_.treeNodeStructureChanged(
+        new event.StructureChangedEvent(this,parent)
+      ))
+    }
     //@+node:gcross.20110412230649.1473: *4* getRoot
     def getRoot = tree.root.delegate
+
+    //@+node:gcross.20110414153139.1454: *4* insertChildInto
+    def insertChildInto(iparent: interface.Parent, inode: interface.Node, index: Int) {
+      fetchParent(iparent).children.insert(index,fetchNode(inode))
+      fireChildInserted(iparent,index,inode)
+    }
     //@+node:gcross.20110412230649.1474: *4* lookupNode
     def lookupNode(id: String) = tree.lookupNode(id).map(_.delegate).orNull
+    //@+node:gcross.20110414153139.1459: *4* removeChildFrom
+    def removeChildFrom(iparent: interface.Parent, index: Int) {
+      val old_child = fetchParent(iparent).children.remove(index)
+      fireChildRemoved(iparent,index,old_child.delegate)
+    }
+    //@+node:gcross.20110413224016.2037: *4* removeTreeChangeListener
+    def removeTreeChangeListener(listener: event.TreeChangeListener) {
+      listeners -= listener
+    }
+    //@+node:gcross.20110414143741.1450: *4* setBodyOf
+    def setBodyOf(inode: interface.Node, body: String) {
+      fetchNode(inode).body = body
+      fireNodeBodyChanged(inode)
+    }
+    //@+node:gcross.20110414143741.1452: *4* setHeadingOf
+    def setHeadingOf(inode: interface.Node, heading: String) {
+      fetchNode(inode).heading = heading
+      fireNodeHeadingChanged(inode)
+    }
     //@-others
   }
   //@-<< Delegate >>
+  //@+others
+  //@+node:gcross.20110413224016.2032: *3* createNode
+  def createNode(heading: String, body: String): Node =
+    new Node(UUID.randomUUID.toString,heading,body)
+  //@-others
 }
 //@-others
 //@-leo
