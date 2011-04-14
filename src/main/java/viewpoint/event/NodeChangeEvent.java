@@ -7,7 +7,7 @@ import viewpoint.model.*;
 
 public class NodeChangeEvent extends TreeChangeEvent {
 
-    protected transient Node node;
+    protected Node node;
 
     public NodeChangeEvent(Tree tree, Node node) {
         super(tree);

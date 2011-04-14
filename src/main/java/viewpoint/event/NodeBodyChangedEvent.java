@@ -1,13 +1,13 @@
 //@+leo-ver=5-thin
-//@+node:gcross.20110410082044.1299: * @file NodeBodyChangeEvent.java
+//@+node:gcross.20110410082044.1299: * @file NodeBodyChangedEvent.java
 //@@language Java
 package viewpoint.event;
 
 import viewpoint.model.*;
 
-public class NodeBodyChangeEvent extends NodeChangeEvent {
+public class NodeBodyChangedEvent extends NodeChangeEvent {
 
-    public NodeBodyChangeEvent(Tree tree, Node node) {
+    public NodeBodyChangedEvent(Tree tree, Node node) {
         super(tree,node);
     }
 

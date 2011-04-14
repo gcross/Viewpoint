@@ -3,6 +3,8 @@
 //@@language Java
 package viewpoint.model;
 
+import viewpoint.event.TreeChangeListener;
+
 public interface Tree {
     public Parent getRoot();
     public Node lookupNode(String id);
