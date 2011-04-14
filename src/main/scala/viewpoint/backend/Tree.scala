@@ -110,9 +110,11 @@ class Tree {
     }
   }
   //@+node:gcross.20110412144451.1417: *3* lookupOrElseAddNode
-  def lookupOrElseAddNode(id: String, default: => Node): Node = {
-    lookupNode(id).getOrElse({addNode(default)})
-  }
+  def lookupOrElseAddNode(id: String, default: => (String,String)): Node =
+    lookupNode(id).getOrElse({
+      val (body,heading) = default ()
+      addNode(new Node(id,body,heading))
+    })
   //@+node:gcross.20110412144451.1419: *3* mergeAndReplaceStub
   def mergeAndReplaceStub(old_node: Node, new_unmerged_node: Node) {
     if(!old_node.isStub) throw AttemptToReplaceNodeThatIsNotStub(old_node)

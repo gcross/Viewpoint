@@ -46,7 +46,7 @@ object XMLParser {
         case _ => throw TooManyHeadings(id,heading_nodes.size)
       }
     }
-    val node = tree.lookupOrElseAddNode(id,{new Node(id,null,"")})
+    val node = tree.lookupOrElseAddNode(id,{(null,"")})
     for(heading <- maybe_heading) {
       if(!node.isPlaceholder)
         throw NodeDefinitionAppearsMultipleTimes(id)
