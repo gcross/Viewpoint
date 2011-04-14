@@ -7,8 +7,8 @@ import viewpoint.model.*;
 
 public class NodeBodyChangeEvent extends NodeChangeEvent {
 
-    public NodeBodyChangeEvent(Object source, Tree tree, Node node) {
-        super(source,tree,node);
+    public NodeBodyChangeEvent(Tree tree, Node node) {
+        super(tree,node);
     }
 
     public String getBody() { return node.getBody(); }

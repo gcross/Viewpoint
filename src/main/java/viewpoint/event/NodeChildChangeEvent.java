@@ -9,8 +9,8 @@ public class NodeChildChangeEvent extends NodeChangeEvent {
 
     protected int index;
 
-    public NodeChildChangeEvent(Object source, Tree tree, Node node, int index) {
-        super(source,tree,node);
+    public NodeChildChangeEvent(Tree tree, Node node, int index) {
+        super(tree,node);
     }
 
     public int getChildIndex() { return index; }

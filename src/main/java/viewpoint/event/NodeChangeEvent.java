@@ -9,8 +9,8 @@ public class NodeChangeEvent extends TreeChangeEvent {
 
     protected transient Node node;
 
-    public NodeChangeEvent(Object source, Tree tree, Node node) {
-        super(source,tree);
+    public NodeChangeEvent(Tree tree, Node node) {
+        super(tree);
         this.node = node;
     }
 

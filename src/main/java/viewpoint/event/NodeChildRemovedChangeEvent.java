@@ -7,8 +7,8 @@ import viewpoint.model.*;
 
 public class NodeChildRemovedChangeEvent extends NodeChildChangeEvent {
 
-    public NodeChildRemovedChangeEvent(Object source, Tree tree, Node node, int index) {
-        super(source,tree,node,index);
+    public NodeChildRemovedChangeEvent(Tree tree, Node node, int index) {
+        super(tree,node,index);
     }
 
 }

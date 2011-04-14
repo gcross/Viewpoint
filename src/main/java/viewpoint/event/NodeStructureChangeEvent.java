@@ -7,8 +7,8 @@ import viewpoint.model.*;
 
 public class NodeStructureChangeEvent extends NodeChangeEvent {
 
-    public NodeStructureChangeEvent(Object source, Tree tree, Node node) {
-        super(source,tree,node);
+    public NodeStructureChangeEvent(Tree tree, Node node) {
+        super(tree,node);
     }
 
 }

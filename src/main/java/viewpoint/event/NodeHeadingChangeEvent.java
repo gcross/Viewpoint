@@ -7,8 +7,8 @@ import viewpoint.model.*;
 
 public class NodeHeadingChangeEvent extends NodeChangeEvent {
 
-    public NodeHeadingChangeEvent(Object source, Tree tree, Node node) {
-        super(source,tree,node);
+    public NodeHeadingChangeEvent(Tree tree, Node node) {
+        super(tree,node);
     }
 
     public String getHeading() { return node.getHeading(); }

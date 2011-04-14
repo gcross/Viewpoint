@@ -8,14 +8,11 @@ import viewpoint.model.*;
 
 public class TreeChangeEvent extends EventObject {
 
-    protected transient Tree tree;
-
-    public TreeChangeEvent(Object source, Tree tree) {
+    public TreeChangeEvent(Tree tree) {
         super(tree);
-        this.tree = tree;
     }
 
-    public Tree getTree() { return tree; }
+    public Tree getTree() { return (Tree)source; }
 
 }
 //@-leo
