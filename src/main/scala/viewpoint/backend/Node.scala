@@ -224,6 +224,13 @@ object Node {
   //@+node:gcross.20110412230649.1464: *3* << Delegate >>
   case class Delegate(node: Node) extends Parent.Delegate(node) with interface.Node {
     //@+others
+    //@+node:gcross.20110413143734.1433: *4* equals
+    override def equals(other: Any): Boolean =
+      other match {
+        case Delegate(other_node) => node eq other_node
+        case (other_node : interface.Node) => other_node.getId == node.id
+        case _ => false
+      }
     //@+node:gcross.20110412230649.1465: *4* getBody
     def getBody: String = node.body
     //@+node:gcross.20110412230649.1466: *4* getHeading
@@ -232,6 +239,8 @@ object Node {
     def getId: String = node.id
     //@+node:gcross.20110412230649.1468: *4* getParents
     def getParents: java.util.Iterator[interface.Parent] = node.parents.iterator.map(_.delegate)
+    //@+node:gcross.20110413143734.1434: *4* hashCode
+    override def hashCode: Int = node.id.hashCode
     //@-others
   }
   //@-<< Delegate >>

@@ -123,6 +123,13 @@ object Parent {
   class Delegate(parent: Parent) extends interface.Parent {
     private[this] val children = parent.children
     //@+others
+    //@+node:gcross.20110413143734.1439: *4* equals
+    override def equals(other: Any): Boolean =
+      other match {
+        case (_ : Node.Delegate) => false
+        case (_ : Delegate) => true
+        case _ => false
+      }
     //@+node:gcross.20110412230649.1455: *4* getChild
     def getChild(index: Int): interface.Node = children(index).delegate
     //@+node:gcross.20110412230649.1456: *4* getChildCount
@@ -133,6 +140,8 @@ object Parent {
         case Node.Delegate(n) => children.indexOf(n)
         case _ => children.iterator.map(_.id).indexOf(node.getId)
       }
+    //@+node:gcross.20110413143734.1437: *4* hashCode
+    override def hashCode: Int = 0
     //@-others
   }
 
