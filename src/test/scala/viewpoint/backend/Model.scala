@@ -11,9 +11,12 @@ import org.scalatest.matchers.ShouldMatchers
 
 import viewpoint.backend.crosswhite.model._
 import viewpoint.backend.crosswhite.parser._
+import viewpoint.model.testing._
 //@-<< Imports >>
 
 //@+others
+//@+node:gcross.20110414153139.1500: ** InterfaceSpecification
+class InterfaceSpecification extends ModelSpecification({(new Tree).delegate}) {}
 //@+node:gcross.20110414153139.1492: ** NodeSpecification
 class NodeSpecification extends Spec with ShouldMatchers {
   describe("The node comparer should work for") {
