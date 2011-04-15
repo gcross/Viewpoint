@@ -86,6 +86,17 @@ abstract class Parent {
   }
   //@+node:gcross.20110412144451.1366: *3* getProperty
   def getProperty(key: String) : Option[String] = properties.get(key)
+  //@+node:gcross.20110414153139.1467: *3* insertChild
+  def insertChild(index: Int, node: Node) {
+    node.parents.add(this)
+    children.insert(index,node)
+  }
+  //@+node:gcross.20110414153139.1469: *3* removeChild
+  def removeChild(index: Int): Node = {
+    val node = children.remove(index)
+    node.parents.remove(this)
+    node
+  }
   //@+node:gcross.20110412144451.1372: *3* replaceChild
   def replaceChild(old_child: Node, new_child: Node) {
     children = children.map({child =>

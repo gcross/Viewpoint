@@ -235,14 +235,14 @@ object Tree {
 
     //@+node:gcross.20110414153139.1454: *4* insertChildInto
     def insertChildInto(iparent: interface.Parent, inode: interface.Node, index: Int) {
-      fetchParent(iparent).children.insert(index,fetchNode(inode))
+      fetchParent(iparent).insertChild(index,fetchNode(inode))
       fireChildInserted(iparent,index,inode)
     }
     //@+node:gcross.20110412230649.1474: *4* lookupNode
     def lookupNode(id: String) = tree.lookupNode(id).map(_.delegate).orNull
     //@+node:gcross.20110414153139.1459: *4* removeChildFrom
     def removeChildFrom(iparent: interface.Parent, index: Int) {
-      val old_child = fetchParent(iparent).children.remove(index)
+      val old_child = fetchParent(iparent).removeChild(index)
       fireChildRemoved(iparent,index,old_child.delegate)
     }
     //@+node:gcross.20110413224016.2037: *4* removeTreeChangeListener
