@@ -45,6 +45,9 @@ class Tree {
     }
     node
   }
+  //@+node:gcross.20110414153139.1505: *3* createNode
+  def createNode(heading: String, body: String): Node =
+    addNode(new Node(UUID.randomUUID.toString,heading,body))
   //@+node:gcross.20110412144451.1415: *3* containsNode
   def containsNode(id: String): Boolean = lookupNode(id).isDefined
   //@+node:gcross.20110412144451.1421: *3* findFileNodes
@@ -178,7 +181,7 @@ object Tree {
     }
     //@+node:gcross.20110414143741.1454: *4* createNode
     def createNode(heading: String, body: String): interface.Node =
-      Tree.createNode(heading,body).delegate
+      tree.createNode(heading,body).delegate
     //@+node:gcross.20110414143741.1453: *4* fetchNode
     def fetchNode(inode: interface.Node): Node =
       inode match {
@@ -263,9 +266,6 @@ object Tree {
   }
   //@-<< Delegate >>
   //@+others
-  //@+node:gcross.20110413224016.2032: *3* createNode
-  def createNode(heading: String, body: String): Node =
-    new Node(UUID.randomUUID.toString,heading,body)
   //@-others
 }
 //@-others
