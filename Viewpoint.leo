@@ -10,6 +10,9 @@
 <v t="gcross.20110410082044.1311"><vh>@path main</vh>
 <v t="gcross.20110410082044.1312"><vh>@path java</vh>
 <v t="gcross.20110410073838.1274"><vh>@path viewpoint</vh>
+<v t="gcross.20110414153139.1819"><vh>@path action</vh>
+<v t="gcross.20110414153139.1818"><vh>@file Action.java</vh></v>
+</v>
 <v t="gcross.20110410082044.1289"><vh>@path event</vh>
 <v t="gcross.20110414153139.1464"><vh>@file ChildChangeEvent.java</vh></v>
 <v t="gcross.20110410082044.1301"><vh>@file ChildInsertedEvent.java</vh></v>
@@ -34,6 +37,13 @@
 </v>
 <v t="gcross.20110412144451.1345"><vh>@path scala</vh>
 <v t="gcross.20110412144451.1346"><vh>@path viewpoint</vh>
+<v t="gcross.20110414153139.1820"><vh>@path action</vh>
+<v t="gcross.20110417144805.1870"><vh>@file ChangeNodeBody.scala</vh></v>
+<v t="gcross.20110417144805.1871"><vh>@file ChangeNodeHeading.scala</vh></v>
+<v t="gcross.20110417144805.1872"><vh>@file MoveChildDownOne.scala</vh></v>
+<v t="gcross.20110417144805.1873"><vh>@file MoveChildUpOne.scala</vh></v>
+<v t="gcross.20110417144805.1874"><vh>@file UnexpectedChildAtIndexWhenExecutingAction.scala</vh></v>
+</v>
 <v t="gcross.20110412144451.1349"><vh>@path backend</vh>
 <v t="gcross.20110412144451.1347"><vh>@file Node.scala</vh></v>
 <v t="gcross.20110412144451.1348"><vh>@file Parent.scala</vh></v>
@@ -51,6 +61,9 @@
 <v t="gcross.20110412144451.1360"><vh>@path test</vh>
 <v t="gcross.20110412144451.1361"><vh>@path scala</vh>
 <v t="gcross.20110412144451.1362"><vh>@path viewpoint</vh>
+<v t="gcross.20110417144805.2773"><vh>@path action</vh>
+<v t="gcross.20110417144805.2774"><vh>@file ActionsSpecification.scala</vh></v>
+</v>
 <v t="gcross.20110414153139.1471"><vh>@path model</vh>
 <v t="gcross.20110414153139.1472"><vh>@file ModelSpecification.scala</vh></v>
 </v>
@@ -78,6 +91,9 @@
 <t tx="gcross.20110412144451.1362"></t>
 <t tx="gcross.20110414153139.1470"></t>
 <t tx="gcross.20110414153139.1471"></t>
+<t tx="gcross.20110414153139.1819"></t>
+<t tx="gcross.20110414153139.1820"></t>
 <t tx="gcross.20110414153139.2319"></t>
+<t tx="gcross.20110417144805.2773"></t>
 </tnodes>
 </leo_file>

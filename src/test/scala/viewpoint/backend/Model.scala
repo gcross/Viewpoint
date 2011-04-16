@@ -9,12 +9,15 @@ import scala.collection.mutable.HashSet
 import org.scalatest.Spec
 import org.scalatest.matchers.ShouldMatchers
 
+import viewpoint.action.testing._
 import viewpoint.backend.crosswhite.model._
 import viewpoint.backend.crosswhite.parser._
 import viewpoint.model.testing._
 //@-<< Imports >>
 
 //@+others
+//@+node:gcross.20110414153139.2624: ** ActionsSpecification
+class ActionsSpecification extends ModelActionsSpecification({new Tree}) {}
 //@+node:gcross.20110414153139.1500: ** InterfaceSpecification
 class InterfaceSpecification extends ModelSpecification({new Tree}) {}
 //@+node:gcross.20110414153139.1492: ** NodeSpecification
