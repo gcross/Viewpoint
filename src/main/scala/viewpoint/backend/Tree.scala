@@ -7,8 +7,9 @@ package viewpoint.backend.crosswhite.model
 //@+node:gcross.20110412144451.1411: ** << Imports >>
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.Callable
 import scala.collection.{Map,Set}
-import scala.collection.mutable.{HashMap,HashSet}
+import scala.collection.mutable.{ArrayBuffer,HashMap,HashSet,Stack}
 import scala.ref.WeakReference
 
 import viewpoint.backend.crosswhite.parser.Parser.ParseResult
@@ -173,6 +174,8 @@ object Tree {
     //@+<< Fields >>
     //@+node:gcross.20110413224016.2035: *4* << Fields >>
     val listeners = new HashSet[event.TreeChangeListener]
+    protected[this] val transaction_undo_log: Stack[ArrayBuffer[() => Unit]]
+      = new Stack
     //@-<< Fields >>
     //@+others
     //@+node:gcross.20110413224016.2034: *4* addTreeChangeListener
@@ -205,47 +208,74 @@ object Tree {
       }
     //@+node:gcross.20110414153139.1460: *4* fireChildInserted
     def fireChildInserted(parent: interface.Parent, index: Int, child: interface.Node) {
-      listeners.foreach(_.treeNodeChildInserted(
+      forEachListenerCallIgnoringException(_.treeNodeChildInserted(
         new event.ChildInsertedEvent(this,parent,index,child)
       ))
     }
     //@+node:gcross.20110414153139.1462: *4* fireChildRemoved
     def fireChildRemoved(parent: interface.Parent, index: Int, child: interface.Node) {
-      listeners.foreach(_.treeNodeChildRemoved(
+      forEachListenerCallIgnoringException(_.treeNodeChildRemoved(
         new event.ChildRemovedEvent(this,parent,index,child)
       ))
     }
     //@+node:gcross.20110414124800.1604: *4* fireNodeBodyChanged
     def fireNodeBodyChanged(node: interface.Node) {
-      listeners.foreach(_.treeNodeBodyChanged(
+      forEachListenerCallIgnoringException(_.treeNodeBodyChanged(
         new event.NodeBodyChangedEvent(this,node)
       ))
     }
     //@+node:gcross.20110414143741.1444: *4* fireNodeHeadingChanged
     def fireNodeHeadingChanged(node: interface.Node) {
-      listeners.foreach(_.treeNodeHeadingChanged(
+      forEachListenerCallIgnoringException(_.treeNodeHeadingChanged(
         new event.NodeHeadingChangedEvent(this,node)
       ))
     }
     //@+node:gcross.20110414153139.1465: *4* fireStructureChanged
     def fireStructureChanged(parent: interface.Parent) {
-      listeners.foreach(_.treeNodeStructureChanged(
+      forEachListenerCallIgnoringException(_.treeNodeStructureChanged(
         new event.StructureChangedEvent(this,parent)
       ))
+    }
+    //@+node:gcross.20110414153139.2056: *4* forEachListenerCallIgnoringException
+    def forEachListenerCallIgnoringException(callback: event.TreeChangeListener => Unit) {
+      for(listener <- listeners) {
+        try {
+          callback(listener)
+        } catch {
+          case (e: Exception) => {
+            print("Ignoring exception in tree change event listener:")
+            print(e)
+          }
+        }
+      }
     }
     //@+node:gcross.20110412230649.1473: *4* getRoot
     def getRoot = tree.root.delegate
 
     //@+node:gcross.20110414153139.1454: *4* insertChildInto
     def insertChildInto(iparent: interface.Parent, inode: interface.Node, index: Int) {
-      fetchParent(iparent).insertChild(index,fetchNode(inode))
+      val parent = fetchParent(iparent)
+      parent.insertChild(index,fetchNode(inode))
+      for(undo_log <- transaction_undo_log.headOption) {
+        undo_log += { () =>
+          parent.removeChild(index)
+          fireChildRemoved(iparent,index,inode)
+        }
+      }
       fireChildInserted(iparent,index,inode)
     }
     //@+node:gcross.20110412230649.1474: *4* lookupNode
     def lookupNode(id: String) = tree.lookupNode(id).map(_.delegate).orNull
     //@+node:gcross.20110414153139.1459: *4* removeChildFrom
     def removeChildFrom(iparent: interface.Parent, index: Int) {
-      val old_child = fetchParent(iparent).removeChild(index)
+      val parent = fetchParent(iparent)
+      val old_child = parent.removeChild(index)
+      for(undo_log <- transaction_undo_log.headOption) {
+        undo_log += { () =>
+          parent.insertChild(index,old_child)
+          fireChildInserted(iparent,index,old_child.delegate)
+        }
+      }
       fireChildRemoved(iparent,index,old_child.delegate)
     }
     //@+node:gcross.20110413224016.2037: *4* removeTreeChangeListener
@@ -254,13 +284,45 @@ object Tree {
     }
     //@+node:gcross.20110414143741.1450: *4* setBodyOf
     def setBodyOf(inode: interface.Node, body: String) {
-      fetchNode(inode).body = body
+      val node = fetchNode(inode)
+      for(undo_log <- transaction_undo_log.headOption) {
+        val old_body = node.body
+        undo_log += { () =>
+          node.body = old_body
+          fireNodeBodyChanged(inode)
+        }
+      }
+      node.body = body
       fireNodeBodyChanged(inode)
     }
     //@+node:gcross.20110414143741.1452: *4* setHeadingOf
     def setHeadingOf(inode: interface.Node, heading: String) {
-      fetchNode(inode).heading = heading
+      val node = fetchNode(inode)
+      for(undo_log <- transaction_undo_log.headOption) {
+        val old_heading = node.heading
+        undo_log += { () =>
+          node.heading = old_heading
+          fireNodeHeadingChanged(inode)
+        }
+      }
+      node.heading = heading
       fireNodeHeadingChanged(inode)
+    }
+    //@+node:gcross.20110414153139.2057: *4* withinTransaction
+    def withinTransaction[T](transaction: Callable[T]): T = {
+      transaction_undo_log.push(new ArrayBuffer)
+      try {
+        try {
+          transaction.call()
+        } catch {
+          case (e : Exception) => {
+            for(undo <- transaction_undo_log.head) undo()
+            throw e
+          }
+        }
+      } finally {
+        transaction_undo_log.pop()
+      }
     }
     //@-others
   }
