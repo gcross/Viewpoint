@@ -135,7 +135,7 @@ object Parent {
     private[this] val children = parent.children
     //@+others
     //@+node:gcross.20110412230649.1455: *4* getChild
-    def getChild(index: Int): interface.Node = children(index).delegate
+    def getChild(index: Int): interface.Node = children(index)
     //@+node:gcross.20110412230649.1456: *4* getChildCount
     def getChildCount: Int = children.size
     //@+node:gcross.20110412230649.1457: *4* getIndexOfChild

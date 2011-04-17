@@ -16,7 +16,7 @@ import viewpoint.model.testing._
 
 //@+others
 //@+node:gcross.20110414153139.1500: ** InterfaceSpecification
-class InterfaceSpecification extends ModelSpecification({(new Tree).delegate}) {}
+class InterfaceSpecification extends ModelSpecification({new Tree}) {}
 //@+node:gcross.20110414153139.1492: ** NodeSpecification
 class NodeSpecification extends Spec with ShouldMatchers {
   describe("The node comparer should work for") {

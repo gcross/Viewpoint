@@ -184,7 +184,7 @@ object Tree {
     }
     //@+node:gcross.20110414143741.1454: *4* createNode
     def createNode(heading: String, body: String): interface.Node =
-      tree.createNode(heading,body).delegate
+      tree.createNode(heading,body)
     //@+node:gcross.20110414143741.1453: *4* fetchNode
     def fetchNode(inode: interface.Node): Node =
       inode match {
@@ -250,7 +250,7 @@ object Tree {
       }
     }
     //@+node:gcross.20110412230649.1473: *4* getRoot
-    def getRoot = tree.root.delegate
+    def getRoot = tree.root
 
     //@+node:gcross.20110414153139.1454: *4* insertChildInto
     def insertChildInto(iparent: interface.Parent, inode: interface.Node, index: Int) {
@@ -273,10 +273,10 @@ object Tree {
       for(undo_log <- transaction_undo_log.headOption) {
         undo_log += { () =>
           parent.insertChild(index,old_child)
-          fireChildInserted(iparent,index,old_child.delegate)
+          fireChildInserted(iparent,index,old_child)
         }
       }
-      fireChildRemoved(iparent,index,old_child.delegate)
+      fireChildRemoved(iparent,index,old_child)
     }
     //@+node:gcross.20110413224016.2037: *4* removeTreeChangeListener
     def removeTreeChangeListener(listener: event.TreeChangeListener) {
@@ -328,6 +328,8 @@ object Tree {
   }
   //@-<< Delegate >>
   //@+others
+  //@+node:gcross.20110414153139.2335: *3* getTreeDelegate
+  implicit def getTreeDelegate(tree: Tree): interface.Tree = tree.delegate
   //@-others
 }
 //@-others

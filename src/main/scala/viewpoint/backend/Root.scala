@@ -19,6 +19,8 @@ class Root(val tree: Tree) extends Parent {
   //@+node:gcross.20110413224016.1850: *3* << Fields >>
   val delegate = new Delegate(this)
   //@-<< Fields >>
+  //@+others
+  //@-others
 }
 //@+node:gcross.20110413224016.1851: ** object Root
 object Root {
@@ -37,6 +39,10 @@ object Root {
     //@-others
   }
   //@-<< Delegate >>
+  //@+others
+  //@+node:gcross.20110414153139.2333: *3* getRootDelegate
+  implicit def getRootDelegate(root: Root): interface.Parent = root.delegate
+  //@-others
 }
 //@-others
 //@-leo

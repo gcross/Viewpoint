@@ -292,6 +292,8 @@ val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
   //@+node:gcross.20110412144451.1395: *3* isPropertyKey
   def isPropertyKey(key: String): Boolean =
     return property_keys.contains(key)
+  //@+node:gcross.20110414153139.2329: *3* getNodeDelegate
+  implicit def getNodeDelegate(node: Node): interface.Node = node.delegate
   //@+node:gcross.20110412144451.1396: *3* levelToString
   def levelToString(level: Int): String = {
     assert(level > 0)
