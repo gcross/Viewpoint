@@ -14,6 +14,7 @@ import org.scalatest.matchers.ShouldMatchers
 
 import viewpoint.event._
 import viewpoint.model._
+import viewpoint.util.JavaConversions._
 //@-<< Imports >>
 
 //@+others
@@ -139,10 +140,10 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
 
       val E = new Exception
       try {
-        tree.withinTransaction(new Callable[Unit] { def call {
+        tree.withinTransaction({ () =>
           tree.setBodyOf(node,"soul")
           throw E
-        }})
+        })
       } catch { case E => }
 
       node.getBody should be ("body")
@@ -190,10 +191,10 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       tree.addTreeChangeListener(listener)
 
       try {
-        tree.withinTransaction(new Callable[Unit] { def call {
+        tree.withinTransaction({ () =>
           tree.setHeadingOf(node,"footing")
           throw E
-        }})
+        })
       } catch { case E => }
 
       node.getHeading should be ("heading")
@@ -278,10 +279,10 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
 
       val E = new Exception
       try {
-        tree.withinTransaction(new Callable[Unit] { def call {
+        tree.withinTransaction({ () =>
           tree.insertChildInto(root,child,0)
           throw E
-        }})
+        })
       } catch { case E => }
 
       root.getChildCount should be (0)
@@ -369,10 +370,10 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
 
       val E = new Exception
       try {
-        tree.withinTransaction(new Callable[Unit] { def call {
+        tree.withinTransaction({ () =>
           tree.removeChildFrom(root,0)
           throw E
-        }})
+        })
       } catch { case E => }
 
       root.getChildCount should be (1)
@@ -392,18 +393,18 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     //@+others
     //@+node:gcross.20110414153139.2314: *4* returns the value returned by the callback.
     it("returns the value returned by the callback.") {
-      createEmptyTree.withinTransaction(new Callable[Int] { def call = {
+      createEmptyTree.withinTransaction({ () =>
         42
-      }}) should be (42)
+      }) should be (42)
     }
     //@+node:gcross.20110414153139.2316: *4* throws the value thrown by the callback.
     it("throws the value thrown by the callback.") {
       val correct_exception = new Exception
       val thrown_exception: Exception =
         try {
-          createEmptyTree.withinTransaction(new Callable[Unit] { def call {
+          createEmptyTree.withinTransaction({ () =>
             throw correct_exception
-          }})
+          })
           fail("Exception was not thrown.")
         } catch {
           case (e: Exception) => e
@@ -423,14 +424,14 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
 
       val E = new Exception
       try {
-        tree.withinTransaction(new Callable[Unit] { def call {
+        tree.withinTransaction({ () =>
           tree.insertChildInto(root,child2,1)
           tree.removeChildFrom(root,0)
           tree.insertChildInto(root,child1,1)
           tree.removeChildFrom(root,1)
           tree.insertChildInto(root,child4,2)
           throw E
-        }})
+        })
       } catch {
         case E =>
       }
