@@ -267,7 +267,7 @@ object Tree {
     //@+node:gcross.20110412230649.1474: *4* lookupNode
     def lookupNode(id: String) = tree.lookupNode(id).map(_.delegate).orNull
     //@+node:gcross.20110414153139.1459: *4* removeChildFrom
-    def removeChildFrom(iparent: interface.Parent, index: Int) {
+    def removeChildFrom(iparent: interface.Parent, index: Int): interface.Node = {
       val parent = fetchParent(iparent)
       val old_child = parent.removeChild(index)
       for(undo_log <- transaction_undo_log.headOption) {
@@ -277,6 +277,7 @@ object Tree {
         }
       }
       fireChildRemoved(iparent,index,old_child)
+      old_child
     }
     //@+node:gcross.20110413224016.2037: *4* removeTreeChangeListener
     def removeTreeChangeListener(listener: event.TreeChangeListener) {

@@ -17,7 +17,7 @@ public interface Tree {
 
     public Node lookupNode(String id);
 
-    public void removeChildFrom(Parent parent, int index);
+    public Node removeChildFrom(Parent parent, int index);
 
     public void setBodyOf(Node node, String body);
     public void setHeadingOf(Node node, String heading);

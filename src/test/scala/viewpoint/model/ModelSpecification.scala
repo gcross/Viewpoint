@@ -386,6 +386,14 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       event.getChild should be (child)
       event.getChildIndex should be (0)
     }
+    //@+node:gcross.20110414153139.5151: *4* returns the correct value.
+    it("returns the correct value.") {
+      val tree = createEmptyTree
+      val root = tree.getRoot
+      val child = tree.createNode(null,null)
+      tree.insertChildInto(root,child,0)
+      tree.removeChildFrom(root,0) should be (child)
+    }
     //@-others
   }
   //@+node:gcross.20110414153139.2313: *3* The withinTransaction method
