@@ -5,6 +5,7 @@ package viewpoint.model.testing
 
 //@+<< Imports >>
 //@+node:gcross.20110414153139.1473: ** << Imports >>
+import java.util.concurrent.Callable
 import scala.collection.JavaConversions._
 import scala.collection.Seq
 import scala.collection.mutable.{ArrayBuffer}
@@ -127,6 +128,32 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       event.getNode should be (node)
       event.getBody should be (node.getBody)
     }
+    //@+node:gcross.20110414153139.2058: *4* logs the correct undo for the transaction.
+    it("logs the correct undo for the transaction.") {
+      val tree = createEmptyTree
+      val node = tree.createNode(null,"body")
+
+      val listener = new EventRecorderTreeChangeListener
+      val events = listener.events
+      tree.addTreeChangeListener(listener)
+
+      val E = new Exception
+      try {
+        tree.withinTransaction(new Callable[Unit] { def call {
+          tree.setBodyOf(node,"soul")
+          throw E
+        }})
+      } catch { case E => }
+
+      node.getBody should be ("body")
+
+      events.size should be (2)
+      events(1).getClass should be (classOf[NodeBodyChangedEvent])
+      val event = events(1).asInstanceOf[NodeBodyChangedEvent]
+      event.getTree should be (tree)
+      event.getNode should be (node)
+      event.getBody should be (node.getBody)
+    }
     //@-others
   }
   //@+node:gcross.20110414153139.1541: *3* The setHeadingOf method
@@ -148,6 +175,32 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       events.size should be (1)
       events(0).getClass should be (classOf[NodeHeadingChangedEvent])
       val event = events(0).asInstanceOf[NodeHeadingChangedEvent]
+      event.getTree should be (tree)
+      event.getNode should be (node)
+      event.getHeading should be (node.getHeading)
+    }
+    //@+node:gcross.20110414153139.2060: *4* logs the correct undo for the transaction.
+    it("logs the correct undo for the transaction.") {
+      val tree = createEmptyTree
+      val node = tree.createNode("heading",null)
+      val E = new Exception
+
+      val listener = new EventRecorderTreeChangeListener
+      val events = listener.events
+      tree.addTreeChangeListener(listener)
+
+      try {
+        tree.withinTransaction(new Callable[Unit] { def call {
+          tree.setHeadingOf(node,"footing")
+          throw E
+        }})
+      } catch { case E => }
+
+      node.getHeading should be ("heading")
+
+      events.size should be (2)
+      events(1).getClass should be (classOf[NodeHeadingChangedEvent])
+      val event = events(1).asInstanceOf[NodeHeadingChangedEvent]
       event.getTree should be (tree)
       event.getNode should be (node)
       event.getHeading should be (node.getHeading)
@@ -213,6 +266,33 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       event.getChild should be (child)
       event.getChildIndex should be (0)
     }
+    //@+node:gcross.20110414153139.2066: *4* logs the correct undo for the transaction.
+    it("logs the correct undo for the transaction.") {
+      val tree = createEmptyTree
+      val root = tree.getRoot
+      val child = tree.createNode(null,null)
+
+      val listener = new EventRecorderTreeChangeListener
+      val events = listener.events
+      tree.addTreeChangeListener(listener)
+
+      val E = new Exception
+      try {
+        tree.withinTransaction(new Callable[Unit] { def call {
+          tree.insertChildInto(root,child,0)
+          throw E
+        }})
+      } catch { case E => }
+
+      root.getChildCount should be (0)
+
+      events.size should be (2)
+      events(1).getClass should be (classOf[ChildRemovedEvent])
+      val event = events(1).asInstanceOf[ChildRemovedEvent]
+      event.getTree should be (tree)
+      event.getChild should be (child)
+      event.getChildIndex should be (0)
+    }
     //@-others
   }
   //@+node:gcross.20110414153139.1519: *3* The removeChildFrom method
@@ -272,6 +352,35 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       events.size should be (1)
       events(0).getClass should be (classOf[ChildRemovedEvent])
       val event = events(0).asInstanceOf[ChildRemovedEvent]
+      event.getTree should be (tree)
+      event.getChild should be (child)
+      event.getChildIndex should be (0)
+    }
+    //@+node:gcross.20110414153139.2071: *4* logs the correct undo for the transaction.
+    it("logs the correct undo for the transaction.") {
+      val tree = createEmptyTree
+      val root = tree.getRoot
+      val child = tree.createNode(null,null)
+      tree.insertChildInto(root,child,0)
+
+      val listener = new EventRecorderTreeChangeListener
+      val events = listener.events
+      tree.addTreeChangeListener(listener)
+
+      val E = new Exception
+      try {
+        tree.withinTransaction(new Callable[Unit] { def call {
+          tree.removeChildFrom(root,0)
+          throw E
+        }})
+      } catch { case E => }
+
+      root.getChildCount should be (1)
+      root.getChild(0) should be (child)
+
+      events.size should be (2)
+      events(1).getClass should be (classOf[ChildInsertedEvent])
+      val event = events(1).asInstanceOf[ChildInsertedEvent]
       event.getTree should be (tree)
       event.getChild should be (child)
       event.getChildIndex should be (0)
