@@ -21,20 +21,22 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
   //@+<< Helpers >>
   //@+node:gcross.20110414153139.1549: *3* << Helpers >>
   //@+others
+  //@+node:gcross.20110414153139.2064: *4* class EventRecorderTreeChangeListener
+  class EventRecorderTreeChangeListener extends TreeChangeListener {
+    val events = new ArrayBuffer[TreeChangeEvent]
+    def treeNodeBodyChanged(event: NodeBodyChangedEvent) { events += event }
+    def treeNodeChildInserted(event: ChildInsertedEvent) { events += event }
+    def treeNodeChildRemoved(event: ChildRemovedEvent) { events += event }
+    def treeNodeHeadingChanged(event: NodeHeadingChangedEvent){ events += event }
+    def treeNodeStructureChanged(event: StructureChangedEvent) { events += event }
+  }
   //@+node:gcross.20110414153139.1550: *4* recordEventsDuring
   def recordEventsDuring(tree: Tree)(block: () => Unit): Seq[TreeChangeEvent] = {
-    val events = new ArrayBuffer[TreeChangeEvent]
-    val listener = new TreeChangeListener {
-      def treeNodeBodyChanged(event: NodeBodyChangedEvent) { events += event }
-      def treeNodeChildInserted(event: ChildInsertedEvent) { events += event }
-      def treeNodeChildRemoved(event: ChildRemovedEvent) { events += event }
-      def treeNodeHeadingChanged(event: NodeHeadingChangedEvent){ events += event }
-      def treeNodeStructureChanged(event: StructureChangedEvent) { events += event }
-    }
+    val listener = new EventRecorderTreeChangeListener
     tree.addTreeChangeListener(listener)
     block ()
     tree.removeTreeChangeListener(listener)
-    events
+    listener.events
   }
   //@-others
   //@-<< Helpers >>
