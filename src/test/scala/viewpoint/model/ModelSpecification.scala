@@ -450,6 +450,57 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     }
     //@-others
   }
+  //@+node:gcross.20110414153139.5154: *3* The getIndexOfChild method
+  describe("The getIndexOfChild method") {
+    //@+others
+    //@+node:gcross.20110414153139.5155: *4* works for multiple cloned children.
+    it("works for multiple cloned children.") {
+      val tree = createEmptyTree
+      val root = tree.getRoot
+      val child1 = tree.createNode(null,null)
+      val child2 = tree.createNode(null,null)
+      tree.insertChildInto(root,child1,0)
+      tree.insertChildInto(root,child2,1)
+      tree.insertChildInto(root,child1,2)
+      tree.insertChildInto(root,child2,3)
+      tree.insertChildInto(root,child1,4)
+      tree.insertChildInto(root,child2,5)
+      tree.insertChildInto(root,child1,6)
+      root.getIndexOfChild(child1,1) should be (2)
+    }
+    //@+node:gcross.20110414153139.5159: *4* works for multiple cloned children with negative occurence.
+    it("works for multiple cloned children with negative occurence.") {
+      val tree = createEmptyTree
+      val root = tree.getRoot
+      val child1 = tree.createNode(null,null)
+      val child2 = tree.createNode(null,null)
+      tree.insertChildInto(root,child1,0)
+      tree.insertChildInto(root,child2,1)
+      tree.insertChildInto(root,child1,2)
+      tree.insertChildInto(root,child2,3)
+      tree.insertChildInto(root,child1,4)
+      tree.insertChildInto(root,child2,5)
+      tree.insertChildInto(root,child1,6)
+      root.getIndexOfChild(child1,-1) should be (6)
+    }
+    //@+node:gcross.20110414153139.5161: *4* returns -1 when the child is not present.
+    it("returns -1 when the child is not present.") {
+      val tree = createEmptyTree
+      val root = tree.getRoot
+      val child1 = tree.createNode(null,null)
+      val child2 = tree.createNode(null,null)
+      val child3 = tree.createNode(null,null)
+      tree.insertChildInto(root,child1,0)
+      tree.insertChildInto(root,child2,1)
+      tree.insertChildInto(root,child1,2)
+      tree.insertChildInto(root,child2,3)
+      tree.insertChildInto(root,child1,4)
+      tree.insertChildInto(root,child2,5)
+      tree.insertChildInto(root,child1,6)
+      root.getIndexOfChild(child3,-1) should be (-1)
+    }
+    //@-others
+  }
   //@-others
 }
 //@-others

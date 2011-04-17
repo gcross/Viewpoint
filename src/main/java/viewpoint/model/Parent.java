@@ -7,5 +7,6 @@ public interface Parent {
     public Node getChild(int index);
     public int getChildCount();
     public int getIndexOfChild(Node node);
+    public int getIndexOfChild(Node node, int occurrence);
 }
 //@-leo

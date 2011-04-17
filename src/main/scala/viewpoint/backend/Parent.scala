@@ -139,11 +139,25 @@ object Parent {
     //@+node:gcross.20110412230649.1456: *4* getChildCount
     def getChildCount: Int = children.size
     //@+node:gcross.20110412230649.1457: *4* getIndexOfChild
-    def getIndexOfChild(node: interface.Node): Int =
-      node match {
-        case Node.Delegate(n) => children.indexOf(n)
-        case _ => children.iterator.map(_.id).indexOf(node.getId)
+    def getIndexOfChild(inode: interface.Node): Int = getIndexOfChild(inode,0)
+    def getIndexOfChild(inode: interface.Node, occurrence: Int): Int = {
+      var occurrences_left = if(occurrence >= 0) (occurrence+1) else (-occurrence)
+      val indices_and_children: Iterator[(Int,Node)] =
+        if(occurrence >= 0)
+          (0 until children.size).iterator.zip(children.iterator)
+        else
+          (0 until children.size).reverse.iterator.zip(children.reverseIterator)
+      val isEqualToNode =
+        inode match {
+          case Node.Delegate(node) => { (child: Node) => child == node }
+          case _ => { (child: Node) => child.id == inode.getId }
+        }
+      for((index,child) <- indices_and_children if isEqualToNode(child)) {
+        occurrences_left -= 1;
+        if(occurrences_left == 0) return index;
       }
+      -1
+    }
     //@-others
   }
   //@-<< Delegate >>
