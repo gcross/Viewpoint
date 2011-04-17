@@ -316,7 +316,7 @@ object Tree {
           transaction.call()
         } catch {
           case (e : Exception) => {
-            for(undo <- transaction_undo_log.head) undo()
+            for(undo <- transaction_undo_log.head.reverseIterator) undo()
             throw e
           }
         }
