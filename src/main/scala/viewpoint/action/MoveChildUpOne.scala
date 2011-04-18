@@ -6,14 +6,15 @@ package viewpoint.action
 import viewpoint.model._
 import viewpoint.util.JavaConversions._
 
-case class MoveChildUpOne(parent: Parent, child: Node, index: Int) extends Action {
+case class MoveChildUpOne(parent: Parent, tag: Long) extends Action {
   def actOn(tree: Tree) = {
-    if(parent.getChild(index) != child)
-      throw UnexpectedChildAtIndexWhenExecutingAction(parent,child,index,this)
+    val index = parent.getIndexOfChildTag(tag)
+    if(index < 0)
+      throw TargetDisappearedBeforeActionCommenced(this)
     tree.withinTransaction({ () =>
       val child = tree.removeChildFrom(parent,index)
       tree.insertChildInto(parent,child,index-1)
-      MoveChildDownOne(parent,child,index-1)
+      MoveChildDownOne(parent,tag)
     })
   }
 }

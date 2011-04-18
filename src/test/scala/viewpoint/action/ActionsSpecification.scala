@@ -1,10 +1,11 @@
 //@+leo-ver=5-thin
-//@+node:gcross.20110414153139.2614: * @file ActionsSpecification.scala
+//@+node:gcross.20110417144805.2774: * @file ActionsSpecification.scala
 //@@language Scala
 package viewpoint.action.testing
 
 //@+<< Imports >>
 //@+node:gcross.20110414153139.2616: ** << Imports >>
+import scala.collection.mutable.HashSet
 import org.scalatest.Spec
 import org.scalatest.matchers.ShouldMatchers
 
@@ -59,36 +60,39 @@ abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec 
     it("should perform the correct action.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val child1 = tree.createNode(null,null)
-      val child2 = tree.createNode(null,null)
-      tree.insertChildInto(root,child1,0)
-      tree.insertChildInto(root,child2,1)
-      MoveChildDownOne(root,child1,0).actOn(tree)
+      val node1 = tree.createNode(null,null)
+      val node2 = tree.createNode(null,null)
+      val tag = tree.insertChildInto(root,node1,0)
+      tree.insertChildInto(root,node2,1)
+      MoveChildDownOne(root,tag).actOn(tree)
       root.getChildCount should be (2)
-      root.getChild(0) should be (child2)
-      root.getChild(1) should be (child1)
+      root.getChild(0).getNode should be (node2)
+      root.getChild(1).getNode should be (node1)
     }
     //@+node:gcross.20110417144805.1567: *4* should return the correct undo action.
     it("should return the correct undo action.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val child1 = tree.createNode(null,null)
-      val child2 = tree.createNode(null,null)
-      tree.insertChildInto(root,child1,0)
-      tree.insertChildInto(root,child2,1)
-      MoveChildDownOne(root,child1,0).actOn(tree) should be (MoveChildUpOne(root,child1,1))
+      val node1 = tree.createNode(null,null)
+      val node2 = tree.createNode(null,null)
+      val tag = tree.insertChildInto(root,node1,0)
+      tree.insertChildInto(root,node2,1)
+      MoveChildDownOne(root,tag).actOn(tree) should be (MoveChildUpOne(root,tag))
     }
     //@+node:gcross.20110417144805.1568: *4* should throw the correct exception upon child change.
     it("should throw the correct exception upon child change.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val child1 = tree.createNode(null,null)
-      val child2 = tree.createNode(null,null)
-      tree.insertChildInto(root,child1,0)
-      tree.insertChildInto(root,child2,1)
-      val action = MoveChildDownOne(root,child2,0)
+      val node1 = tree.createNode(null,null)
+      val node2 = tree.createNode(null,null)
+      val tags = new HashSet[Long]
+      tags += tree.insertChildInto(root,node1,0)
+      tags += tree.insertChildInto(root,node2,1)
+      var tag = 10
+      while(tags(tag)) tag += 1
+      val action = MoveChildDownOne(root,tag)
       val thrown_exception = try { action.actOn(tree) } catch { case (e : Exception) => e }
-      val expected_exception = UnexpectedChildAtIndexWhenExecutingAction(root,child2,0,action)
+      val expected_exception = TargetDisappearedBeforeActionCommenced(action)
       thrown_exception should be (expected_exception)
     }
     //@-others
@@ -100,36 +104,39 @@ abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec 
     it("should perform the correct action.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val child1 = tree.createNode(null,null)
-      val child2 = tree.createNode(null,null)
-      tree.insertChildInto(root,child1,0)
-      tree.insertChildInto(root,child2,1)
-      MoveChildUpOne(root,child2,1).actOn(tree)
+      val node1 = tree.createNode(null,null)
+      val node2 = tree.createNode(null,null)
+      tree.insertChildInto(root,node1,0)
+      val tag = tree.insertChildInto(root,node2,1)
+      MoveChildUpOne(root,tag).actOn(tree)
       root.getChildCount should be (2)
-      root.getChild(0) should be (child2)
-      root.getChild(1) should be (child1)
+      root.getChild(0).getNode should be (node2)
+      root.getChild(1).getNode should be (node1)
     }
     //@+node:gcross.20110417144805.1575: *4* should return the correct undo action.
     it("should return the correct undo action.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val child1 = tree.createNode(null,null)
-      val child2 = tree.createNode(null,null)
-      tree.insertChildInto(root,child1,0)
-      tree.insertChildInto(root,child2,1)
-      MoveChildUpOne(root,child2,1).actOn(tree) should be (MoveChildDownOne(root,child2,0))
+      val node1 = tree.createNode(null,null)
+      val node2 = tree.createNode(null,null)
+      tree.insertChildInto(root,node1,0)
+      val tag = tree.insertChildInto(root,node2,1)
+      MoveChildUpOne(root,tag).actOn(tree) should be (MoveChildDownOne(root,tag))
     }
     //@+node:gcross.20110417144805.1576: *4* should throw the correct exception upon child change.
     it("should throw the correct exception upon child change.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val child1 = tree.createNode(null,null)
-      val child2 = tree.createNode(null,null)
-      tree.insertChildInto(root,child1,0)
-      tree.insertChildInto(root,child2,1)
-      val action = MoveChildUpOne(root,child1,1)
+      val node1 = tree.createNode(null,null)
+      val node2 = tree.createNode(null,null)
+      val tags = new HashSet[Long]
+      tags += tree.insertChildInto(root,node1,0)
+      tags += tree.insertChildInto(root,node2,1)
+      var tag = 10
+      while(tags(tag)) tag += 1
+      val action = MoveChildUpOne(root,tag)
       val thrown_exception = try { action.actOn(tree) } catch { case (e : Exception) => e }
-      val expected_exception = UnexpectedChildAtIndexWhenExecutingAction(root,child1,1,action)
+      val expected_exception = TargetDisappearedBeforeActionCommenced(action)
       thrown_exception should be (expected_exception)
     }
     //@-others

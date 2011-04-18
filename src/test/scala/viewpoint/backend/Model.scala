@@ -27,7 +27,7 @@ class NodeSpecification extends Spec with ShouldMatchers {
       import XMLParser._
       val ParseResult(tree1,_) = parse(n1)
       val ParseResult(tree2,_) = parse(n2)
-      (tree1.root.children(0) === tree2.root.children(0)) should be (correct_result)
+      (tree1.root.getChildNode(0) === tree2.root.getChildNode(0)) should be (correct_result)
     }
     it("identical singletons") {
       test(true,
@@ -430,9 +430,9 @@ class TreeSpecification extends Spec with ShouldMatchers {
       val ParseResult(tree1,_) = parse(n1)
       val ParseResult(tree2,_) = parse(n2)
       val ParseResult(tree3,_) = parse(n3)
-      val substitute = tree2.root.children(0)
+      val substitute = tree2.root.getChildNode(0)
       tree1.mergeAndReplaceStub(tree1.lookupNode(substitute.id).get,substitute)
-      (tree1.root.children(0) === tree3.root.children(0)) should be (true)
+      (tree1.root.getChildNode(0) === tree3.root.getChildNode(0)) should be (true)
       def checkValidity(node: Node, seen: HashMap[String,Node] = new HashMap[String,Node]) {
         seen.get(node.id) match {
           case None =>
@@ -440,9 +440,9 @@ class TreeSpecification extends Spec with ShouldMatchers {
           case Some(other_node) =>
             other_node should be (node)
         }
-        for(child <- node.children) checkValidity(child)
+        for(child <- node.childNodes) checkValidity(child)
       }
-      checkValidity(tree1.root.children(0))
+      checkValidity(tree1.root.getChildNode(0))
     }
     it("an empty node.") {
       test(
@@ -615,12 +615,12 @@ class TreeSpecification extends Spec with ShouldMatchers {
           case Left(e) => Left(e)
           case Right(node) => {
             val ParseResult(tree2,_) = parse(node)
-            Right(tree2.root.children(0))
+            Right(tree2.root.getChildNode(0))
           }
         }
       val ParseResult(tree3,_) = parse(n3)
       tree1.mergeParseResultWithStub(tree1.lookupNode("id").get,result)
-      tree1.root.children(0).toYAML should be (tree3.root.children(0).toYAML)
+      tree1.root.getChildNode(0).toYAML should be (tree3.root.getChildNode(0).toYAML)
     }
     it("a successful parse.") {
       test(

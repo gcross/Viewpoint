@@ -147,14 +147,12 @@ class Tree {
         node.id = newid
       }
     })
-    node.children = node.children.map({old_child =>
-      val new_child = mergeNode(old_child)
-      if(new_child ne old_child) {
-        old_child.parents -= node
-        new_child.parents += node
+    for(old_node: Node <- node.childNodes.toSet) {
+      val new_node = mergeNode(old_node)
+      if(new_node ne old_node) {
+        node.replaceChild(old_node,new_node)
       }
-      new_child
-    })
+    }
     addNode(node)
   }
   //@+node:gcross.20110412144451.1418: *3* mergeParseResultWithStub
@@ -185,6 +183,12 @@ object Tree {
     //@+node:gcross.20110414143741.1454: *4* createNode
     def createNode(heading: String, body: String): interface.Node =
       tree.createNode(heading,body)
+    //@+node:gcross.20110418122658.2114: *4* fetchChild
+    def fetchChild(ichild: interface.Child): Child =
+      ichild match {
+        case Child.Delegate(child) => child
+        case _ => Child(fetchNode(ichild.getNode),ichild.getTag)
+      }
     //@+node:gcross.20110414143741.1453: *4* fetchNode
     def fetchNode(inode: interface.Node): Node =
       inode match {
@@ -207,13 +211,13 @@ object Tree {
           }
       }
     //@+node:gcross.20110414153139.1460: *4* fireChildInserted
-    def fireChildInserted(parent: interface.Parent, index: Int, child: interface.Node) {
+    def fireChildInserted(parent: interface.Parent, index: Int, child: interface.Child) {
       forEachListenerCallIgnoringException(_.treeNodeChildInserted(
         new event.ChildInsertedEvent(this,parent,index,child)
       ))
     }
     //@+node:gcross.20110414153139.1462: *4* fireChildRemoved
-    def fireChildRemoved(parent: interface.Parent, index: Int, child: interface.Node) {
+    def fireChildRemoved(parent: interface.Parent, index: Int, child: interface.Child) {
       forEachListenerCallIgnoringException(_.treeNodeChildRemoved(
         new event.ChildRemovedEvent(this,parent,index,child)
       ))
@@ -253,21 +257,33 @@ object Tree {
     def getRoot = tree.root
 
     //@+node:gcross.20110414153139.1454: *4* insertChildInto
-    def insertChildInto(iparent: interface.Parent, inode: interface.Node, index: Int) {
+    def insertChildInto(iparent: interface.Parent, inode: interface.Node, index: Int): Long = {
       val parent = fetchParent(iparent)
-      parent.insertChild(index,fetchNode(inode))
+      val tag = parent.insertChild(index,fetchNode(inode))
+      for(undo_log <- transaction_undo_log.headOption) {
+        undo_log += { () =>
+          val child = parent.removeChild(index)
+          fireChildRemoved(iparent,index,child)
+        }
+      }
+      fireChildInserted(iparent,index,parent.getChild(index))
+      tag
+    }
+    def insertChildInto(iparent: interface.Parent, ichild: interface.Child, index: Int) {
+      val parent = fetchParent(iparent)
+      parent.insertChild(index,fetchChild(ichild))
       for(undo_log <- transaction_undo_log.headOption) {
         undo_log += { () =>
           parent.removeChild(index)
-          fireChildRemoved(iparent,index,inode)
+          fireChildRemoved(iparent,index,ichild)
         }
       }
-      fireChildInserted(iparent,index,inode)
+      fireChildInserted(iparent,index,ichild)
     }
     //@+node:gcross.20110412230649.1474: *4* lookupNode
     def lookupNode(id: String) = tree.lookupNode(id).map(_.delegate).orNull
     //@+node:gcross.20110414153139.1459: *4* removeChildFrom
-    def removeChildFrom(iparent: interface.Parent, index: Int): interface.Node = {
+    def removeChildFrom(iparent: interface.Parent, index: Int): interface.Child = {
       val parent = fetchParent(iparent)
       val old_child = parent.removeChild(index)
       for(undo_log <- transaction_undo_log.headOption) {

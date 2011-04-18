@@ -22,7 +22,7 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
   //@+<< Fields >>
   //@+node:gcross.20110412144451.1382: *3* << Fields >>
   override val delegate = new Delegate(this)
-  var parents = new HashSet[Parent]
+  val parents = new HashSet[Parent]
   //@-<< Fields >>
   //@+others
   //@+node:gcross.20110412144451.1381: *3* ===
@@ -69,7 +69,7 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
       this.children.size == other.children.size &&
       {
         examined_nodes += ((this,other))
-        !this.children.zip(other.children).exists({case (this_child,other_child) =>
+        !this.childNodes.zip(other.childNodes).exists({case (this_child,other_child) =>
           !this_child.compareAgainst(examined_nodes,other_child)
         })
       }

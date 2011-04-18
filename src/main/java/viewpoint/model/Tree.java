@@ -13,11 +13,12 @@ public interface Tree {
 
     public Parent getRoot();
 
-    public void insertChildInto(Parent parent, Node child, int index);
+    public long insertChildInto(Parent parent, Node node, int index);
+    public void insertChildInto(Parent parent, Child child, int index);
 
     public Node lookupNode(String id);
 
-    public Node removeChildFrom(Parent parent, int index);
+    public Child removeChildFrom(Parent parent, int index);
 
     public void setBodyOf(Node node, String body);
     public void setHeadingOf(Node node, String heading);

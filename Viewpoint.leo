@@ -27,6 +27,8 @@
 <v t="gcross.20110414153139.1545"><vh>@file TreeChangeAdapter.java</vh></v>
 </v>
 <v t="gcross.20110410082044.1288"><vh>@path model</vh>
+<v t="gcross.20110418093501.1579"><vh>@file Child.java</vh></v>
+<v t="gcross.20110418122658.2100"><vh>@file InvalidChildTagException.java</vh></v>
 <v t="gcross.20110410082044.1281"><vh>@file Node.java</vh></v>
 <v t="gcross.20110412230649.1416"><vh>@file Parent.java</vh></v>
 <v t="gcross.20110410073838.1275"><vh>@file Tree.java</vh></v>
@@ -42,9 +44,10 @@
 <v t="gcross.20110417144805.1871"><vh>@file ChangeNodeHeading.scala</vh></v>
 <v t="gcross.20110417144805.1872"><vh>@file MoveChildDownOne.scala</vh></v>
 <v t="gcross.20110417144805.1873"><vh>@file MoveChildUpOne.scala</vh></v>
-<v t="gcross.20110417144805.1874"><vh>@file UnexpectedChildAtIndexWhenExecutingAction.scala</vh></v>
+<v t="gcross.20110417144805.1874"><vh>@file TargetDisappearedBeforeActionCommenced.scala</vh></v>
 </v>
 <v t="gcross.20110412144451.1349"><vh>@path backend</vh>
+<v t="gcross.20110418093501.1580"><vh>@file Child.scala</vh></v>
 <v t="gcross.20110412144451.1347"><vh>@file Node.scala</vh></v>
 <v t="gcross.20110412144451.1348"><vh>@file Parent.scala</vh></v>
 <v t="gcross.20110412144451.1356"><vh>@file Parser.scala</vh></v>

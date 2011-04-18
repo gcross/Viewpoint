@@ -4,9 +4,8 @@
 package viewpoint.model;
 
 public interface Parent {
-    public Node getChild(int index);
+    public Child getChild(int index);
     public int getChildCount();
-    public int getIndexOfChild(Node node);
-    public int getIndexOfChild(Node node, int occurrence);
+    public int getIndexOfChildTag(long tag);
 }
 //@-leo
