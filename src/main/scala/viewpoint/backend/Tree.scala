@@ -36,13 +36,8 @@ class Tree {
   //@-<< Fields >>
   //@+others
   //@+node:gcross.20110412144451.1416: *3* addNode
-  def addNode(node: Node): Node = {
-    lookupNode(node.id) match {
-      case Some(other_node) =>
-        throw NodeIdAlreadyInTree(node.id)
-      case None =>
-        nodemap(node.id) = new WeakReference(node)
-    }
+  protected[Tree] def addNode(node: Node): Node = {
+    nodemap(node.id) = new WeakReference(node)
     node
   }
   //@+node:gcross.20110412144451.1415: *3* containsNode
