@@ -101,8 +101,8 @@ abstract class Parent {
   def getChildNode(index: Int): Node = getChild(index).node
   //@+node:gcross.20110417144805.2796: *3* getChildTag
   def getChildTag(index: Int): Long = getChild(index).tag
-  //@+node:gcross.20110417144805.2798: *3* getIndexOfChildTag
-  def getIndexOfChildTag(tag: Long): Int = childTags.indexOf(tag)
+  //@+node:gcross.20110417144805.2798: *3* getIndexOfChild
+  def getIndexOfChild(tag: Long): Int = childTags.indexOf(tag)
   //@+node:gcross.20110412144451.1366: *3* getProperty
   def getProperty(key: String) : Option[String] = properties.get(key)
   //@+node:gcross.20110414153139.1467: *3* insertChild
@@ -182,8 +182,8 @@ object Parent {
     def getChildNode(index: Int): interface.Node = parent.getChildNode(index)
     //@+node:gcross.20110417144805.2768: *4* getChildTag
     def getChildTag(index: Int): Long = parent.getChildTag(index)
-    //@+node:gcross.20110412230649.1457: *4* getIndexOfChildTag
-    def getIndexOfChildTag(tag: Long): Int = parent.getIndexOfChildTag(tag)
+    //@+node:gcross.20110412230649.1457: *4* getIndexOfChild
+    def getIndexOfChild(tag: Long): Int = parent.getIndexOfChild(tag)
     //@-others
   }
   //@-<< Delegate >>

@@ -552,7 +552,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       tags += tree.insertChildInto(root,node1,4)
       tags += tree.insertChildInto(root,node2,5)
       tags += tree.insertChildInto(root,node1,6)
-      for(index <- 0 to 6) { root.getIndexOfChildTag(tags(index)) should be (index) }
+      for(index <- 0 to 6) { root.getIndexOfChild(tags(index)) should be (index) }
     }
     //@+node:gcross.20110414153139.5161: *4* returns -1 when the child is not present.
     it("returns -1 when the child is not present.") {
@@ -571,7 +571,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       tags += tree.insertChildInto(root,child1,6)
       var tag = 10
       while(tags(tag)) tag += 1
-      root.getIndexOfChildTag(tag) should be (-1)
+      root.getIndexOfChild(tag) should be (-1)
     }
     //@-others
   }

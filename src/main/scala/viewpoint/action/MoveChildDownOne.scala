@@ -8,7 +8,7 @@ import viewpoint.util.JavaConversions._
 
 case class MoveChildDownOne(parent: Parent, tag: Long) extends Action {
   def actOn(tree: Tree) = {
-    val index = parent.getIndexOfChildTag(tag)
+    val index = parent.getIndexOfChild(tag)
     if(index < 0)
       throw TargetDisappearedBeforeActionCommenced(this)
     tree.withinTransaction({ () =>

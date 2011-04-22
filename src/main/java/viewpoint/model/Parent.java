@@ -6,6 +6,6 @@ package viewpoint.model;
 public interface Parent {
     public Child getChild(int index);
     public int getChildCount();
-    public int getIndexOfChildTag(long tag);
+    public int getIndexOfChild(long tag);
 }
 //@-leo
