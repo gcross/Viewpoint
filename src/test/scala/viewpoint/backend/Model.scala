@@ -16,10 +16,10 @@ import viewpoint.model.testing._
 //@-<< Imports >>
 
 //@+others
-//@+node:gcross.20110414153139.2624: ** ActionsSpecification
-class ActionsSpecification extends ModelActionsSpecification({new Tree}) {}
 //@+node:gcross.20110414153139.1500: ** InterfaceSpecification
+class ActionsSpecification extends ModelActionsSpecification({new Tree}) {}
 class InterfaceSpecification extends ModelSpecification({new Tree}) {}
+class RichInterfaceSpecification extends RichInterfaceModelSpecification({new Tree}) {}
 //@+node:gcross.20110414153139.1492: ** NodeSpecification
 class NodeSpecification extends Spec with ShouldMatchers {
   describe("The node comparer should work for") {

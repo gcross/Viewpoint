@@ -80,6 +80,9 @@
 <v t="gcross.20110414153139.1471"><vh>@path model</vh>
 <v t="gcross.20110414153139.1472"><vh>@file ModelSpecification.scala</vh></v>
 </v>
+<v t="gcross.20110422115402.2029"><vh>@path util</vh>
+<v t="gcross.20110422115402.2030"><vh>@file RichInterfaceModelSpecification.scala</vh></v>
+</v>
 </v>
 </v>
 </v>
@@ -104,5 +107,6 @@
 <t tx="gcross.20110414153139.1820"></t>
 <t tx="gcross.20110414153139.2319"></t>
 <t tx="gcross.20110417144805.2773"></t>
+<t tx="gcross.20110422115402.2029"></t>
 </tnodes>
 </leo_file>
