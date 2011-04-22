@@ -48,6 +48,13 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
   describe("An empty tree has no children.") {
     createEmptyTree.getRoot.getChildCount should be (0)
   }
+  //@+node:gcross.20110422115402.2028: *3* createNode creates a node with the correct properties.
+  describe("createNode creates a node with the correct properties.") {
+    val node = createEmptyTree.createNode("id","heading","body")
+    node.getId should be ("id")
+    node.getHeading should be ("heading")
+    node.getBody should be ("body")
+  }
   //@+node:gcross.20110414153139.1503: *3* lookupNode returns the correct node.
   describe("lookupNode returns the correct node.") {
     val tree = createEmptyTree
