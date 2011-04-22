@@ -247,6 +247,13 @@ object Tree {
         }
       }
     }
+    //@+node:gcross.20110420231854.1621: *4* forgetNode
+    def forgetNode(inode: interface.Node) {
+      val node = fetchNode(inode)
+      if(!node.parents.isEmpty) throw new interface.NodeStillHasAncestorsException(inode);
+      node.clearChildren()
+      tree.nodemap -= node.id
+    }
     //@+node:gcross.20110412230649.1473: *4* getRoot
     def getRoot = tree.root
 

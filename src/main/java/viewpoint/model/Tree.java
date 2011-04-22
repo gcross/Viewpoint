@@ -11,6 +11,8 @@ public interface Tree {
 
     public Node createNode(String id, String heading, String body);
 
+    public void forgetNode(Node node);
+
     public Parent getRoot();
 
     public long insertChildInto(Parent parent, Node node, int index);

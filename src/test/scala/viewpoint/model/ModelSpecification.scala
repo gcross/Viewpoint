@@ -576,6 +576,44 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     }
     //@-others
   }
+  //@+node:gcross.20110422115402.1649: *3* The forgetNode method
+  describe("The forgetNode method") {
+    //@+others
+    //@+node:gcross.20110422115402.1650: *4* causes a node to no longer appear in a tree.
+    it("causes a node to no longer appear in a tree.") {
+      val tree = createEmptyTree
+      val node = tree.createNode()
+      tree.forgetNode(node)
+      tree.lookupNode(node.getId) should be (null)
+    }
+    //@+node:gcross.20110422115402.1651: *4* throws an exception when a node still has parents.
+    it("throws an exception when a node still has parents.") {
+      val tree = createEmptyTree
+      val root = tree.getRoot
+      val node = tree.createNode()
+      tree.insertChildInto(root,node,0)
+      node.getParents.size should be (1)
+      try {
+        tree.forgetNode(node)
+        fail("Failed to throw exception.")
+      } catch {
+        case (e: NodeStillHasAncestorsException) => e.getNode should be (node)
+      }
+      tree.lookupNode(node.getId) should be (node)
+    }
+    //@+node:gcross.20110422115402.1653: *4* clears the children of the forgotten node.
+    it("clears the children of the forgotten node.") {
+      val tree = createEmptyTree
+      val node1 = tree.createNode()
+      val node2 = tree.createNode()
+      tree.insertChildInto(node1,node2,0)
+      node2.getParents.size should be (1)
+      tree.forgetNode(node1)
+      node1.getChildren.size should be (0)
+      node2.getParents.size should be (0)
+    }
+    //@-others
+  }
   //@-others
 }
 //@-others
