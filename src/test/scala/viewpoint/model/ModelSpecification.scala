@@ -15,6 +15,7 @@ import org.scalatest.matchers.ShouldMatchers
 import viewpoint.event._
 import viewpoint.model._
 import viewpoint.util.JavaConversions._
+import viewpoint.util.RichInterface._
 //@-<< Imports >>
 
 //@+others
@@ -50,7 +51,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
   //@+node:gcross.20110414153139.1503: *3* lookupNode returns the correct node.
   describe("lookupNode returns the correct node.") {
     val tree = createEmptyTree
-    val node1 = tree.createNode(null,null)
+    val node1 = tree.createNode()
     val node2 = tree.lookupNode(node1.getId)
     node1 should be (node2)
   }
@@ -62,7 +63,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       }
     }
     val tree = createEmptyTree
-    val node = tree.createNode(null,null)
+    val node = tree.createNode()
     tree.addTreeChangeListener(listener)
     tree.removeTreeChangeListener(listener)
     tree.setBodyOf(node,"body")
@@ -75,13 +76,13 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       //@+others
       //@+node:gcross.20110414153139.1515: *5* is correct for equal nodes.
       it("is correct for equal nodes.") {
-        val node = createEmptyTree.createNode(null,null)
+        val node = createEmptyTree.createNode()
         node should be (node)
       }
       //@+node:gcross.20110414153139.1516: *5* is correct for non-equal nodes.
       it("is correct for non-equal nodes.") {
         val tree = createEmptyTree
-        tree.createNode(null,null) should not be tree.createNode(null,null)
+        tree.createNode() should not be tree.createNode()
       }
       //@-others
     }
@@ -102,7 +103,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     //@+node:gcross.20110414153139.1517: *4* is correct when comparing nodes and roots.
     it("is correct when comparing nodes and roots.") {
       val tree = createEmptyTree
-      tree.getRoot should not be (tree.createNode(null,null))
+      tree.getRoot should not be (tree.createNode())
     }
     //@-others
   }
@@ -112,14 +113,14 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     //@+node:gcross.20110414153139.1518: *4* works correctly.
     it("works correctly.") {
       val tree = createEmptyTree
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       tree.setBodyOf(node,"body")
       node.getBody should be ("body")
     }
     //@+node:gcross.20110414153139.1546: *4* fires the correct event.
     it("fires the correct event.") {
       val tree = createEmptyTree
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       val events = recordEventsDuring(tree) { () => tree.setBodyOf(node,"body") }
 
       events.size should be (1)
@@ -163,14 +164,14 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     //@+node:gcross.20110414153139.1521: *4* works correctly.
     it("works correctly.") {
       val tree = createEmptyTree
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       tree.setHeadingOf(node,"heading")
       node.getHeading should be ("heading")
     }
     //@+node:gcross.20110414153139.1552: *4* fires the correct event.
     it("fires the correct event.") {
       val tree = createEmptyTree
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       val events = recordEventsDuring(tree) { () => tree.setHeadingOf(node,"heading") }
 
       events.size should be (1)
@@ -218,7 +219,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       it("to an empty parent.") {
         val tree = createEmptyTree
         val root = tree.getRoot
-        val node = tree.createNode(null,null)
+        val node = tree.createNode()
         val tag = tree.insertChildInto(root,node,0)
         root.getChildCount should be (1)
         val child = root.getChild(0)
@@ -230,8 +231,8 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       it("after a sibling.") {
         val tree = createEmptyTree
         val root = tree.getRoot
-        val node1 = tree.createNode(null,null)
-        val node2 = tree.createNode(null,null)
+        val node1 = tree.createNode()
+        val node2 = tree.createNode()
         val tag1 = tree.insertChildInto(root,node1,0)
         val tag2 = tree.insertChildInto(root,node2,1)
         root.getChildCount should be (2)
@@ -248,8 +249,8 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       it("before a sibling.") {
         val tree = createEmptyTree
         val root = tree.getRoot
-        val node1 = tree.createNode(null,null)
-        val node2 = tree.createNode(null,null)
+        val node1 = tree.createNode()
+        val node2 = tree.createNode()
         val tag1 = tree.insertChildInto(root,node1,0)
         val tag2 = tree.insertChildInto(root,node2,0)
         root.getChildCount should be (2)
@@ -266,7 +267,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       it("with a valid tag.") {
         val tree = createEmptyTree
         val root = tree.getRoot
-        val node = tree.createNode(null,null)
+        val node = tree.createNode()
         val tag = tree.insertChildInto(root,node,0)
         val child = tree.removeChildFrom(root,0)
         tree.insertChildInto(root,child,0)
@@ -281,7 +282,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     //@+node:gcross.20110414153139.1554: *4* fires the correct event.
     it("fires the correct event.") {
       val tree = createEmptyTree
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       var tag: Long = 0
       val events = recordEventsDuring(tree) { () => tag = tree.insertChildInto(tree.getRoot,node,0) }
       events.size should be (1)
@@ -296,7 +297,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     it("logs the correct undo for the transaction.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       var tag: Long = 0
 
       val listener = new EventRecorderTreeChangeListener
@@ -325,7 +326,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     it("returns the correct value.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       val tag = tree.insertChildInto(root,node,0)
       root.getChild(0).getTag should be (tag)
     }
@@ -336,7 +337,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       it("an invalid tag.") {
         val tree = createEmptyTree
         val root = tree.getRoot
-        val node = tree.createNode(null,null)
+        val node = tree.createNode()
         try {
           tree.insertChildInto(root,new Child { def getNode: Node = node; def getTag: Long = 100 },0)
           fail("Exception was not thrown.")
@@ -351,7 +352,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       it("an existing tag.") {
         val tree = createEmptyTree
         val root = tree.getRoot
-        val node = tree.createNode(null,null)
+        val node = tree.createNode()
         val tag = tree.insertChildInto(root,node,0)
         try {
           tree.insertChildInto(root,root.getChild(0),0)
@@ -377,7 +378,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       it("an only child.") {
         val tree = createEmptyTree
         val root = tree.getRoot
-        val node = tree.createNode(null,null)
+        val node = tree.createNode()
         val tag = tree.insertChildInto(root,node,0)
         val child = tree.removeChildFrom(root,0)
         child.getNode should be (node)
@@ -389,8 +390,8 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       it("the first sibling of two.") {
         val tree = createEmptyTree
         val root = tree.getRoot
-        val node1 = tree.createNode(null,null)
-        val node2 = tree.createNode(null,null)
+        val node1 = tree.createNode()
+        val node2 = tree.createNode()
         val tag1 = tree.insertChildInto(root,node1,0)
         val tag2 = tree.insertChildInto(root,node2,1)
         val child1 = tree.removeChildFrom(root,0)
@@ -407,8 +408,8 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       it("the second sibling of two.") {
         val tree = createEmptyTree
         val root = tree.getRoot
-        val node1 = tree.createNode(null,null)
-        val node2 = tree.createNode(null,null)
+        val node1 = tree.createNode()
+        val node2 = tree.createNode()
         val tag1 = tree.insertChildInto(root,node1,0)
         val tag2 = tree.insertChildInto(root,node2,1)
         val child1 = root.getChild(0)
@@ -427,7 +428,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     it("fires the correct event.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       val tag = tree.insertChildInto(root,node,0)
       var child: Child = null
       val events = recordEventsDuring(tree) { () => child = tree.removeChildFrom(root,0) }
@@ -443,7 +444,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     it("logs the correct undo for the transaction.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       val tag = tree.insertChildInto(root,node,0)
 
       val listener = new EventRecorderTreeChangeListener
@@ -474,7 +475,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     it("returns the correct value.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       tree.insertChildInto(root,node,0)
       val child = root.getChild(0)
       tree.removeChildFrom(root,0) should be (child)
@@ -508,10 +509,10 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     it("multi-step transactions are completely undone.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node1 = tree.createNode(null,null)
-      val node2 = tree.createNode(null,null)
-      val node3 = tree.createNode(null,null)
-      val node4 = tree.createNode(null,null)
+      val node1 = tree.createNode()
+      val node2 = tree.createNode()
+      val node3 = tree.createNode()
+      val node4 = tree.createNode()
       tree.insertChildInto(root,node1,0)
       tree.insertChildInto(root,node3,1)
 
@@ -542,8 +543,8 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     it("works for multiple cloned children.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node1 = tree.createNode(null,null)
-      val node2 = tree.createNode(null,null)
+      val node1 = tree.createNode()
+      val node2 = tree.createNode()
       val tags = new ArrayBuffer[Long]
       tags += tree.insertChildInto(root,node1,0)
       tags += tree.insertChildInto(root,node2,1)
@@ -558,9 +559,9 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
     it("returns -1 when the child is not present.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val child1 = tree.createNode(null,null)
-      val child2 = tree.createNode(null,null)
-      val child3 = tree.createNode(null,null)
+      val child1 = tree.createNode()
+      val child2 = tree.createNode()
+      val child3 = tree.createNode()
       val tags = new HashSet[Long]
       tags += tree.insertChildInto(root,child1,0)
       tags += tree.insertChildInto(root,child2,1)

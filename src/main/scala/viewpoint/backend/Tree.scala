@@ -6,7 +6,6 @@ package viewpoint.backend.crosswhite.model
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1411: ** << Imports >>
 import java.io.File
-import java.util.UUID
 import java.util.concurrent.Callable
 import scala.collection.{Map,Set}
 import scala.collection.mutable.{ArrayBuffer,HashMap,HashSet,Stack}
@@ -46,9 +45,6 @@ class Tree {
     }
     node
   }
-  //@+node:gcross.20110414153139.1505: *3* createNode
-  def createNode(heading: String, body: String): Node =
-    addNode(new Node(UUID.randomUUID.toString,heading,body))
   //@+node:gcross.20110412144451.1415: *3* containsNode
   def containsNode(id: String): Boolean = lookupNode(id).isDefined
   //@+node:gcross.20110412144451.1421: *3* findFileNodes
@@ -181,8 +177,11 @@ object Tree {
       listeners += listener
     }
     //@+node:gcross.20110414143741.1454: *4* createNode
-    def createNode(heading: String, body: String): interface.Node =
-      tree.createNode(heading,body)
+    def createNode(id: String, heading: String, body: String): interface.Node =
+      if(tree.nodemap.contains(id))
+        throw new interface.NodeIdConflictException(id)
+      else
+        tree.addNode(new Node(id,heading,body))
     //@+node:gcross.20110418122658.2114: *4* fetchChild
     def fetchChild(ichild: interface.Child): Child =
       ichild match {

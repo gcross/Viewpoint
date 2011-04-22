@@ -30,6 +30,7 @@
 <v t="gcross.20110418093501.1579"><vh>@file Child.java</vh></v>
 <v t="gcross.20110418122658.2100"><vh>@file InvalidChildTagException.java</vh></v>
 <v t="gcross.20110410082044.1281"><vh>@file Node.java</vh></v>
+<v t="gcross.20110420231854.1722"><vh>@file NodeIdConflictException.java</vh></v>
 <v t="gcross.20110412230649.1416"><vh>@file Parent.java</vh></v>
 <v t="gcross.20110410073838.1275"><vh>@file Tree.java</vh></v>
 <v t="gcross.20110414153139.1452"><vh>@file UnknownParentException.java</vh></v>
@@ -57,6 +58,10 @@
 </v>
 <v t="gcross.20110414153139.2319"><vh>@path util</vh>
 <v t="gcross.20110414153139.2320"><vh>@file JavaConversions.scala</vh></v>
+<v t="gcross.20110420231854.1748"><vh>@file RichInterface.scala</vh></v>
+<v t="gcross.20110420231854.1624"><vh>@file RichNode.scala</vh></v>
+<v t="gcross.20110420231854.1655"><vh>@file RichParent.scala</vh></v>
+<v t="gcross.20110420231854.1734"><vh>@file RichTree.scala</vh></v>
 </v>
 </v>
 </v>

@@ -9,7 +9,7 @@ import viewpoint.event.TreeChangeListener;
 public interface Tree {
     public void addTreeChangeListener(TreeChangeListener listener);
 
-    public Node createNode(String heading, String body);
+    public Node createNode(String id, String heading, String body);
 
     public Parent getRoot();
 

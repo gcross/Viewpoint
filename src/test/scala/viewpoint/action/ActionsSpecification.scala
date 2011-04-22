@@ -11,6 +11,7 @@ import org.scalatest.matchers.ShouldMatchers
 
 import viewpoint.action._
 import viewpoint.model._
+import viewpoint.util.RichInterface._
 //@-<< Imports >>
 
 //@+others
@@ -23,7 +24,7 @@ abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec 
     //@+node:gcross.20110414153139.2620: *4* should perform the correct action.
     it("should perform the correct action.") {
       val tree = createEmptyTree
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       ChangeNodeBody(node,"body").actOn(tree)
       node.getBody should be ("body")
     }
@@ -41,14 +42,14 @@ abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec 
     //@+node:gcross.20110414153139.5166: *4* should perform the correct action.
     it("should perform the correct action.") {
       val tree = createEmptyTree
-      val node = tree.createNode(null,null)
+      val node = tree.createNode()
       ChangeNodeHeading(node,"heading").actOn(tree)
       node.getHeading should be ("heading")
     }
     //@+node:gcross.20110414153139.5167: *4* should return the correct undo action.
     it("should return the correct undo action.") {
       val tree = createEmptyTree
-      val node = tree.createNode("heading",null)
+      val node = tree.createNode("heading")
       ChangeNodeHeading(node,"footing").actOn(tree) should be (ChangeNodeHeading(node,"heading"))
     }
     //@-others
@@ -60,8 +61,8 @@ abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec 
     it("should perform the correct action.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node1 = tree.createNode(null,null)
-      val node2 = tree.createNode(null,null)
+      val node1 = tree.createNode()
+      val node2 = tree.createNode()
       val tag = tree.insertChildInto(root,node1,0)
       tree.insertChildInto(root,node2,1)
       MoveChildDownOne(root,tag).actOn(tree)
@@ -73,8 +74,8 @@ abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec 
     it("should return the correct undo action.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node1 = tree.createNode(null,null)
-      val node2 = tree.createNode(null,null)
+      val node1 = tree.createNode()
+      val node2 = tree.createNode()
       val tag = tree.insertChildInto(root,node1,0)
       tree.insertChildInto(root,node2,1)
       MoveChildDownOne(root,tag).actOn(tree) should be (MoveChildUpOne(root,tag))
@@ -83,8 +84,8 @@ abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec 
     it("should throw the correct exception upon child change.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node1 = tree.createNode(null,null)
-      val node2 = tree.createNode(null,null)
+      val node1 = tree.createNode()
+      val node2 = tree.createNode()
       val tags = new HashSet[Long]
       tags += tree.insertChildInto(root,node1,0)
       tags += tree.insertChildInto(root,node2,1)
@@ -104,8 +105,8 @@ abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec 
     it("should perform the correct action.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node1 = tree.createNode(null,null)
-      val node2 = tree.createNode(null,null)
+      val node1 = tree.createNode()
+      val node2 = tree.createNode()
       tree.insertChildInto(root,node1,0)
       val tag = tree.insertChildInto(root,node2,1)
       MoveChildUpOne(root,tag).actOn(tree)
@@ -117,8 +118,8 @@ abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec 
     it("should return the correct undo action.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node1 = tree.createNode(null,null)
-      val node2 = tree.createNode(null,null)
+      val node1 = tree.createNode()
+      val node2 = tree.createNode()
       tree.insertChildInto(root,node1,0)
       val tag = tree.insertChildInto(root,node2,1)
       MoveChildUpOne(root,tag).actOn(tree) should be (MoveChildDownOne(root,tag))
@@ -127,8 +128,8 @@ abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec 
     it("should throw the correct exception upon child change.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val node1 = tree.createNode(null,null)
-      val node2 = tree.createNode(null,null)
+      val node1 = tree.createNode()
+      val node2 = tree.createNode()
       val tags = new HashSet[Long]
       tags += tree.insertChildInto(root,node1,0)
       tags += tree.insertChildInto(root,node2,1)
