@@ -63,8 +63,8 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val root = tree.getRoot
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      val tag = tree.insertChildInto(root,node1,0)
-      tree.insertChildInto(root,node2,1)
+      val tag = tree.appendChildTo(root,node1)
+      tree.appendChildTo(root,node2)
       MoveChildDownOne(root,tag).actOn(tree)
       root.getChildCount should be (2)
       root.getChild(0).getNode should be (node2)
@@ -76,8 +76,8 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val root = tree.getRoot
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      val tag = tree.insertChildInto(root,node1,0)
-      tree.insertChildInto(root,node2,1)
+      val tag = tree.appendChildTo(root,node1)
+      tree.appendChildTo(root,node2)
       MoveChildDownOne(root,tag).actOn(tree) should be (MoveChildUpOne(root,tag))
     }
     //@+node:gcross.20110417144805.1568: *4* should throw the correct exception upon child change.
@@ -87,8 +87,8 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val node1 = tree.createNode()
       val node2 = tree.createNode()
       val tags = new HashSet[Long]
-      tags += tree.insertChildInto(root,node1,0)
-      tags += tree.insertChildInto(root,node2,1)
+      tags += tree.appendChildTo(root,node1)
+      tags += tree.appendChildTo(root,node2)
       var tag = 10
       while(tags(tag)) tag += 1
       val action = MoveChildDownOne(root,tag)
@@ -107,8 +107,8 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val root = tree.getRoot
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      tree.insertChildInto(root,node1,0)
-      val tag = tree.insertChildInto(root,node2,1)
+      tree.appendChildTo(root,node1)
+      val tag = tree.appendChildTo(root,node2)
       MoveChildUpOne(root,tag).actOn(tree)
       root.getChildCount should be (2)
       root.getChild(0).getNode should be (node2)
@@ -120,8 +120,8 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val root = tree.getRoot
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      tree.insertChildInto(root,node1,0)
-      val tag = tree.insertChildInto(root,node2,1)
+      tree.appendChildTo(root,node1)
+      val tag = tree.appendChildTo(root,node2)
       MoveChildUpOne(root,tag).actOn(tree) should be (MoveChildDownOne(root,tag))
     }
     //@+node:gcross.20110417144805.1576: *4* should throw the correct exception upon child change.
@@ -131,8 +131,8 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val node1 = tree.createNode()
       val node2 = tree.createNode()
       val tags = new HashSet[Long]
-      tags += tree.insertChildInto(root,node1,0)
-      tags += tree.insertChildInto(root,node2,1)
+      tags += tree.appendChildTo(root,node1)
+      tags += tree.appendChildTo(root,node2)
       var tag = 10
       while(tags(tag)) tag += 1
       val action = MoveChildUpOne(root,tag)

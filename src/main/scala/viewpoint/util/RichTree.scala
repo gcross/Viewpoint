@@ -8,7 +8,7 @@ package viewpoint.util
 import java.util.UUID
 import scala.collection.mutable.{Queue,Set}
 
-import viewpoint.model.{Node,Tree}
+import viewpoint.model.{Node,Parent,Tree}
 //@-<< Imports >>
 
 //@+others
@@ -28,6 +28,9 @@ class RichTree(tree: Tree) extends Proxy {
     self.createNode(UUID.randomUUID.toString,heading,body)
   def createNode(heading: String): Node = createNode(heading,null)
   def createNode(): Node = createNode(null)
+  //@+node:gcross.20110422115402.2035: *3* appendChildTo
+  def appendChildTo(parent: Parent, node: Node): Long =
+    self.insertChildInto(parent,node,parent.getChildCount)
   //@-others
 }
 //@+node:gcross.20110420231854.1742: ** object RichTree

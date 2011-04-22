@@ -20,9 +20,9 @@ abstract class RichInterfaceModelSpecification(createEmptyTree: => Tree) extends
   describe("The getChildren method iterates correctly over children.") {
     val tree = createEmptyTree
     val root = tree.getRoot
-    tree.insertChildInto(root,tree.createNode(),0)
-    tree.insertChildInto(root,tree.createNode(),1)
-    tree.insertChildInto(root,tree.createNode(),2)
+    tree.appendChildTo(root,tree.createNode())
+    tree.appendChildTo(root,tree.createNode())
+    tree.appendChildTo(root,tree.createNode())
     val children = root.getChildren.toSeq
     for(index <- 0 until 3) children(index) should be (root.getChild(index))
   }

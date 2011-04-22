@@ -386,7 +386,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
         val tree = createEmptyTree
         val root = tree.getRoot
         val node = tree.createNode()
-        val tag = tree.insertChildInto(root,node,0)
+        val tag = tree.appendChildTo(root,node)
         val child = tree.removeChildFrom(root,0)
         child.getNode should be (node)
         child.getTag should be (tag)
@@ -399,8 +399,8 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
         val root = tree.getRoot
         val node1 = tree.createNode()
         val node2 = tree.createNode()
-        val tag1 = tree.insertChildInto(root,node1,0)
-        val tag2 = tree.insertChildInto(root,node2,1)
+        val tag1 = tree.appendChildTo(root,node1)
+        val tag2 = tree.appendChildTo(root,node2)
         val child1 = tree.removeChildFrom(root,0)
         val child2 = root.getChild(0)
         root.getChildCount should be (1)
@@ -417,8 +417,8 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
         val root = tree.getRoot
         val node1 = tree.createNode()
         val node2 = tree.createNode()
-        val tag1 = tree.insertChildInto(root,node1,0)
-        val tag2 = tree.insertChildInto(root,node2,1)
+        val tag1 = tree.appendChildTo(root,node1)
+        val tag2 = tree.appendChildTo(root,node2)
         val child1 = root.getChild(0)
         val child2 = tree.removeChildFrom(root,1)
         root.getChildCount should be (1)
@@ -436,7 +436,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       val tree = createEmptyTree
       val root = tree.getRoot
       val node = tree.createNode()
-      val tag = tree.insertChildInto(root,node,0)
+      val tag = tree.appendChildTo(root,node)
       var child: Child = null
       val events = recordEventsDuring(tree) { () => child = tree.removeChildFrom(root,0) }
 
@@ -452,7 +452,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       val tree = createEmptyTree
       val root = tree.getRoot
       val node = tree.createNode()
-      val tag = tree.insertChildInto(root,node,0)
+      val tag = tree.appendChildTo(root,node)
 
       val listener = new EventRecorderTreeChangeListener
       val events = listener.events
@@ -483,7 +483,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       val tree = createEmptyTree
       val root = tree.getRoot
       val node = tree.createNode()
-      tree.insertChildInto(root,node,0)
+      tree.appendChildTo(root,node)
       val child = root.getChild(0)
       tree.removeChildFrom(root,0) should be (child)
     }
@@ -520,8 +520,8 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       val node2 = tree.createNode()
       val node3 = tree.createNode()
       val node4 = tree.createNode()
-      tree.insertChildInto(root,node1,0)
-      tree.insertChildInto(root,node3,1)
+      tree.appendChildTo(root,node1)
+      tree.appendChildTo(root,node3)
 
       val E = new Exception
       try {
@@ -553,30 +553,25 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       val node1 = tree.createNode()
       val node2 = tree.createNode()
       val tags = new ArrayBuffer[Long]
-      tags += tree.insertChildInto(root,node1,0)
-      tags += tree.insertChildInto(root,node2,1)
-      tags += tree.insertChildInto(root,node1,2)
-      tags += tree.insertChildInto(root,node2,3)
-      tags += tree.insertChildInto(root,node1,4)
-      tags += tree.insertChildInto(root,node2,5)
-      tags += tree.insertChildInto(root,node1,6)
+      for(_ <- 1 to 3) {
+        tags += tree.appendChildTo(root,node1)
+        tags += tree.appendChildTo(root,node2)
+      }
+      tags += tree.appendChildTo(root,node1)
       for(index <- 0 to 6) { root.getIndexOfChild(tags(index)) should be (index) }
     }
     //@+node:gcross.20110414153139.5161: *4* returns -1 when the child is not present.
     it("returns -1 when the child is not present.") {
       val tree = createEmptyTree
       val root = tree.getRoot
-      val child1 = tree.createNode()
-      val child2 = tree.createNode()
-      val child3 = tree.createNode()
+      val node1 = tree.createNode()
+      val node2 = tree.createNode()
       val tags = new HashSet[Long]
-      tags += tree.insertChildInto(root,child1,0)
-      tags += tree.insertChildInto(root,child2,1)
-      tags += tree.insertChildInto(root,child1,2)
-      tags += tree.insertChildInto(root,child2,3)
-      tags += tree.insertChildInto(root,child1,4)
-      tags += tree.insertChildInto(root,child2,5)
-      tags += tree.insertChildInto(root,child1,6)
+      for(_ <- 1 to 3) {
+        tags += tree.appendChildTo(root,node1)
+        tags += tree.appendChildTo(root,node2)
+      }
+      tags += tree.appendChildTo(root,node1)
       var tag = 10
       while(tags(tag)) tag += 1
       root.getIndexOfChild(tag) should be (-1)
@@ -598,7 +593,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       val tree = createEmptyTree
       val root = tree.getRoot
       val node = tree.createNode()
-      tree.insertChildInto(root,node,0)
+      tree.appendChildTo(root,node)
       node.getParents.size should be (1)
       try {
         tree.forgetNode(node)
@@ -613,7 +608,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       val tree = createEmptyTree
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      tree.insertChildInto(node1,node2,0)
+      tree.appendChildTo(node1,node2)
       node2.getParents.size should be (1)
       tree.forgetNode(node1)
       node1.getChildren.size should be (0)
