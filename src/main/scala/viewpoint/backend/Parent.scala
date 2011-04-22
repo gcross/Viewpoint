@@ -74,6 +74,12 @@ abstract class Parent {
   def childNodes = children.iterator.map(_.node)
   //@+node:gcross.20110418093501.1594: *3* childTags
   def childTags = children.iterator.map(_.tag)
+  //@+node:gcross.20110418161204.2001: *3* clearChildren
+  def clearChildren() {
+    active_tags.clear
+    for(node <- childNodes) node.parents -= this
+    children.clear
+  }
   //@+node:gcross.20110412144451.1368: *3* findChildWithSectionName
   def findChildWithSectionName(section_name: String): Option[Node] = {
     import scala.collection.JavaConversions._
