@@ -71,7 +71,7 @@
 <v t="gcross.20110412144451.1361"><vh>@path scala</vh>
 <v t="gcross.20110412144451.1362"><vh>@path viewpoint</vh>
 <v t="gcross.20110417144805.2773"><vh>@path action</vh>
-<v t="gcross.20110417144805.2774"><vh>@file ActionsSpecification.scala</vh></v>
+<v t="gcross.20110417144805.2774"><vh>@file ActionsModelSpecification.scala</vh></v>
 </v>
 <v t="gcross.20110414153139.1470"><vh>@path backend</vh>
 <v t="gcross.20110414153139.1487"><vh>@file Model.scala</vh></v>

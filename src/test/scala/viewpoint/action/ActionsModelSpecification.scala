@@ -1,5 +1,5 @@
 //@+leo-ver=5-thin
-//@+node:gcross.20110417144805.2774: * @file ActionsSpecification.scala
+//@+node:gcross.20110417144805.2774: * @file ActionsModelSpecification.scala
 //@@language Scala
 package viewpoint.action.testing
 
@@ -15,8 +15,8 @@ import viewpoint.util.RichInterface._
 //@-<< Imports >>
 
 //@+others
-//@+node:gcross.20110414153139.2617: ** ModelActionsSpecification
-abstract class ModelActionsSpecification(createEmptyTree: => Tree) extends Spec with ShouldMatchers {
+//@+node:gcross.20110414153139.2617: ** ActionsModelSpecification
+abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec with ShouldMatchers {
   //@+others
   //@+node:gcross.20110414153139.2619: *3* ChangeNodeBody
   describe("ChangeNodeBody") {

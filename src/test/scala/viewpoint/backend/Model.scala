@@ -17,7 +17,7 @@ import viewpoint.model.testing._
 
 //@+others
 //@+node:gcross.20110414153139.1500: ** InterfaceSpecification
-class ActionsSpecification extends ModelActionsSpecification({new Tree}) {}
+class ActionsSpecification extends ActionsModelSpecification({new Tree}) {}
 class InterfaceSpecification extends ModelSpecification({new Tree}) {}
 class RichInterfaceSpecification extends RichInterfaceModelSpecification({new Tree}) {}
 //@+node:gcross.20110414153139.1492: ** NodeSpecification
