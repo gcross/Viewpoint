@@ -177,6 +177,22 @@ abstract class RichInterfaceModelSpecification(createEmptyTree: => Tree) extends
     }
     //@-others
   }
+  //@+node:gcross.20110422115402.2822: *3* The getAllNodesInSubtree method iteratres or
+  describe("The getChildren method iterates correctly over all nodes in the subtree.") {
+    val tree = createEmptyTree
+    val node = tree.createNode("id","heading","body")
+    val nodea = tree.createNode("ida","heading","a")
+    val nodeb = tree.createNode("idb","heading","b")
+    val nodeb1 = tree.createNode("idb1","heading","b1")
+    val nodeb1a = tree.createNode("idb1a","heading","b1a")
+    val nodeb1b = tree.createNode("idb1b","heading","b1b")
+    val nodeb2 = tree.createNode("idb2","heading","b2")
+    tree.appendChildrenTo(node,nodea,nodeb)
+    tree.appendChildrenTo(nodea,nodeb1)
+    tree.appendChildrenTo(nodeb,nodeb1,nodeb2,nodea)
+    tree.appendChildrenTo(nodeb1,nodeb1a,nodeb1b)
+    node.getAllNodesInSubtree.map(_.getId).toSet should be (Set("id","ida","idb","idb1","idb1","idb1a","idb1b","idb2"))
+  }
   //@+node:gcross.20110422115402.2033: *3* The getChildren method iterates correctly over children.
   describe("The getChildren method iterates correctly over children.") {
     val tree = createEmptyTree
