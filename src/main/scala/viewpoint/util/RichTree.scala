@@ -6,7 +6,8 @@ package viewpoint.util
 //@+<< Imports >>
 //@+node:gcross.20110420231854.1735: ** << Imports >>
 import java.util.UUID
-import scala.collection.mutable.{Queue,Set}
+import scala.collection.IndexedSeq
+import scala.collection.mutable.{ArrayBuffer,Queue,Set}
 
 import viewpoint.model.{Node,Parent,Tree}
 //@-<< Imports >>
@@ -23,14 +24,24 @@ class RichTree(tree: Tree) extends Proxy {
   override val self: Tree = tree
   //@-<< Fields >>
   //@+others
+  //@+node:gcross.20110422204808.1666: *3* appendChildrenTo
+  def appendChildrenTo(parent: Parent, nodes: Node*): IndexedSeq[Long] = {
+    var index = parent.getChildCount
+    val tags = new ArrayBuffer[Long]
+    for(node <- nodes) {
+      tags += self.insertChildInto(parent,node,index)
+      index += 1
+    }
+    tags
+  }
+  //@+node:gcross.20110422115402.2035: *3* appendChildTo
+  def appendChildTo(parent: Parent, node: Node): Long =
+    self.insertChildInto(parent,node,parent.getChildCount)
   //@+node:gcross.20110420231854.1740: *3* createNode
   def createNode(heading: String, body: String): Node =
     self.createNode(UUID.randomUUID.toString,heading,body)
   def createNode(heading: String): Node = createNode(heading,null)
   def createNode(): Node = createNode(null)
-  //@+node:gcross.20110422115402.2035: *3* appendChildTo
-  def appendChildTo(parent: Parent, node: Node): Long =
-    self.insertChildInto(parent,node,parent.getChildCount)
   //@-others
 }
 //@+node:gcross.20110420231854.1742: ** object RichTree

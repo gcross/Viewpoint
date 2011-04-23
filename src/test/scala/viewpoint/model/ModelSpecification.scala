@@ -520,8 +520,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       val node2 = tree.createNode()
       val node3 = tree.createNode()
       val node4 = tree.createNode()
-      tree.appendChildTo(root,node1)
-      tree.appendChildTo(root,node3)
+      tree.appendChildrenTo(root,node1,node3)
 
       val E = new Exception
       try {
@@ -554,8 +553,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       val node2 = tree.createNode()
       val tags = new ArrayBuffer[Long]
       for(_ <- 1 to 3) {
-        tags += tree.appendChildTo(root,node1)
-        tags += tree.appendChildTo(root,node2)
+        tags ++= tree.appendChildrenTo(root,node1,node2)
       }
       tags += tree.appendChildTo(root,node1)
       for(index <- 0 to 6) { root.getIndexOfChild(tags(index)) should be (index) }
@@ -568,8 +566,7 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       val node2 = tree.createNode()
       val tags = new HashSet[Long]
       for(_ <- 1 to 3) {
-        tags += tree.appendChildTo(root,node1)
-        tags += tree.appendChildTo(root,node2)
+        tags ++= tree.appendChildrenTo(root,node1,node2)
       }
       tags += tree.appendChildTo(root,node1)
       var tag = 10

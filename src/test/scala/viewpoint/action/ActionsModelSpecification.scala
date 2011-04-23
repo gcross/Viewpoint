@@ -5,7 +5,6 @@ package viewpoint.action.testing
 
 //@+<< Imports >>
 //@+node:gcross.20110414153139.2616: ** << Imports >>
-import scala.collection.mutable.HashSet
 import org.scalatest.Spec
 import org.scalatest.matchers.ShouldMatchers
 
@@ -63,9 +62,8 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val root = tree.getRoot
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      val tag = tree.appendChildTo(root,node1)
-      tree.appendChildTo(root,node2)
-      MoveChildDownOne(root,tag).actOn(tree)
+      val tags = tree.appendChildrenTo(root,node1,node2)
+      MoveChildDownOne(root,tags(0)).actOn(tree)
       root.getChildCount should be (2)
       root.getChild(0).getNode should be (node2)
       root.getChild(1).getNode should be (node1)
@@ -76,9 +74,8 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val root = tree.getRoot
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      val tag = tree.appendChildTo(root,node1)
-      tree.appendChildTo(root,node2)
-      MoveChildDownOne(root,tag).actOn(tree) should be (MoveChildUpOne(root,tag))
+      val tags = tree.appendChildrenTo(root,node1,node2)
+      MoveChildDownOne(root,tags(0)).actOn(tree) should be (MoveChildUpOne(root,tags(0)))
     }
     //@+node:gcross.20110417144805.1568: *4* should throw the correct exception upon child change.
     it("should throw the correct exception upon child change.") {
@@ -86,11 +83,9 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val root = tree.getRoot
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      val tags = new HashSet[Long]
-      tags += tree.appendChildTo(root,node1)
-      tags += tree.appendChildTo(root,node2)
+      val tags = tree.appendChildrenTo(root,node1,node2)
       var tag = 10
-      while(tags(tag)) tag += 1
+      while(tags.contains(tag)) tag += 1
       val action = MoveChildDownOne(root,tag)
       val thrown_exception = try { action.actOn(tree) } catch { case (e : Exception) => e }
       val expected_exception = TargetDisappearedBeforeActionCommenced(action)
@@ -107,9 +102,8 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val root = tree.getRoot
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      tree.appendChildTo(root,node1)
-      val tag = tree.appendChildTo(root,node2)
-      MoveChildUpOne(root,tag).actOn(tree)
+      val tags = tree.appendChildrenTo(root,node1,node2)
+      MoveChildUpOne(root,tags(1)).actOn(tree)
       root.getChildCount should be (2)
       root.getChild(0).getNode should be (node2)
       root.getChild(1).getNode should be (node1)
@@ -120,9 +114,8 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val root = tree.getRoot
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      tree.appendChildTo(root,node1)
-      val tag = tree.appendChildTo(root,node2)
-      MoveChildUpOne(root,tag).actOn(tree) should be (MoveChildDownOne(root,tag))
+      val tags = tree.appendChildrenTo(root,node1,node2)
+      MoveChildUpOne(root,tags(1)).actOn(tree) should be (MoveChildDownOne(root,tags(1)))
     }
     //@+node:gcross.20110417144805.1576: *4* should throw the correct exception upon child change.
     it("should throw the correct exception upon child change.") {
@@ -130,11 +123,9 @@ abstract class ActionsModelSpecification(createEmptyTree: => Tree) extends Spec 
       val root = tree.getRoot
       val node1 = tree.createNode()
       val node2 = tree.createNode()
-      val tags = new HashSet[Long]
-      tags += tree.appendChildTo(root,node1)
-      tags += tree.appendChildTo(root,node2)
+      val tags = tree.appendChildrenTo(root,node1,node2)
       var tag = 10
-      while(tags(tag)) tag += 1
+      while(tags.contains(tag)) tag += 1
       val action = MoveChildUpOne(root,tag)
       val thrown_exception = try { action.actOn(tree) } catch { case (e : Exception) => e }
       val expected_exception = TargetDisappearedBeforeActionCommenced(action)
