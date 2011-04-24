@@ -31,7 +31,7 @@
 <v t="gcross.20110418122658.2100"><vh>@file InvalidChildTagException.java</vh></v>
 <v t="gcross.20110410082044.1281"><vh>@file Node.java</vh></v>
 <v t="gcross.20110420231854.1722"><vh>@file NodeIdConflictException.java</vh></v>
-<v t="gcross.20110422115402.1648"><vh>@file NodeStillHasAncestorsException.java</vh></v>
+<v t="gcross.20110425121514.1738"><vh>@file NodeStillHasLinksException.java</vh></v>
 <v t="gcross.20110412230649.1416"><vh>@file Parent.java</vh></v>
 <v t="gcross.20110410073838.1275"><vh>@file Tree.java</vh></v>
 <v t="gcross.20110414143741.1457"><vh>@file UnknownNodeException.java</vh></v>

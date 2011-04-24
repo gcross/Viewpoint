@@ -9,7 +9,6 @@ import java.io.File
 import java.util.concurrent.Callable
 import scala.collection.{Map,Set}
 import scala.collection.mutable.{ArrayBuffer,HashMap,HashSet,Stack}
-import scala.ref.WeakReference
 
 import viewpoint.backend.crosswhite.parser.Parser.ParseResult
 import viewpoint.event
@@ -31,13 +30,13 @@ class Tree {
   //@+<< Fields >>
   //@+node:gcross.20110412144451.1413: *3* << Fields >>
   val delegate = new Delegate(this)
-  val nodemap = new HashMap[String,WeakReference[Node]]
+  val nodemap = new HashMap[String,Node]
   val root = new Root(this)
   //@-<< Fields >>
   //@+others
   //@+node:gcross.20110412144451.1416: *3* addNode
   protected[Tree] def addNode(node: Node): Node = {
-    nodemap(node.id) = new WeakReference(node)
+    nodemap(node.id) = node
     node
   }
   //@+node:gcross.20110412144451.1415: *3* containsNode
@@ -95,16 +94,7 @@ class Tree {
     (files_associated_with_node,nodes_associated_with_file)
   }
   //@+node:gcross.20110412144451.1414: *3* lookupNode
-  def lookupNode(id: String): Option[Node] = {
-    nodemap.get(id).map(_.get) match {
-      case None => None
-      case Some(None) => {
-        nodemap -= id
-        None
-      }
-      case Some(Some(node)) => Some(node)
-    }
-  }
+  def lookupNode(id: String): Option[Node] = nodemap.get(id)
   //@+node:gcross.20110412144451.1417: *3* lookupOrElseAddNode
   def lookupOrElseAddNode(id: String, default: => (String,String)): Node =
     lookupNode(id).getOrElse({
@@ -250,9 +240,10 @@ object Tree {
     //@+node:gcross.20110420231854.1621: *4* forgetNode
     def forgetNode(inode: interface.Node) {
       val node = fetchNode(inode)
-      if(!node.parents.isEmpty) throw new interface.NodeStillHasAncestorsException(inode);
-      node.clearChildren()
-      tree.nodemap -= node.id
+      if(node.parents.isEmpty && node.children.isEmpty)
+        tree.nodemap -= node.id
+      else
+        throw new interface.NodeStillHasLinksException(inode)
     }
     //@+node:gcross.20110412230649.1473: *4* getRoot
     def getRoot = tree.root

@@ -596,20 +596,25 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
         tree.forgetNode(node)
         fail("Failed to throw exception.")
       } catch {
-        case (e: NodeStillHasAncestorsException) => e.getNode should be (node)
+        case (e: NodeStillHasLinksException) => e.getNode should be (node)
       }
       tree.lookupNode(node.getId) should be (node)
     }
-    //@+node:gcross.20110422115402.1653: *4* clears the children of the forgotten node.
-    it("clears the children of the forgotten node.") {
+    //@+node:gcross.20110422115402.1653: *4* throws an exception when a node still has children.
+    it("throws an exception when a node still has children.") {
       val tree = createEmptyTree
       val node1 = tree.createNode()
       val node2 = tree.createNode()
       tree.appendChildTo(node1,node2)
       node2.getParents.size should be (1)
-      tree.forgetNode(node1)
-      node1.getChildren.size should be (0)
-      node2.getParents.size should be (0)
+      try {
+        tree.forgetNode(node1)
+        fail("Failed to throw exception.")
+      } catch {
+        case (e: NodeStillHasLinksException) => e.getNode should be (node1)
+      }
+      tree.lookupNode(node1.getId) should be (node1)
+      tree.lookupNode(node2.getId) should be (node2)
     }
     //@-others
   }
