@@ -9,7 +9,7 @@ import java.util.UUID
 import scala.collection.IndexedSeq
 import scala.collection.mutable.{ArrayBuffer,Queue,Set}
 
-import viewpoint.model.{Node,Parent,Tree}
+import viewpoint.model.{Child,Node,Parent,Tree}
 //@-<< Imports >>
 
 //@+others
@@ -42,6 +42,19 @@ class RichTree(tree: Tree) extends Proxy {
     self.createNode(UUID.randomUUID.toString,heading,body)
   def createNode(heading: String): Node = createNode(heading,null)
   def createNode(): Node = createNode(null)
+  //@+node:gcross.20110422115402.4698: *3* lookupChild
+  def lookupChild(id: String, tag: Long): Child =
+    new Child {
+      lazy val node = self.lookupNode(id)
+      def getNode = node
+      def getTag = tag
+    }
+  //@+node:gcross.20110422115402.4697: *3* lookupParent
+  def lookupParent(maybe_id: Option[String]): Parent =
+    maybe_id match {
+      case Some(id) => self.lookupNode(id)
+      case None => self.getRoot
+    }
   //@-others
 }
 //@+node:gcross.20110420231854.1742: ** object RichTree

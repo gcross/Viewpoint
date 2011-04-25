@@ -39,6 +39,12 @@ class RichParent(parent: Parent) extends Proxy {
   }
   //@+node:gcross.20110420231854.1662: *3* getChildTags
   def getChildTags: Iterator[Long] = getChildren.map(_.getTag)
+  //@+node:gcross.20110422115402.4701: *3* getId
+  def getId: Option[String] =
+    self match {
+      case (node: Node) => Some(node.getId)
+      case _ => None
+    }
   //@-others
 }
 //@+node:gcross.20110420231854.1666: ** object RichParent
