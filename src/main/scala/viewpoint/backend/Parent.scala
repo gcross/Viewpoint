@@ -121,7 +121,8 @@ abstract class Parent {
   }
   def insertChild(index: Int, child: Child) {
     val Child(node,tag) = child
-    if(active_tags(tag) || tag >= next_tag) throw new interface.InvalidChildTagException(this,tag)
+    if(active_tags(tag) || tag > next_tag) throw new interface.InvalidChildTagException(this,tag)
+    if(tag == next_tag) next_tag += 1
     node.parents.add(this)
     children.insert(index,Child(node,tag))
   }
