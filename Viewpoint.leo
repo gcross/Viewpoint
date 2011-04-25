@@ -63,6 +63,7 @@
 <v t="gcross.20110420231854.1624"><vh>@file RichNode.scala</vh></v>
 <v t="gcross.20110420231854.1655"><vh>@file RichParent.scala</vh></v>
 <v t="gcross.20110420231854.1734"><vh>@file RichTree.scala</vh></v>
+<v t="gcross.20110422115402.5144"><vh>@file TreeLog.scala</vh></v>
 <v t="gcross.20110422115402.4686"><vh>@file TreeLogger.scala</vh></v>
 </v>
 </v>
