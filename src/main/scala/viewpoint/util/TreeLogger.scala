@@ -78,6 +78,11 @@ class TreeLogger(tree: Tree) extends Tree {
     tree.setHeadingOf(node,new_heading)
     log += new SetHeadingOf(node,old_heading,new_heading)
   }
+  //@+node:gcross.20110422115402.5176: *3* unwind
+  def unwind() {
+    log.reverseIterator.foreach(_.apply(tree))
+    log.clear()
+  }
   //@+node:gcross.20110422115402.4719: *3* withinTransaction
   def withinTransaction[V](transaction: Callable[V]): V =
     tree.withinTransaction(transaction)
