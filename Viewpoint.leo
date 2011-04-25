@@ -58,7 +58,9 @@
 <v t="gcross.20110412144451.1359"><vh>@file XMLParser.scala</vh></v>
 </v>
 <v t="gcross.20110414153139.2319"><vh>@path util</vh>
+<v t="gcross.20110425121514.1735"><vh>@file ChildEqualityPolicy.scala</vh></v>
 <v t="gcross.20110414153139.2320"><vh>@file JavaConversions.scala</vh></v>
+<v t="gcross.20110425121514.1737"><vh>@file NodeEqualityPolicy.scala</vh></v>
 <v t="gcross.20110420231854.1748"><vh>@file RichInterface.scala</vh></v>
 <v t="gcross.20110420231854.1624"><vh>@file RichNode.scala</vh></v>
 <v t="gcross.20110420231854.1655"><vh>@file RichParent.scala</vh></v>

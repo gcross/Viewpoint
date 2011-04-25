@@ -6,6 +6,7 @@ package viewpoint.backend.crosswhite.model
 //@+<< Imports >>
 //@+node:gcross.20110418093501.1581: ** << Imports >>
 import viewpoint.{model => interface}
+import viewpoint.util.ChildEqualityPolicy
 //@-<< Imports >>
 
 //@+others
@@ -24,7 +25,7 @@ case class Child(val node: Node, val tag: Long) {
 object Child {
   //@+<< Delegate >>
   //@+node:gcross.20110418093501.1586: *3* << Delegate >>
-  case class Delegate(child: Child) extends interface.Child {
+  case class Delegate(child: Child) extends interface.Child with ChildEqualityPolicy {
     //@+others
     //@+node:gcross.20110418122658.2112: *4* getNode
     def getNode: interface.Node = child.node

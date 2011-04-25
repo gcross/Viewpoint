@@ -44,7 +44,7 @@ class RichTree(tree: Tree) extends Proxy {
   def createNode(): Node = createNode(null)
   //@+node:gcross.20110422115402.4698: *3* lookupChild
   def lookupChild(id: String, tag: Long): Child =
-    new Child {
+    new Child with ChildEqualityPolicy {
       lazy val node = self.lookupNode(id)
       def getNode = node
       def getTag = tag
