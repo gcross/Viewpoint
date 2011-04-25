@@ -137,32 +137,6 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       event.getNode should be (node)
       event.getBody should be (node.getBody)
     }
-    //@+node:gcross.20110414153139.2058: *4* logs the correct undo for the transaction.
-    it("logs the correct undo for the transaction.") {
-      val tree = createEmptyTree
-      val node = tree.createNode(null,"body")
-
-      val listener = new EventRecorderTreeChangeListener
-      val events = listener.events
-      tree.addTreeChangeListener(listener)
-
-      val E = new Exception
-      try {
-        tree.withinTransaction({ () =>
-          tree.setBodyOf(node,"soul")
-          throw E
-        })
-      } catch { case E => }
-
-      node.getBody should be ("body")
-
-      events.size should be (2)
-      events(1).getClass should be (classOf[NodeBodyChangedEvent])
-      val event = events(1).asInstanceOf[NodeBodyChangedEvent]
-      event.getTree should be (tree)
-      event.getNode should be (node)
-      event.getBody should be (node.getBody)
-    }
     //@-others
   }
   //@+node:gcross.20110414153139.1541: *3* The setHeadingOf method
@@ -184,32 +158,6 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       events.size should be (1)
       events(0).getClass should be (classOf[NodeHeadingChangedEvent])
       val event = events(0).asInstanceOf[NodeHeadingChangedEvent]
-      event.getTree should be (tree)
-      event.getNode should be (node)
-      event.getHeading should be (node.getHeading)
-    }
-    //@+node:gcross.20110414153139.2060: *4* logs the correct undo for the transaction.
-    it("logs the correct undo for the transaction.") {
-      val tree = createEmptyTree
-      val node = tree.createNode("heading",null)
-      val E = new Exception
-
-      val listener = new EventRecorderTreeChangeListener
-      val events = listener.events
-      tree.addTreeChangeListener(listener)
-
-      try {
-        tree.withinTransaction({ () =>
-          tree.setHeadingOf(node,"footing")
-          throw E
-        })
-      } catch { case E => }
-
-      node.getHeading should be ("heading")
-
-      events.size should be (2)
-      events(1).getClass should be (classOf[NodeHeadingChangedEvent])
-      val event = events(1).asInstanceOf[NodeHeadingChangedEvent]
       event.getTree should be (tree)
       event.getNode should be (node)
       event.getHeading should be (node.getHeading)
@@ -295,35 +243,6 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       events.size should be (1)
       events(0).getClass should be (classOf[ChildInsertedEvent])
       val event = events(0).asInstanceOf[ChildInsertedEvent]
-      event.getTree should be (tree)
-      event.getChildIndex should be (0)
-      event.getChildNode should be (node)
-      event.getChildTag should be (tag)
-    }
-    //@+node:gcross.20110414153139.2066: *4* logs the correct undo for the transaction.
-    it("logs the correct undo for the transaction.") {
-      val tree = createEmptyTree
-      val root = tree.getRoot
-      val node = tree.createNode()
-      var tag: Long = 0
-
-      val listener = new EventRecorderTreeChangeListener
-      val events = listener.events
-      tree.addTreeChangeListener(listener)
-
-      val E = new Exception
-      try {
-        tree.withinTransaction({ () =>
-          tag = tree.insertChildInto(root,node,0)
-          throw E
-        })
-      } catch { case E => }
-
-      root.getChildCount should be (0)
-
-      events.size should be (2)
-      events(1).getClass should be (classOf[ChildRemovedEvent])
-      val event = events(1).asInstanceOf[ChildRemovedEvent]
       event.getTree should be (tree)
       event.getChildIndex should be (0)
       event.getChildNode should be (node)
@@ -447,37 +366,6 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       event.getChild should be (child)
       event.getChildIndex should be (0)
     }
-    //@+node:gcross.20110414153139.2071: *4* logs the correct undo for the transaction.
-    it("logs the correct undo for the transaction.") {
-      val tree = createEmptyTree
-      val root = tree.getRoot
-      val node = tree.createNode()
-      val tag = tree.appendChildTo(root,node)
-
-      val listener = new EventRecorderTreeChangeListener
-      val events = listener.events
-      tree.addTreeChangeListener(listener)
-
-      val E = new Exception
-      try {
-        tree.withinTransaction({ () =>
-          tree.removeChildFrom(root,0)
-          throw E
-        })
-      } catch { case E => }
-
-      root.getChildCount should be (1)
-      val child = root.getChild(0)
-      child.getNode should be (node)
-      child.getTag should be (tag)
-
-      events.size should be (2)
-      events(1).getClass should be (classOf[ChildInsertedEvent])
-      val event = events(1).asInstanceOf[ChildInsertedEvent]
-      event.getTree should be (tree)
-      event.getChild should be (child)
-      event.getChildIndex should be (0)
-    }
     //@+node:gcross.20110414153139.5151: *4* returns the correct value.
     it("returns the correct value.") {
       val tree = createEmptyTree
@@ -486,59 +374,6 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
       tree.appendChildTo(root,node)
       val child = root.getChild(0)
       tree.removeChildFrom(root,0) should be (child)
-    }
-    //@-others
-  }
-  //@+node:gcross.20110414153139.2313: *3* The withinTransaction method
-  describe("The withinTransaction method") {
-    //@+others
-    //@+node:gcross.20110414153139.2314: *4* returns the value returned by the callback.
-    it("returns the value returned by the callback.") {
-      createEmptyTree.withinTransaction({ () =>
-        42
-      }) should be (42)
-    }
-    //@+node:gcross.20110414153139.2316: *4* throws the value thrown by the callback.
-    it("throws the value thrown by the callback.") {
-      val correct_exception = new Exception
-      val thrown_exception: Exception =
-        try {
-          createEmptyTree.withinTransaction({ () =>
-            throw correct_exception
-          })
-          fail("Exception was not thrown.")
-        } catch {
-          case (e: Exception) => e
-        }
-      assert(thrown_exception eq correct_exception)
-    }
-    //@+node:gcross.20110414153139.2318: *4* multi-step transactions are undone.
-    it("multi-step transactions are completely undone.") {
-      val tree = createEmptyTree
-      val root = tree.getRoot
-      val node1 = tree.createNode()
-      val node2 = tree.createNode()
-      val node3 = tree.createNode()
-      val node4 = tree.createNode()
-      tree.appendChildrenTo(root,node1,node3)
-
-      val E = new Exception
-      try {
-        tree.withinTransaction({ () =>
-          tree.insertChildInto(root,node2,1)
-          tree.removeChildFrom(root,0)
-          tree.insertChildInto(root,node1,1)
-          tree.removeChildFrom(root,1)
-          tree.insertChildInto(root,node4,2)
-          throw E
-        })
-      } catch {
-        case E =>
-      }
-
-      root.getChildCount should be (2)
-      root.getChild(0).getNode should be (node1)
-      root.getChild(1).getNode should be (node3)
     }
     //@-others
   }

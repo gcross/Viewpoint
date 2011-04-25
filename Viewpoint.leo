@@ -65,6 +65,7 @@
 <v t="gcross.20110420231854.1624"><vh>@file RichNode.scala</vh></v>
 <v t="gcross.20110420231854.1655"><vh>@file RichParent.scala</vh></v>
 <v t="gcross.20110420231854.1734"><vh>@file RichTree.scala</vh></v>
+<v t="gcross.20110425115406.1726"><vh>@file TreeChangeEventRecorder.scala</vh></v>
 <v t="gcross.20110422115402.5144"><vh>@file TreeLog.scala</vh></v>
 <v t="gcross.20110422115402.4686"><vh>@file TreeLogger.scala</vh></v>
 <v t="gcross.20110422115402.5171"><vh>@file TreeTransaction.scala</vh></v>
@@ -87,6 +88,7 @@
 </v>
 <v t="gcross.20110422115402.2029"><vh>@path util</vh>
 <v t="gcross.20110422115402.2030"><vh>@file RichInterfaceModelSpecification.scala</vh></v>
+<v t="gcross.20110422115402.5179"><vh>@file TransactionModelSpecification.scala</vh></v>
 </v>
 </v>
 </v>
