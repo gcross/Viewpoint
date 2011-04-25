@@ -3,7 +3,6 @@
 //@@language Java
 package viewpoint.model;
 
-import java.util.concurrent.Callable;
 import viewpoint.event.TreeChangeListener;
 
 public interface Tree {
@@ -26,7 +25,5 @@ public interface Tree {
     public void setHeadingOf(Node node, String heading);
 
     public void removeTreeChangeListener(TreeChangeListener listener);
-
-    public <V> V withinTransaction(Callable<V> transaction);
 }
 //@-leo

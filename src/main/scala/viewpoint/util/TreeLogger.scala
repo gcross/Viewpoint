@@ -83,9 +83,6 @@ class TreeLogger(tree: Tree) extends Tree {
     log.reverseIterator.foreach(_.inverse.apply(tree))
     log.clear()
   }
-  //@+node:gcross.20110422115402.4719: *3* withinTransaction
-  def withinTransaction[V](transaction: Callable[V]): V =
-    tree.withinTransaction(transaction)
   //@-others
 }
 //@-others

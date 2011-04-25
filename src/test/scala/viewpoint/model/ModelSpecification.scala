@@ -14,7 +14,6 @@ import org.scalatest.matchers.ShouldMatchers
 
 import viewpoint.event._
 import viewpoint.model._
-import viewpoint.util.JavaConversions._
 import viewpoint.util.RichInterface._
 //@-<< Imports >>
 

@@ -6,9 +6,8 @@ package viewpoint.backend.crosswhite.model
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1411: ** << Imports >>
 import java.io.File
-import java.util.concurrent.Callable
 import scala.collection.{Map,Set}
-import scala.collection.mutable.{ArrayBuffer,HashMap,HashSet,Stack}
+import scala.collection.mutable.{ArrayBuffer,HashMap,HashSet}
 
 import viewpoint.backend.crosswhite.parser.Parser.ParseResult
 import viewpoint.event
@@ -153,8 +152,6 @@ object Tree {
     //@+<< Fields >>
     //@+node:gcross.20110413224016.2035: *4* << Fields >>
     val listeners = new HashSet[event.TreeChangeListener]
-    protected[this] val transaction_undo_log: Stack[ArrayBuffer[() => Unit]]
-      = new Stack
     //@-<< Fields >>
     //@+others
     //@+node:gcross.20110413224016.2034: *4* addTreeChangeListener
@@ -250,40 +247,19 @@ object Tree {
 
     //@+node:gcross.20110414153139.1454: *4* insertChildInto
     def insertChildInto(iparent: interface.Parent, inode: interface.Node, index: Int): Long = {
-      val parent = fetchParent(iparent)
-      val tag = parent.insertChild(index,fetchNode(inode))
-      for(undo_log <- transaction_undo_log.headOption) {
-        undo_log += { () =>
-          val child = parent.removeChild(index)
-          fireChildRemoved(iparent,index,child)
-        }
-      }
-      fireChildInserted(iparent,index,parent.getChild(index))
+      val tag = fetchParent(iparent).insertChild(index,fetchNode(inode))
+      fireChildInserted(iparent,index,iparent.getChild(index))
       tag
     }
     def insertChildInto(iparent: interface.Parent, ichild: interface.Child, index: Int) {
-      val parent = fetchParent(iparent)
-      parent.insertChild(index,fetchChild(ichild))
-      for(undo_log <- transaction_undo_log.headOption) {
-        undo_log += { () =>
-          parent.removeChild(index)
-          fireChildRemoved(iparent,index,ichild)
-        }
-      }
+      fetchParent(iparent).insertChild(index,fetchChild(ichild))
       fireChildInserted(iparent,index,ichild)
     }
     //@+node:gcross.20110412230649.1474: *4* lookupNode
     def lookupNode(id: String) = tree.lookupNode(id).map(_.delegate).orNull
     //@+node:gcross.20110414153139.1459: *4* removeChildFrom
     def removeChildFrom(iparent: interface.Parent, index: Int): interface.Child = {
-      val parent = fetchParent(iparent)
-      val old_child = parent.removeChild(index)
-      for(undo_log <- transaction_undo_log.headOption) {
-        undo_log += { () =>
-          parent.insertChild(index,old_child)
-          fireChildInserted(iparent,index,old_child)
-        }
-      }
+      val old_child = fetchParent(iparent).removeChild(index)
       fireChildRemoved(iparent,index,old_child)
       old_child
     }
@@ -293,45 +269,13 @@ object Tree {
     }
     //@+node:gcross.20110414143741.1450: *4* setBodyOf
     def setBodyOf(inode: interface.Node, body: String) {
-      val node = fetchNode(inode)
-      for(undo_log <- transaction_undo_log.headOption) {
-        val old_body = node.body
-        undo_log += { () =>
-          node.body = old_body
-          fireNodeBodyChanged(inode)
-        }
-      }
-      node.body = body
+      fetchNode(inode).body = body
       fireNodeBodyChanged(inode)
     }
     //@+node:gcross.20110414143741.1452: *4* setHeadingOf
     def setHeadingOf(inode: interface.Node, heading: String) {
-      val node = fetchNode(inode)
-      for(undo_log <- transaction_undo_log.headOption) {
-        val old_heading = node.heading
-        undo_log += { () =>
-          node.heading = old_heading
-          fireNodeHeadingChanged(inode)
-        }
-      }
-      node.heading = heading
+      fetchNode(inode).heading = heading
       fireNodeHeadingChanged(inode)
-    }
-    //@+node:gcross.20110414153139.2057: *4* withinTransaction
-    def withinTransaction[T](transaction: Callable[T]): T = {
-      transaction_undo_log.push(new ArrayBuffer)
-      try {
-        try {
-          transaction.call()
-        } catch {
-          case (e : Exception) => {
-            for(undo <- transaction_undo_log.head.reverseIterator) undo()
-            throw e
-          }
-        }
-      } finally {
-        transaction_undo_log.pop()
-      }
     }
     //@-others
   }
