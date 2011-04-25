@@ -13,6 +13,7 @@ import viewpoint.action.testing._
 import viewpoint.backend.crosswhite.model._
 import viewpoint.backend.crosswhite.parser._
 import viewpoint.model.testing._
+import viewpoint.util.testing._
 //@-<< Imports >>
 
 //@+others

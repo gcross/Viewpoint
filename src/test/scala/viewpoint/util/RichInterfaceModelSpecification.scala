@@ -1,7 +1,7 @@
 //@+leo-ver=5-thin
 //@+node:gcross.20110422115402.2030: * @file RichInterfaceModelSpecification.scala
 //@@language Scala
-package viewpoint.model.testing
+package viewpoint.util.testing
 
 //@+<< Imports >>
 //@+node:gcross.20110422115402.2031: ** << Imports >>
