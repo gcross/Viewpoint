@@ -38,6 +38,18 @@ class RichMutator(override val self: Mutator) extends RichLibrarian(self) {
     self.createNode(UUID.randomUUID.toString,heading,body)
   def createNode(heading: String): Node = createNode(heading,null)
   def createNode(): Node = createNode(null)
+  //@+node:gcross.20110425140158.1766: *3* moveChildDownOne
+  def moveChildDownOne(parent: Parent, tag: Long) {
+    val index = parent.getIndexOfChild(tag)
+    val child = self.removeChildFrom(parent,index)
+    self.insertChildInto(parent,child,index+1)
+  }
+  //@+node:gcross.20110425140158.1768: *3* moveChildUpOne
+  def moveChildUpOne(parent: Parent, tag: Long) {
+    val index = parent.getIndexOfChild(tag)
+    val child = self.removeChildFrom(parent,index)
+    self.insertChildInto(parent,child,index-1)
+  }
   //@+node:gcross.20110425121514.2231: *3* withinTransaction
   def withinTransaction[V](callback: Mutator => V): Transaction[V] =
     Transaction.wrapInTransaction(self,callback)

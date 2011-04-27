@@ -56,6 +56,7 @@
 <v t="gcross.20110412144451.1346"><vh>@path viewpoint</vh>
 <v t="gcross.20110413143734.1425"><vh>@path view</vh>
 <v t="gcross.20110422115402.3305"><vh>@file ChildSelection.scala</vh></v>
+<v t="gcross.20110413143734.1426"><vh>@file JViewpoint.scala</vh></v>
 <v t="gcross.20110417144805.2197"><vh>@file TreeController.scala</vh></v>
 </v>
 <v t="gcross.20110412144451.1349"><vh>@path backend</vh>
