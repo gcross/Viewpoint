@@ -38,6 +38,12 @@ class RichMutator(override val self: Mutator) extends RichLibrarian(self) {
     self.createNode(UUID.randomUUID.toString,heading,body)
   def createNode(heading: String): Node = createNode(heading,null)
   def createNode(): Node = createNode(null)
+  //@+node:gcross.20110425121514.2231: *3* withinTransaction
+  def withinTransaction[V](callback: Mutator => V): Transaction[V] =
+    Transaction.wrapInTransaction(self,callback)
+  //@+node:gcross.20110503191908.1808: *3* withTemporaryAccess
+  def withTemporaryAccess[V](callback: Mutator => V): V =
+    TemporaryAccessMutator.withTemporaryAccess(self)(callback)
   //@-others
 }
 //@+node:gcross.20110420231854.1742: ** object RichMutator
