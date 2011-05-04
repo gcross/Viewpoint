@@ -104,7 +104,7 @@ object TreeController {
   class TreeModelDelegate(tree: Tree) extends javax.swing.tree.TreeModel {
     //@+<< Imports >>
     //@+node:gcross.20110503191908.1826: *4* << Imports >>
-    import javax.swing.SwingUtilities.invokeLater
+    import javax.swing.SwingUtilities.{invokeLater,isEventDispatchThread}
     //@-<< Imports >>
     //@+<< Fields >>
     //@+node:gcross.20110503191908.1827: *4* << Fields >>
@@ -117,7 +117,7 @@ object TreeController {
     }
     //@+node:gcross.20110503191908.1829: *4* fireNodeChanged
     def fireNodeChanged(parent: Parent, node: Node, index: Int) {
-      invokeLaterForEachPathAndListener(
+      invokeInSwingThreadForEachPathAndListener(
         parent,
         {(path,listener) =>
           listener.treeNodesChanged(new TreeModelEvent(this,path,Array(index),Array[Object](node)))
@@ -126,7 +126,7 @@ object TreeController {
     }
     //@+node:gcross.20110503191908.1830: *4* fireNodeInserted
     def fireNodeInserted(parent: Parent, node: Node, index: Int) {
-      invokeLaterForEachPathAndListener(
+      invokeInSwingThreadForEachPathAndListener(
         parent,
         {(path,listener) =>
           listener.treeNodesInserted(new TreeModelEvent(this,path,Array(index),Array[Object](node)))
@@ -135,7 +135,7 @@ object TreeController {
     }
     //@+node:gcross.20110503191908.1831: *4* fireNodeRemoved
     def fireNodeRemoved(parent: Parent, node: Node, index: Int) {
-      invokeLaterForEachPathAndListener(
+      invokeInSwingThreadForEachPathAndListener(
         parent,
         {(path,listener) =>
           listener.treeNodesRemoved(new TreeModelEvent(this,path,Array(index),Array[Object](node)))
@@ -144,7 +144,7 @@ object TreeController {
     }
     //@+node:gcross.20110503191908.1832: *4* fireStructureChanged
     def fireStructureChanged(parent: Parent) {
-      invokeLaterForEachPathAndListener(
+      invokeInSwingThreadForEachPathAndListener(
         parent,
         {(path,listener) =>
           listener.treeStructureChanged(new TreeModelEvent(this,path))
@@ -166,14 +166,19 @@ object TreeController {
       }
     //@+node:gcross.20110503191908.1836: *4* getRoot
     def getRoot: AnyRef = tree.getRoot
-    //@+node:gcross.20110503191908.1837: *4* invokeLaterForEachPathAndListener
-    def invokeLaterForEachPathAndListener(parent: Parent, callback: (TreePath,TreeModelListener) => Unit) {
-      callWithAncestorPaths(parent,{path =>
-        invokeLater(new Runnable { def run {
+    //@+node:gcross.20110503191908.1837: *4* invokeInSwingThreadForEachPathAndListener
+    def invokeInSwingThreadForEachPathAndListener(parent: Parent, callback: (TreePath,TreeModelListener) => Unit) {
+      val go =
+        () =>
+        callWithAncestorPaths(parent) {
+          path =>
           for(listener <- listeners)
             callback(path,listener)
-        }})
-      })
+        }
+
+      if(isEventDispatchThread)
+        go()
+      else(invokeLater(go))
     }
     //@+node:gcross.20110503191908.1838: *4* isLeaf
     def isLeaf(node: AnyRef): Boolean =
@@ -194,7 +199,7 @@ object TreeController {
   //@-<< TreeModelDelegate >>
   //@+others
   //@+node:gcross.20110503191908.1843: *3* callWithAncestorPaths
-  def callWithAncestorPaths(initial_parent: Parent, callback: TreePath => Unit) {
+  def callWithAncestorPaths(initial_parent: Parent)(callback: TreePath => Unit) {
     def recurse(current_parent: Parent, current_path: List[Parent]) {
       current_parent match {
         case (current_node : Node) =>
