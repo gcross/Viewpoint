@@ -8,10 +8,9 @@ package viewpoint.view
 import java.awt.Component
 import java.awt.event.ActionEvent
 import javax.swing.{AbstractAction,JPanel,JTree,SwingUtilities}
-import javax.swing.event.{TreeModelEvent,TreeModelListener,TreeSelectionEvent,TreeSelectionListener}
+import javax.swing.event.{TreeSelectionEvent,TreeSelectionListener}
 import javax.swing.tree._
-import scala.collection.JavaConversions._
-import scala.collection.mutable.{ArrayBuffer,Set}
+import scala.collection.mutable.Set
 
 import viewpoint.action._
 import viewpoint.model.{Child,Mutator,Node,Parent,Tree}
@@ -23,17 +22,12 @@ import viewpoint.view.event._
 //@+others
 //@+node:gcross.20110413143734.1428: ** class JViewpoint
 class JViewpoint(val controller: TreeController) extends JPanel {
-  //@+<< Imports >>
-  //@+node:gcross.20110417144805.2178: *3* << Imports >>
-  import JViewpoint._
-  //@-<< Imports >>
   //@+<< Fields >>
   //@+node:gcross.20110413143734.1429: *3* << Fields >>
   protected var current_child_selection: Option[ChildSelection] = None
   private[this] var ignore_selection_events: Boolean = false
   protected val listeners = Set[ChildSelectionListener]()
-  protected val tree = controller.tree
-  protected val jtree = new JTree(new TreeModelDelegate(tree))
+  protected val jtree = new JTree(controller.delegate)
   //@-<< Fields >>
   //@+<< Inner Classes >>
   //@+node:gcross.20110422115402.3301: *3* << Inner Classes >>
@@ -203,116 +197,6 @@ class JViewpoint(val controller: TreeController) extends JPanel {
   //@+node:gcross.20110422115402.3291: *3* removeChildSelectionListener
   def removeChildSelectionListener(listener: ChildSelectionListener) {
     listeners -= listener
-  }
-  //@-others
-}
-//@+node:gcross.20110413143734.1431: ** object JViewpoint
-object JViewpoint {
-  //@+<< TreeModelDelegate >>
-  //@+node:gcross.20110413143734.1440: *3* << TreeModelDelegate >>
-  class TreeModelDelegate(tree: Tree) extends javax.swing.tree.TreeModel {
-    //@+<< Imports >>
-    //@+node:gcross.20110413224016.1463: *4* << Imports >>
-    import javax.swing.SwingUtilities.invokeLater
-    //@-<< Imports >>
-    //@+<< Fields >>
-    //@+node:gcross.20110413224016.1464: *4* << Fields >>
-    val listeners = Set[TreeModelListener]()
-    //@-<< Fields >>
-    //@+others
-    //@+node:gcross.20110413224016.1465: *4* addTreeModelListener
-    def addTreeModelListener(listener: TreeModelListener) {
-      listeners += listener
-    }
-    //@+node:gcross.20110413224016.1479: *4* fireNodeChanged
-    def fireNodeChanged(parent: Parent, node: Node, index: Int) {
-      invokeLaterForEachPathAndListener(
-        parent,
-        {(path,listener) =>
-          listener.treeNodesChanged(new TreeModelEvent(this,path,Array(index),Array[Object](node)))
-        }
-      )
-    }
-    //@+node:gcross.20110413224016.1477: *4* fireNodeInserted
-    def fireNodeInserted(parent: Parent, node: Node, index: Int) {
-      invokeLaterForEachPathAndListener(
-        parent,
-        {(path,listener) =>
-          listener.treeNodesInserted(new TreeModelEvent(this,path,Array(index),Array[Object](node)))
-        }
-      )
-    }
-    //@+node:gcross.20110413224016.1475: *4* fireNodeRemoved
-    def fireNodeRemoved(parent: Parent, node: Node, index: Int) {
-      invokeLaterForEachPathAndListener(
-        parent,
-        {(path,listener) =>
-          listener.treeNodesRemoved(new TreeModelEvent(this,path,Array(index),Array[Object](node)))
-        }
-      )
-    }
-    //@+node:gcross.20110413224016.1481: *4* fireStructureChanged
-    def fireStructureChanged(parent: Parent) {
-      invokeLaterForEachPathAndListener(
-        parent,
-        {(path,listener) =>
-          listener.treeStructureChanged(new TreeModelEvent(this,path))
-        }
-      )
-    }
-    //@+node:gcross.20110413224016.1471: *4* getChild
-    def getChild(parent: AnyRef, index: Int) = {
-      parent.asInstanceOf[Parent].getChild(index)
-    }
-    //@+node:gcross.20110413224016.1472: *4* getChildCount
-    def getChildCount(parent: AnyRef): Int =
-      parent.asInstanceOf[Parent].getChildCount
-    //@+node:gcross.20110413224016.1473: *4* getIndexOfChild
-    def getIndexOfChild(parent: AnyRef, child_and_tag: AnyRef) =
-      child_and_tag match {
-        case (_,tag:Long) =>
-          parent.asInstanceOf[Parent].getIndexOfChild(tag)
-      }
-    //@+node:gcross.20110413224016.1468: *4* getRoot
-    def getRoot: AnyRef = tree.getRoot
-    //@+node:gcross.20110413143734.1432: *4* invokeLaterForEachPathAndListener
-    def invokeLaterForEachPathAndListener(parent: Parent, callback: (TreePath,TreeModelListener) => Unit) {
-      callWithAncestorPaths(parent,{path =>
-        invokeLater(new Runnable { def run {
-          for(listener <- listeners)
-            callback(path,listener)
-        }})
-      })
-    }
-    //@+node:gcross.20110413224016.1469: *4* isLeaf
-    def isLeaf(node: AnyRef): Boolean =
-      node match {
-        case (parent: Parent) => false
-        case (child: Node,_:Int) => child.getChildCount == 0
-      }
-    //@+node:gcross.20110413224016.1467: *4* removeTreeModelListener
-    def removeTreeModelListener(listener: TreeModelListener) {
-      listeners -= listener
-    }
-    //@+node:gcross.20110413224016.1470: *4* valueForPathChanged
-    def valueForPathChanged(path: TreePath, newValue: AnyRef) {
-      throw new UnsupportedOperationException("This has not been implemented.")
-    }
-    //@-others
-  }
-  //@-<< TreeModelDelegate >>
-  //@+others
-  //@+node:gcross.20110413224016.1462: *3* callWithAncestorPaths
-  def callWithAncestorPaths(initial_parent: Parent, callback: TreePath => Unit) {
-    def recurse(current_parent: Parent, current_path: List[Parent]) {
-      current_parent match {
-        case (current_node : Node) =>
-          for(parent <- current_node.getParents)
-            recurse(parent, parent :: current_path)
-        case _ => callback(new TreePath(current_path.toArray[Object]))
-      }
-    }
-    recurse(initial_parent,List(initial_parent))
   }
   //@-others
 }
