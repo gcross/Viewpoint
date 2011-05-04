@@ -12,7 +12,7 @@ import viewpoint.event._
 import viewpoint.model._
 import viewpoint.util._
 import viewpoint.util.RichInterface._
-import viewpoint.util.MutatorTransaction.wrapInTransaction
+import viewpoint.util.Transaction.wrapInTransaction
 //@-<< Imports >>
 
 //@+others
@@ -31,7 +31,7 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
       val events = listener.events
       tree.addTreeChangeListener(listener)
 
-      val logger = new MutatorLogger(tree)
+      val logger = new LoggedMutator(tree)
       logger.setBodyOf(node,"soul")
       logger.unwind()
 
@@ -53,7 +53,7 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
       val events = listener.events
       tree.addTreeChangeListener(listener)
 
-      val logger = new MutatorLogger(tree)
+      val logger = new LoggedMutator(tree)
       logger.setHeadingOf(node,"footing")
       logger.unwind()
 
@@ -76,7 +76,7 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
       val events = listener.events
       tree.addTreeChangeListener(listener)
 
-      val logger = new MutatorLogger(tree)
+      val logger = new LoggedMutator(tree)
       val tag = logger.insertChildInto(root,node,0)
       logger.unwind()
 
@@ -101,7 +101,7 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
       val events = listener.events
       tree.addTreeChangeListener(listener)
 
-      val logger = new MutatorLogger(tree)
+      val logger = new LoggedMutator(tree)
       logger.removeChildFrom(root,0)
       logger.unwind()
 

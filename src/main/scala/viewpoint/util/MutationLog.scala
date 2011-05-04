@@ -1,5 +1,5 @@
 //@+leo-ver=5-thin
-//@+node:gcross.20110422115402.5144: * @file MutatorLog.scala
+//@+node:gcross.20110422115402.5144: * @file MutationLog.scala
 //@@language Scala
 package viewpoint.util
 
@@ -12,27 +12,27 @@ import viewpoint.util.RichInterface._
 //@-<< Imports >>
 
 //@+others
-//@+node:gcross.20110422115402.5162: ** class MutatorLog
-class MutatorLog protected (replay_log: Seq[MutatorLog.Item], unwind_log: Seq[MutatorLog.Item]) {
+//@+node:gcross.20110422115402.5162: ** class MutationLog
+class MutationLog protected (replay_log: Seq[MutationLog.Item], unwind_log: Seq[MutationLog.Item]) {
   //@+<< Imports >>
   //@+node:gcross.20110422115402.5164: *3* << Imports >>
-  import MutatorLog._
+  import MutationLog._
   //@-<< Imports >>
   //@+<< Constructors >>
   //@+node:gcross.20110422115402.5169: *3* << Constructors >>
-  def this(log: Seq[MutatorLog.Item]) = this(log,log.reverseMap(_.inverse))
+  def this(log: Seq[MutationLog.Item]) = this(log,log.reverseMap(_.inverse))
   //@-<< Constructors >>
   //@+others
   //@+node:gcross.20110422115402.5168: *3* inverse
-  def inverse: MutatorLog = new MutatorLog(unwind_log,replay_log)
+  def inverse: MutationLog = new MutationLog(unwind_log,replay_log)
   //@+node:gcross.20110422115402.5165: *3* replay
   def replay(mutator: Mutator) { replay_log.foreach(_.apply(mutator)) }
   //@+node:gcross.20110422115402.5167: *3* unwind
   def unwind(mutator: Mutator) { unwind_log.foreach(_.apply(mutator)) }
   //@-others
 }
-//@+node:gcross.20110422115402.5154: ** object MutatorLog
-object MutatorLog {
+//@+node:gcross.20110422115402.5154: ** object MutationLog
+object MutationLog {
   //@+<< Log Items >>
   //@+node:gcross.20110422115402.5155: *3* << Log Items >>
   sealed abstract class Item {

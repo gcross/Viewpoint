@@ -1,5 +1,5 @@
 //@+leo-ver=5-thin
-//@+node:gcross.20110422115402.4686: * @file MutatorLogger.scala
+//@+node:gcross.20110422115402.4686: * @file LoggedMutator.scala
 //@@language Scala
 package viewpoint.util
 
@@ -13,15 +13,15 @@ import viewpoint.model.{Child,Mutator,Node,Parent}
 //@-<< Imports >>
 
 //@+others
-//@+node:gcross.20110422115402.4707: ** class MutatorLogger
-class MutatorLogger(self: Mutator) extends Mutator {
+//@+node:gcross.20110422115402.4707: ** class LoggedMutator
+class LoggedMutator(self: Mutator) extends Mutator {
   //@+<< Imports >>
   //@+node:gcross.20110422115402.4711: *3* << Imports >>
-  import MutatorLog._
+  import MutationLog._
   //@-<< Imports >>
   //@+<< Fields >>
   //@+node:gcross.20110422115402.4710: *3* << Fields >>
-  protected val log = new ArrayBuffer[MutatorLog.Item]
+  protected val log = new ArrayBuffer[MutationLog.Item]
   //@-<< Fields >>
   //@+others
   //@+node:gcross.20110422115402.4709: *3* createNode
@@ -36,7 +36,7 @@ class MutatorLogger(self: Mutator) extends Mutator {
     log += new ForgetNode(node)
   }
   //@+node:gcross.20110422115402.5170: *3* getLog
-  def getLog: MutatorLog = new MutatorLog(log.toIndexedSeq)
+  def getLog: MutationLog = new MutationLog(log.toIndexedSeq)
   //@+node:gcross.20110422115402.4721: *3* getRoot
   def getRoot: Parent = self.getRoot
   //@+node:gcross.20110422115402.4713: *3* insertChildInto
