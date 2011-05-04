@@ -7,13 +7,13 @@ package viewpoint.view
 //@+node:gcross.20110417144805.2198: ** << Imports >>
 import javax.swing.event.{TreeModelEvent,TreeModelListener}
 import javax.swing.tree.TreePath
-import scala.actors.Actor._
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{ArrayBuffer,Set,Stack}
 
 import viewpoint.model.{Librarian,Mutator,Node,Parent,Tree}
 import viewpoint.util._
 import viewpoint.util.ExceptionUtilities._
+import viewpoint.util.JavaConversions._
 import viewpoint.util.RichInterface._
 //@-<< Imports >>
 
@@ -24,67 +24,36 @@ class TreeController(tree: Tree) extends Librarian {
   //@+node:gcross.20110422115402.3328: *3* << Imports >>
   import TreeController._
   //@-<< Imports >>
-  //@+<< Actor >>
-  //@+node:gcross.20110422115402.3325: *3* << Actor >>
-  protected val runner = actor {
-    val undos = new Stack[MutationLog]
-    val redos = new Stack[MutationLog]
-    loop {
-      react {
-        case Action(callback) =>
-          ignoreAndLogException({
-            undos.push(tree.withinTransaction({_.withTemporaryAccess(callback)}).log)
-            redos.clear()
-          })
-        case Undo(bracket) => {
-          if(
-            try {
-              bracket.beforeAction(); true
-            } catch {
-              case (e: Exception) => false
-            }
-          ) {
-            val undo = undos.pop()
-            undo.unwind(tree)
-            redos.push(undo)
-            ignoreAndLogException({bracket.afterAction()})
-          }
-        }
-        case Redo(bracket) => {
-          if(
-            try {
-              bracket.beforeAction(); true
-            } catch {
-              case (e: Exception) => false
-            }
-          ) {
-            val redo = redos.pop()
-            redo.replay(tree)
-            undos.push(redo)
-            ignoreAndLogException({bracket.afterAction()})
-          }
-        }
-      }
-    }
-  }
-  //@-<< Actor >>
   //@+<< Fields >>
   //@+node:gcross.20110503191908.1841: *3* << Fields >>
   val delegate = new TreeModelDelegate(tree)
+  protected val redos = new Stack[MutationLog]
+  protected val undos = new Stack[MutationLog]
   //@-<< Fields >>
   //@+others
-  //@+node:gcross.20110417223621.1618: *3* enqueue
-  def enqueue(callback: Mutator => Unit) { runner ! Action(callback) }
   //@+node:gcross.20110503191908.1844: *3* getRoot
   def getRoot: Parent = tree.getRoot
   //@+node:gcross.20110503191908.1845: *3* lookupNode
   def lookupNode(id: String): Node = tree.lookupNode(id)
+  //@+node:gcross.20110417223621.1618: *3* mutate
+  def mutate[V](mutation: Mutator => V): V = {
+    val Transaction(result,log) = tree.withinTransaction({_.withTemporaryAccess(mutation)})
+    undos.push(log)
+    redos.clear()
+    result
+  }
   //@+node:gcross.20110422115402.3331: *3* redo
-  def redo(bracket: ActionBracket) { runner ! Redo(bracket) }
-  def redo() { runner ! Redo(empty_action_bracket) }
+  def redo() {
+    val redo = redos.pop()
+    redo.replay(tree)
+    undos.push(redo)
+  }
   //@+node:gcross.20110422115402.3329: *3* undo
-  def undo(bracket: ActionBracket) { runner ! Undo(bracket) }
-  def undo() { runner ! Undo(empty_action_bracket) }
+  def undo() {
+    val undo = undos.pop()
+    undo.unwind(tree)
+    redos.push(undo)
+  }
   //@-others
 }
 //@+node:gcross.20110422115402.3326: ** object TreeController
@@ -93,12 +62,6 @@ object TreeController {
   //@+node:gcross.20110427143105.2184: *3* << Fields >>
   val empty_action_bracket = new EmptyActionBracket
   //@-<< Fields >>
-  //@+<< Messages >>
-  //@+node:gcross.20110422115402.3327: *3* << Messages >>
-  protected case class Action(callback: Mutator => Unit)
-  protected case class Undo(bracket: ActionBracket)
-  protected case class Redo(bracket: ActionBracket)
-  //@-<< Messages >>
   //@+<< TreeModelDelegate >>
   //@+node:gcross.20110503191908.1825: *3* << TreeModelDelegate >>
   class TreeModelDelegate(tree: Tree) extends javax.swing.tree.TreeModel {

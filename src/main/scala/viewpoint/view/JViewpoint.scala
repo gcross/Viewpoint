@@ -38,19 +38,8 @@ class JViewpoint(val controller: TreeController) extends JPanel {
     computeAction: ChildSelection => (Mutator => Unit)
   ) extends AbstractAction(name) {
     def actionPerformed(event: ActionEvent) {
-      for(selection <- getChildSelection) {
-        val action = computeAction(selection)
-        controller.enqueue(
-          getChildSelection match {
-            case Some(current_selection) if current_selection == selection => {
-              (mutator: Mutator) =>
-                blockChildSelectionEventsDuring({action(mutator)})
-                SwingUtilities.invokeLater({() => refreshTreeSelection()})
-            }
-            case _ => action
-          }
-        )
-      }
+      for(selection <- getChildSelection)
+        blockChildSelectionEventsDuring({controller.mutate(computeAction(selection))})
     }
   }
   //@+node:gcross.20110422115402.3320: *4* CellRenderer
