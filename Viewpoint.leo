@@ -38,6 +38,8 @@
 <v t="gcross.20110414153139.1452"><vh>@file UnknownParentException.java</vh></v>
 </v>
 <v t="gcross.20110422115402.3270"><vh>@path view</vh>
+<v t="gcross.20110503191908.2398"><vh>@file BodyEditorLock.java</vh></v>
+<v t="gcross.20110503191908.2400"><vh>@file BodyEditorLockHolder.java</vh></v>
 <v t="gcross.20110422115402.3271"><vh>@path event</vh>
 <v t="gcross.20110422115402.3282"><vh>@file ChildSelectionAddedEvent.java</vh></v>
 <v t="gcross.20110422115402.3286"><vh>@file ChildSelectionChangedEvent.java</vh></v>
