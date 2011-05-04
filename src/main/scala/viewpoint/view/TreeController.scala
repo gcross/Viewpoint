@@ -58,27 +58,25 @@ class TreeController(tree: Tree) extends Librarian {
 }
 //@+node:gcross.20110422115402.3326: ** object TreeController
 object TreeController {
-  //@+<< Fields >>
-  //@+node:gcross.20110427143105.2184: *3* << Fields >>
-  val empty_action_bracket = new EmptyActionBracket
-  //@-<< Fields >>
-  //@+<< TreeModelDelegate >>
-  //@+node:gcross.20110503191908.1825: *3* << TreeModelDelegate >>
+  //@+<< Nested classes >>
+  //@+node:gcross.20110503191908.2403: *3* << Nested classes >>
+  //@+others
+  //@+node:gcross.20110503191908.1825: *4* TreeModelDelegate
   class TreeModelDelegate(tree: Tree) extends javax.swing.tree.TreeModel {
     //@+<< Imports >>
-    //@+node:gcross.20110503191908.1826: *4* << Imports >>
+    //@+node:gcross.20110503191908.1826: *5* << Imports >>
     import javax.swing.SwingUtilities.{invokeLater,isEventDispatchThread}
     //@-<< Imports >>
     //@+<< Fields >>
-    //@+node:gcross.20110503191908.1827: *4* << Fields >>
+    //@+node:gcross.20110503191908.1827: *5* << Fields >>
     val listeners = Set[TreeModelListener]()
     //@-<< Fields >>
     //@+others
-    //@+node:gcross.20110503191908.1828: *4* addTreeModelListener
+    //@+node:gcross.20110503191908.1828: *5* addTreeModelListener
     def addTreeModelListener(listener: TreeModelListener) {
       listeners += listener
     }
-    //@+node:gcross.20110503191908.1829: *4* fireNodeChanged
+    //@+node:gcross.20110503191908.1829: *5* fireNodeChanged
     def fireNodeChanged(parent: Parent, node: Node, index: Int) {
       invokeInSwingThreadForEachPathAndListener(
         parent,
@@ -87,7 +85,7 @@ object TreeController {
         }
       )
     }
-    //@+node:gcross.20110503191908.1830: *4* fireNodeInserted
+    //@+node:gcross.20110503191908.1830: *5* fireNodeInserted
     def fireNodeInserted(parent: Parent, node: Node, index: Int) {
       invokeInSwingThreadForEachPathAndListener(
         parent,
@@ -96,7 +94,7 @@ object TreeController {
         }
       )
     }
-    //@+node:gcross.20110503191908.1831: *4* fireNodeRemoved
+    //@+node:gcross.20110503191908.1831: *5* fireNodeRemoved
     def fireNodeRemoved(parent: Parent, node: Node, index: Int) {
       invokeInSwingThreadForEachPathAndListener(
         parent,
@@ -105,7 +103,7 @@ object TreeController {
         }
       )
     }
-    //@+node:gcross.20110503191908.1832: *4* fireStructureChanged
+    //@+node:gcross.20110503191908.1832: *5* fireStructureChanged
     def fireStructureChanged(parent: Parent) {
       invokeInSwingThreadForEachPathAndListener(
         parent,
@@ -114,22 +112,22 @@ object TreeController {
         }
       )
     }
-    //@+node:gcross.20110503191908.1833: *4* getChild
+    //@+node:gcross.20110503191908.1833: *5* getChild
     def getChild(parent: AnyRef, index: Int) = {
       parent.asInstanceOf[Parent].getChild(index)
     }
-    //@+node:gcross.20110503191908.1834: *4* getChildCount
+    //@+node:gcross.20110503191908.1834: *5* getChildCount
     def getChildCount(parent: AnyRef): Int =
       parent.asInstanceOf[Parent].getChildCount
-    //@+node:gcross.20110503191908.1835: *4* getIndexOfChild
+    //@+node:gcross.20110503191908.1835: *5* getIndexOfChild
     def getIndexOfChild(parent: AnyRef, child_and_tag: AnyRef) =
       child_and_tag match {
         case (_,tag:Long) =>
           parent.asInstanceOf[Parent].getIndexOfChild(tag)
       }
-    //@+node:gcross.20110503191908.1836: *4* getRoot
+    //@+node:gcross.20110503191908.1836: *5* getRoot
     def getRoot: AnyRef = tree.getRoot
-    //@+node:gcross.20110503191908.1837: *4* invokeInSwingThreadForEachPathAndListener
+    //@+node:gcross.20110503191908.1837: *5* invokeInSwingThreadForEachPathAndListener
     def invokeInSwingThreadForEachPathAndListener(parent: Parent, callback: (TreePath,TreeModelListener) => Unit) {
       val go =
         () =>
@@ -143,23 +141,28 @@ object TreeController {
         go()
       else(invokeLater(go))
     }
-    //@+node:gcross.20110503191908.1838: *4* isLeaf
+    //@+node:gcross.20110503191908.1838: *5* isLeaf
     def isLeaf(node: AnyRef): Boolean =
       node match {
         case (parent: Parent) => false
         case (child: Node,_:Int) => child.getChildCount == 0
       }
-    //@+node:gcross.20110503191908.1839: *4* removeTreeModelListener
+    //@+node:gcross.20110503191908.1839: *5* removeTreeModelListener
     def removeTreeModelListener(listener: TreeModelListener) {
       listeners -= listener
     }
-    //@+node:gcross.20110503191908.1840: *4* valueForPathChanged
+    //@+node:gcross.20110503191908.1840: *5* valueForPathChanged
     def valueForPathChanged(path: TreePath, newValue: AnyRef) {
       throw new UnsupportedOperationException("This has not been implemented.")
     }
     //@-others
   }
-  //@-<< TreeModelDelegate >>
+  //@-others
+  //@-<< Nested classes >>
+  //@+<< Fields >>
+  //@+node:gcross.20110427143105.2184: *3* << Fields >>
+  val empty_action_bracket = new EmptyActionBracket
+  //@-<< Fields >>
   //@+others
   //@+node:gcross.20110503191908.1843: *3* callWithAncestorPaths
   def callWithAncestorPaths(initial_parent: Parent)(callback: TreePath => Unit) {
