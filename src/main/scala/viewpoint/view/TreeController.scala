@@ -11,7 +11,7 @@ import scala.actors.Actor._
 import scala.collection.JavaConversions._
 import scala.collection.mutable.{ArrayBuffer,Set,Stack}
 
-import viewpoint.model.{Mutator,Node,Parent,Tree}
+import viewpoint.model.{Librarian,Mutator,Node,Parent,Tree}
 import viewpoint.util._
 import viewpoint.util.ExceptionUtilities._
 import viewpoint.util.RichInterface._
@@ -19,7 +19,7 @@ import viewpoint.util.RichInterface._
 
 //@+others
 //@+node:gcross.20110417144805.2199: ** class TreeController
-class TreeController(tree: Tree) {
+class TreeController(tree: Tree) extends Librarian {
   //@+<< Imports >>
   //@+node:gcross.20110422115402.3328: *3* << Imports >>
   import TreeController._
@@ -75,6 +75,10 @@ class TreeController(tree: Tree) {
   //@+others
   //@+node:gcross.20110417223621.1618: *3* enqueue
   def enqueue(callback: Mutator => Unit) { runner ! Action(callback) }
+  //@+node:gcross.20110503191908.1844: *3* getRoot
+  def getRoot: Parent = tree.getRoot
+  //@+node:gcross.20110503191908.1845: *3* lookupNode
+  def lookupNode(id: String): Node = tree.lookupNode(id)
   //@+node:gcross.20110422115402.3331: *3* redo
   def redo(bracket: ActionBracket) { runner ! Redo(bracket) }
   def redo() { runner ! Redo(empty_action_bracket) }
