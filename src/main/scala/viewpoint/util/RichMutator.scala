@@ -14,15 +14,11 @@ import viewpoint.model.{Child,Mutator,Node,Parent}
 
 //@+others
 //@+node:gcross.20110420231854.1736: ** class RichMutator
-class RichMutator(mutator: Mutator) extends RichLibrarian(mutator) {
+class RichMutator(override val self: Mutator) extends RichLibrarian(self) {
   //@+<< Imports >>
   //@+node:gcross.20110420231854.1737: *3* << Imports >>
   import RichMutator._
   //@-<< Imports >>
-  //@+<< Fields >>
-  //@+node:gcross.20110420231854.1738: *3* << Fields >>
-  override val self: Mutator = mutator
-  //@-<< Fields >>
   //@+others
   //@+node:gcross.20110422204808.1666: *3* appendChildrenTo
   def appendChildrenTo(parent: Parent, nodes: Node*): IndexedSeq[Long] = {

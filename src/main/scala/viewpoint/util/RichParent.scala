@@ -12,15 +12,11 @@ import viewpoint.model.{Child,Node,Parent}
 
 //@+others
 //@+node:gcross.20110420231854.1657: ** class RichParent
-class RichParent(parent: Parent) extends Proxy {
+class RichParent(override val self: Parent) extends Proxy {
   //@+<< Imports >>
   //@+node:gcross.20110420231854.1681: *3* << Imports >>
   import RichParent._
   //@-<< Imports >>
-  //@+<< Fields >>
-  //@+node:gcross.20110420231854.1672: *3* << Fields >>
-  override val self: Parent = parent
-  //@-<< Fields >>
   //@+others
   //@+node:gcross.20110420231854.1661: *3* getChildNodes
   def getChildNodes: Iterator[Node] = getChildren.map(_.getNode)

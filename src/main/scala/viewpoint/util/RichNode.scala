@@ -12,15 +12,11 @@ import viewpoint.model.{Child,Node,Parent}
 
 //@+others
 //@+node:gcross.20110420231854.1626: ** class RichNode
-class RichNode(node: Node) extends RichParent(node) {
+class RichNode(override val self: Node) extends RichParent(self) {
   //@+<< Imports >>
   //@+node:gcross.20110420231854.1679: *3* << Imports >>
   import RichNode._
   //@-<< Imports >>
-  //@+<< Fields >>
-  //@+node:gcross.20110420231854.1678: *3* << Fields >>
-  override val self: Node = node
-  //@-<< Fields >>
   //@+others
   //@+node:gcross.20110420231854.1638: *3* ===
   def ===(other: Node): Boolean = {

@@ -14,15 +14,11 @@ import viewpoint.model.{Child,Librarian,Node,Parent}
 
 //@+others
 //@+node:gcross.20110503162356.1697: ** class RichLibrarian
-class RichLibrarian(librarian: Librarian) extends Proxy {
+class RichLibrarian(override val self: Librarian) extends Proxy {
   //@+<< Imports >>
   //@+node:gcross.20110503162356.1698: *3* << Imports >>
   import RichLibrarian._
   //@-<< Imports >>
-  //@+<< Fields >>
-  //@+node:gcross.20110503162356.1699: *3* << Fields >>
-  override val self: Librarian = librarian
-  //@-<< Fields >>
   //@+others
   //@+node:gcross.20110503162356.1703: *3* lookupChild
   def lookupChild(id: String, tag: Long): Child =
