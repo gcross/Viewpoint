@@ -1,5 +1,5 @@
 //@+leo-ver=5-thin
-//@+node:gcross.20110422115402.5179: * @file TransactionModelSpecification.scala
+//@+node:gcross.20110422115402.5179: * @file MutatorWrappersModelSpecification.scala
 //@@language Scala
 package viewpoint.util.testing
 
@@ -13,14 +13,15 @@ import viewpoint.model._
 import viewpoint.util._
 import viewpoint.util.RichInterface._
 import viewpoint.util.Transaction.wrapInTransaction
+import viewpoint.util.TemporaryAccessMutator.{AccessRevoked,withTemporaryAccess}
 //@-<< Imports >>
 
 //@+others
-//@+node:gcross.20110422115402.5181: ** TransactionModelSpecification
-abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends Spec with ShouldMatchers {
+//@+node:gcross.20110422115402.5181: ** MutatorWrappersModelSpecification
+abstract class MutatorWrappersModelSpecification(createEmptyTree: => Tree) extends Spec with ShouldMatchers {
   //@+others
   //@+node:gcross.20110425115406.1716: *3* The unwind method correctly unwinds
-  describe("The unwind method correctly unwinds") {
+  describe("The LoggedMutator.unwind method correctly unwinds") {
     //@+others
     //@+node:gcross.20110425115406.1721: *4* setBodyOf.
     it("setBodyOf.") {
@@ -119,6 +120,49 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
     }
     //@-others
   }
+  //@+node:gcross.20110503191908.1846: *3* The withTemporaryAccess method
+  describe("The withTemporaryAccess method") {
+    //@+others
+    //@+node:gcross.20110503191908.1850: *4* returns the correct value.
+    it("returns the correct value.") {
+      withTemporaryAccess(createEmptyTree) {mutator => 42} should be (42)
+    }
+    //@+node:gcross.20110503191908.1849: *4* revokes access
+    describe("revokes access") {
+      //@+others
+      //@+node:gcross.20110503170605.1723: *5* upon success.
+      it("upon success.") {
+        val mutator = withTemporaryAccess(createEmptyTree) {mutator => mutator}
+        try {
+          mutator.getRoot
+          fail("No exception was thrown.")
+        } catch {
+          case AccessRevoked =>
+        }
+      }
+      //@+node:gcross.20110503191908.1848: *5* upon failure.
+      it("upon failure.") {
+        var bad_mutator: Mutator = null
+        try {
+          withTemporaryAccess(createEmptyTree) {
+            mutator =>
+            bad_mutator = mutator
+            throw new Exception
+          }
+        } catch {
+          case _ =>
+        }
+        try {
+          bad_mutator.getRoot
+          fail("No exception was thrown.")
+        } catch {
+          case AccessRevoked =>
+        }
+      }
+      //@-others
+    }
+    //@-others
+  }
   //@+node:gcross.20110425121514.1728: *3* The wrapInTransaction method
   describe("The wrapInTransaction method") {
     //@+others
@@ -170,5 +214,6 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
   }
   //@-others
 }
+
 //@-others
 //@-leo

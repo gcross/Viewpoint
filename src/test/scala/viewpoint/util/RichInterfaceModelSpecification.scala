@@ -205,5 +205,6 @@ abstract class RichInterfaceModelSpecification(createEmptyTree: => Tree) extends
   }
   //@-others
 }
+
 //@-others
 //@-leo
