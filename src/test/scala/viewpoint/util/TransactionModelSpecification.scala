@@ -12,7 +12,7 @@ import viewpoint.event._
 import viewpoint.model._
 import viewpoint.util._
 import viewpoint.util.RichInterface._
-import viewpoint.util.TreeTransaction.wrapInTransaction
+import viewpoint.util.MutatorTransaction.wrapInTransaction
 //@-<< Imports >>
 
 //@+others
@@ -31,7 +31,7 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
       val events = listener.events
       tree.addTreeChangeListener(listener)
 
-      val logger = new TreeLogger(tree)
+      val logger = new MutatorLogger(tree)
       logger.setBodyOf(node,"soul")
       logger.unwind()
 
@@ -53,7 +53,7 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
       val events = listener.events
       tree.addTreeChangeListener(listener)
 
-      val logger = new TreeLogger(tree)
+      val logger = new MutatorLogger(tree)
       logger.setHeadingOf(node,"footing")
       logger.unwind()
 
@@ -76,7 +76,7 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
       val events = listener.events
       tree.addTreeChangeListener(listener)
 
-      val logger = new TreeLogger(tree)
+      val logger = new MutatorLogger(tree)
       val tag = logger.insertChildInto(root,node,0)
       logger.unwind()
 
@@ -101,7 +101,7 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
       val events = listener.events
       tree.addTreeChangeListener(listener)
 
-      val logger = new TreeLogger(tree)
+      val logger = new MutatorLogger(tree)
       logger.removeChildFrom(root,0)
       logger.unwind()
 
@@ -124,14 +124,14 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
     //@+others
     //@+node:gcross.20110425121514.1729: *4* returns the value returned by the callback.
     it("returns the value returned by the callback.") {
-      wrapInTransaction(null,{(tree) => 42}).result should be (42)
+      wrapInTransaction(null,{(mutator) => 42}).result should be (42)
     }
     //@+node:gcross.20110425121514.1730: *4* throws the value thrown by the callback.
     it("throws the value thrown by the callback.") {
       val correct_exception = new Exception
       val thrown_exception: Exception =
         try {
-          wrapInTransaction(null,{(tree) => throw correct_exception})
+          wrapInTransaction(null,{(mutator) => throw correct_exception})
           fail("Exception was not thrown.")
         } catch {
           case (e: Exception) => e
@@ -150,12 +150,12 @@ abstract class TransactionModelSpecification(createEmptyTree: => Tree) extends S
 
       val E = new Exception
       try {
-        wrapInTransaction(tree,{ (tree) =>
-          tree.insertChildInto(root,node2,1)
-          tree.removeChildFrom(root,0)
-          tree.insertChildInto(root,node1,1)
-          tree.removeChildFrom(root,1)
-          tree.insertChildInto(root,node4,2)
+        wrapInTransaction(tree,{ (mutator) =>
+          mutator.insertChildInto(root,node2,1)
+          mutator.removeChildFrom(root,0)
+          mutator.insertChildInto(root,node1,1)
+          mutator.removeChildFrom(root,1)
+          mutator.insertChildInto(root,node4,2)
           throw E
         })
       } catch {

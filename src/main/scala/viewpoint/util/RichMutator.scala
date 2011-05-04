@@ -1,5 +1,5 @@
 //@+leo-ver=5-thin
-//@+node:gcross.20110420231854.1734: * @file RichTree.scala
+//@+node:gcross.20110420231854.1734: * @file RichMutator.scala
 //@@language Scala
 package viewpoint.util
 
@@ -9,19 +9,19 @@ import java.util.UUID
 import scala.collection.IndexedSeq
 import scala.collection.mutable.{ArrayBuffer,Queue,Set}
 
-import viewpoint.model.{Child,Node,Parent,Tree}
+import viewpoint.model.{Child,Mutator,Node,Parent}
 //@-<< Imports >>
 
 //@+others
-//@+node:gcross.20110420231854.1736: ** class RichTree
-class RichTree(tree: Tree) extends Proxy {
+//@+node:gcross.20110420231854.1736: ** class RichMutator
+class RichMutator(mutator: Mutator) extends RichLibrarian(mutator) {
   //@+<< Imports >>
   //@+node:gcross.20110420231854.1737: *3* << Imports >>
-  import RichTree._
+  import RichMutator._
   //@-<< Imports >>
   //@+<< Fields >>
   //@+node:gcross.20110420231854.1738: *3* << Fields >>
-  override val self: Tree = tree
+  override val self: Mutator = mutator
   //@-<< Fields >>
   //@+others
   //@+node:gcross.20110422204808.1666: *3* appendChildrenTo
@@ -42,27 +42,14 @@ class RichTree(tree: Tree) extends Proxy {
     self.createNode(UUID.randomUUID.toString,heading,body)
   def createNode(heading: String): Node = createNode(heading,null)
   def createNode(): Node = createNode(null)
-  //@+node:gcross.20110422115402.4698: *3* lookupChild
-  def lookupChild(id: String, tag: Long): Child =
-    new Child with ChildEqualityPolicy {
-      lazy val node = self.lookupNode(id)
-      def getNode = node
-      def getTag = tag
-    }
-  //@+node:gcross.20110422115402.4697: *3* lookupParent
-  def lookupParent(maybe_id: Option[String]): Parent =
-    maybe_id match {
-      case Some(id) => self.lookupNode(id)
-      case None => self.getRoot
-    }
   //@-others
 }
-//@+node:gcross.20110420231854.1742: ** object RichTree
-object RichTree {
+//@+node:gcross.20110420231854.1742: ** object RichMutator
+object RichMutator {
   //@+others
-  //@+node:gcross.20110420231854.1743: *3* treeWrapper/Unwrapper
-  implicit def treeWrapper(tree: Tree): RichTree = new RichTree(tree)
-  implicit def treeUnwrapper(tree: RichTree): Tree = tree.self
+  //@+node:gcross.20110420231854.1743: *3* mutatorWrapper/Unwrapper
+  implicit def mutatorWrapper(mutator: Mutator): RichMutator = new RichMutator(mutator)
+  implicit def mutatorUnwrapper(rich_mutator: RichMutator): Mutator = rich_mutator.self
   //@-others
 }
 //@-others

@@ -26,6 +26,8 @@
 <v t="gcross.20110410082044.1288"><vh>@path model</vh>
 <v t="gcross.20110418093501.1579"><vh>@file Child.java</vh></v>
 <v t="gcross.20110418122658.2100"><vh>@file InvalidChildTagException.java</vh></v>
+<v t="gcross.20110503162356.1680"><vh>@file Librarian.java</vh></v>
+<v t="gcross.20110503162356.1682"><vh>@file Mutator.java</vh></v>
 <v t="gcross.20110410082044.1281"><vh>@file Node.java</vh></v>
 <v t="gcross.20110420231854.1722"><vh>@file NodeIdConflictException.java</vh></v>
 <v t="gcross.20110425121514.1738"><vh>@file NodeStillHasLinksException.java</vh></v>
@@ -49,15 +51,16 @@
 </v>
 <v t="gcross.20110414153139.2319"><vh>@path util</vh>
 <v t="gcross.20110425121514.1735"><vh>@file ChildEqualityPolicy.scala</vh></v>
+<v t="gcross.20110422115402.5144"><vh>@file MutatorLog.scala</vh></v>
+<v t="gcross.20110422115402.4686"><vh>@file MutatorLogger.scala</vh></v>
+<v t="gcross.20110422115402.5171"><vh>@file MutatorTransaction.scala</vh></v>
 <v t="gcross.20110425121514.1737"><vh>@file NodeEqualityPolicy.scala</vh></v>
 <v t="gcross.20110420231854.1748"><vh>@file RichInterface.scala</vh></v>
+<v t="gcross.20110503162356.1695"><vh>@file RichLibrarian.scala</vh></v>
+<v t="gcross.20110420231854.1734"><vh>@file RichMutator.scala</vh></v>
 <v t="gcross.20110420231854.1624"><vh>@file RichNode.scala</vh></v>
 <v t="gcross.20110420231854.1655"><vh>@file RichParent.scala</vh></v>
-<v t="gcross.20110420231854.1734"><vh>@file RichTree.scala</vh></v>
 <v t="gcross.20110425115406.1726"><vh>@file TreeChangeEventRecorder.scala</vh></v>
-<v t="gcross.20110422115402.5144"><vh>@file TreeLog.scala</vh></v>
-<v t="gcross.20110422115402.4686"><vh>@file TreeLogger.scala</vh></v>
-<v t="gcross.20110422115402.5171"><vh>@file TreeTransaction.scala</vh></v>
 </v>
 </v>
 </v>
