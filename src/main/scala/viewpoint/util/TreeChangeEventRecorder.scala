@@ -20,6 +20,7 @@ class TreeChangeEventRecorder extends TreeChangeListener {
   def treeNodeChildInserted(event: ChildInsertedEvent) { events += event }
   def treeNodeChildRemoved(event: ChildRemovedEvent) { events += event }
   def treeNodeHeadingChanged(event: NodeHeadingChangedEvent){ events += event }
+  def treeNodePropertyChanged(event: NodePropertyChangedEvent) { events += event }
   def treeNodeStructureChanged(event: StructureChangedEvent) { events += event }
 }
 //@+node:gcross.20110425120511.1722: ** object TreeChangeEventRecorder

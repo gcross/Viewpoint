@@ -15,6 +15,7 @@ import org.scalatest.matchers.ShouldMatchers
 import viewpoint.event._
 import viewpoint.model._
 import viewpoint.util.RichInterface._
+import viewpoint.util.TreeChangeEventRecorder
 //@-<< Imports >>
 
 //@+others
@@ -23,18 +24,9 @@ abstract class ModelSpecification(createEmptyTree: => Tree) extends Spec with Sh
   //@+<< Helpers >>
   //@+node:gcross.20110414153139.1549: *3* << Helpers >>
   //@+others
-  //@+node:gcross.20110414153139.2064: *4* class EventRecorderTreeChangeListener
-  class EventRecorderTreeChangeListener extends TreeChangeListener {
-    val events = new ArrayBuffer[TreeChangeEvent]
-    def treeNodeBodyChanged(event: NodeBodyChangedEvent) { events += event }
-    def treeNodeChildInserted(event: ChildInsertedEvent) { events += event }
-    def treeNodeChildRemoved(event: ChildRemovedEvent) { events += event }
-    def treeNodeHeadingChanged(event: NodeHeadingChangedEvent){ events += event }
-    def treeNodeStructureChanged(event: StructureChangedEvent) { events += event }
-  }
   //@+node:gcross.20110414153139.1550: *4* recordEventsDuring
   def recordEventsDuring(tree: Tree)(block: () => Unit): Seq[TreeChangeEvent] = {
-    val listener = new EventRecorderTreeChangeListener
+    val listener = new TreeChangeEventRecorder
     tree.addTreeChangeListener(listener)
     block ()
     tree.removeTreeChangeListener(listener)

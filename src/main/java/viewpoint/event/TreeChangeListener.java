@@ -9,6 +9,7 @@ public interface TreeChangeListener extends java.util.EventListener {
     public void treeNodeChildInserted(ChildInsertedEvent event);
     public void treeNodeChildRemoved(ChildRemovedEvent event);
     public void treeNodeHeadingChanged(NodeHeadingChangedEvent event);
+    public void treeNodePropertyChanged(NodePropertyChangedEvent event);
     public void treeNodeStructureChanged(StructureChangedEvent event);
 
 }

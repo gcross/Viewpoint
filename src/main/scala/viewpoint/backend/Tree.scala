@@ -6,6 +6,7 @@ package viewpoint.backend.crosswhite.model
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1411: ** << Imports >>
 import java.io.File
+import scala.actors.Actor.actor
 import scala.collection.{Map,Set}
 import scala.collection.mutable.{ArrayBuffer,HashMap,HashSet}
 
@@ -215,6 +216,12 @@ object Tree {
         new event.NodeHeadingChangedEvent(this,node)
       ))
     }
+    //@+node:gcross.20110505113029.1726: *4* fireNodePropertyChanged
+    def fireNodePropertyChanged(node: interface.Node, key: String) {
+      forEachListenerCallIgnoringException(_.treeNodePropertyChanged(
+        new event.NodePropertyChangedEvent(this,node,key)
+      ))
+    }
     //@+node:gcross.20110414153139.1465: *4* fireStructureChanged
     def fireStructureChanged(parent: interface.Parent) {
       forEachListenerCallIgnoringException(_.treeNodeStructureChanged(
@@ -269,8 +276,23 @@ object Tree {
     }
     //@+node:gcross.20110414143741.1450: *4* setBodyOf
     def setBodyOf(inode: interface.Node, body: String) {
-      fetchNode(inode).body = body
+      val node = fetchNode(inode)
+      val old_properties = node.properties
+      node.body = body
       fireNodeBodyChanged(inode)
+      for(properties_future <- node.maybe_properties_future)
+        actor {
+          for(new_properties <- properties_future) {
+            for(removed_key <- old_properties.keySet -- new_properties.keySet)
+              fireNodePropertyChanged(inode,removed_key)
+            for((key,new_value) <- new_properties) 
+              old_properties.get(key) match {
+                case None => fireNodePropertyChanged(node,key)
+                case Some(old_value) if new_value != old_value => fireNodePropertyChanged(node,key)
+                case _ =>
+              }
+          }
+        }
     }
     //@+node:gcross.20110414143741.1452: *4* setHeadingOf
     def setHeadingOf(inode: interface.Node, heading: String) {

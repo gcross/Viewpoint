@@ -6,7 +6,7 @@ package viewpoint.backend.crosswhite.model
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1397: ** << Imports >>
 import java.io.{PrintWriter,Writer}
-import scala.actors.Futures
+import scala.actors.{Future,Futures}
 import scala.collection.JavaConversions._
 import scala.collection.Map
 import scala.collection.mutable
@@ -26,10 +26,15 @@ class Node(var id: String, var heading: String, initial_body: String) extends Pa
   //@+<< Fields >>
   //@+node:gcross.20110412144451.1382: *3* << Fields >>
   override val delegate = new Delegate(this)
+  private[crosswhite] var maybe_properties_future: Option[Future[Map[String,String]]] = None
   private var my_body = initial_body
+  private var my_properties: () => Map[String,String] = null
   val parents = new HashSet[Parent]
-  private[crosswhite] var my_properties: () => Map[String,String] = parseBodyProperties
   //@-<< Fields >>
+  //@+<< Initialization >>
+  //@+node:gcross.20110505113029.1724: *3* << Initialization >>
+  refreshProperties()
+  //@-<< Initialization >>
   //@+others
   //@+node:gcross.20110412144451.1381: *3* ===
   def ===(other: Node): Boolean = {
@@ -144,21 +149,22 @@ class Node(var id: String, var heading: String, initial_body: String) extends Pa
   def isPlaceholder: Boolean = heading eq null
   //@+node:gcross.20110412144451.1385: *3* isStub
   def isStub: Boolean = children.isEmpty && body.isEmpty
-  //@+node:gcross.20110505113029.1717: *3* parseBodyProperties
-  protected def parseBodyProperties: () => Map[String,String] =
-    Option(body) match {
-      case None => () => Map[String,String]()
-      case Some("") => () => Map[String,String]()
-      case _ => {
-        val future_value = Futures.future({parseProperties(body)})
-        () => future_value()
-      }
-    }
   //@+node:gcross.20110505113029.1720: *3* properties
-  protected def properties = my_properties()
-  //@+node:gcross.20110505113029.1713: *3* refreshProperties
+  protected[crosswhite] def properties = my_properties()
+  //@+node:gcross.20110505113029.1717: *3* refreshProperties
   def refreshProperties() {
-    my_properties = parseBodyProperties
+    Option(body) match {
+      case None =>
+        maybe_properties_future = None
+        my_properties = () => Map.empty
+      case Some("") =>
+        maybe_properties_future = None
+        my_properties = () => Map.empty
+      case _ =>
+        val future_value = Futures.future({parseProperties(body)})
+        maybe_properties_future = Some(future_value)
+        my_properties = () => future_value()
+    }
   }
   //@+node:gcross.20110412144451.1388: *3* replaceWith
   def replaceWith(other: Node) {

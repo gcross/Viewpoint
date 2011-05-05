@@ -17,11 +17,12 @@
 <v t="gcross.20110410082044.1299"><vh>@file NodeBodyChangedEvent.java</vh></v>
 <v t="gcross.20110410082044.1291"><vh>@file NodeChangeEvent.java</vh></v>
 <v t="gcross.20110410082044.1297"><vh>@file NodeHeadingChangedEvent.java</vh></v>
-<v t="gcross.20110410082044.1309"><vh>@file StructureChangedEvent.java</vh></v>
+<v t="gcross.20110505113029.1723"><vh>@file NodePropertyChangedEvent.java</vh></v>
 <v t="gcross.20110410082044.1305"><vh>@file ParentChangeEvent.java</vh></v>
+<v t="gcross.20110410082044.1309"><vh>@file StructureChangedEvent.java</vh></v>
+<v t="gcross.20110414153139.1545"><vh>@file TreeChangeAdapter.java</vh></v>
 <v t="gcross.20110410082044.1287"><vh>@file TreeChangeEvent.java</vh></v>
 <v t="gcross.20110414143741.1449"><vh>@file TreeChangeListener.java</vh></v>
-<v t="gcross.20110414153139.1545"><vh>@file TreeChangeAdapter.java</vh></v>
 </v>
 <v t="gcross.20110410082044.1288"><vh>@path model</vh>
 <v t="gcross.20110418093501.1579"><vh>@file Child.java</vh></v>
