@@ -9,7 +9,6 @@ public interface Node extends Parent {
     public String getBody();
     public String getHeading();
     public String getId();
-    public String getInheritedProperty(String key);
     public Iterator<Parent> getParents();
     public String getProperty(String key);
 }
