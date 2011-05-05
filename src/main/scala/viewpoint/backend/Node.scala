@@ -275,8 +275,12 @@ object Node {
     def getHeading: String = node.heading
     //@+node:gcross.20110412230649.1467: *4* getId
     def getId: String = node.id
+    //@+node:gcross.20110504230408.1715: *4* getInheritedProperty
+    def getInheritedProperty(key: String) = node.getInheritedProperty(key).orNull
     //@+node:gcross.20110412230649.1468: *4* getParents
     def getParents: java.util.Iterator[interface.Parent] = node.parents.iterator.map(_.delegate)
+    //@+node:gcross.20110504230408.1713: *4* getProperty
+    def getProperty(key: String) = node.getProperty(key).orNull
     //@-others
   }
   //@-<< Delegate >>

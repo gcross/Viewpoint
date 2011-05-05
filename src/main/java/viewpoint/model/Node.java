@@ -8,7 +8,9 @@ import java.util.Iterator;
 public interface Node extends Parent {
     public String getBody();
     public String getHeading();
-    public Iterator<Parent> getParents();
     public String getId();
+    public String getInheritedProperty(String key);
+    public Iterator<Parent> getParents();
+    public String getProperty(String key);
 }
 //@-leo
