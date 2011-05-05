@@ -8,6 +8,7 @@ package viewpoint.view
 import javax.swing.event.{TreeModelEvent,TreeModelListener}
 import javax.swing.tree.TreePath
 import scala.collection.JavaConversions._
+import scala.collection.Seq
 import scala.collection.mutable.{ArrayBuffer,Map,Set,Stack}
 import scala.ref.WeakReference
 
@@ -23,6 +24,7 @@ import viewpoint.util.RichInterface._
 class TreeController(tree: Tree) extends Librarian {
   //@+<< Imports >>
   //@+node:gcross.20110422115402.3328: *3* << Imports >>
+  import MutationLog.SetBodyOf
   import TreeController._
   //@-<< Imports >>
   //@+<< Inner classes >>
@@ -51,17 +53,15 @@ class TreeController(tree: Tree) extends Librarian {
     //@+node:gcross.20110503191908.2421: *5* valid
     def valid = maybe_node.isDefined
     //@+node:gcross.20110503191908.2408: *5* write
-    def write(new_body: String) { write(Array(new_body)) }
+    def write(new_body: String) {
+      val node = getNode
+      mutate({mutator => mutator.setBodyOf(node,new_body)})
+    }
 
-    def write(updates: Array[String]) {
-      maybe_node match {
-        case None => throw LockReleased
-        case Some(node) => {
-          flushBodyEditors()
-          for(update <- updates)
-            mutateWithoutFlushing({mutator => mutator.setBodyOf(node,update)})
-        }
-      }
+    def write(edits: Array[String]) {
+      val node = getNode
+      flushBodyEditors()
+      writeEditsTo(node,edits)
     }
     //@-others
   }
@@ -90,8 +90,7 @@ class TreeController(tree: Tree) extends Librarian {
       lock <- lock_ref.get
       node <- lock.getMaybeNode
       edits <- Option(lock.holder.flushEdits())
-      edit <- edits
-    } mutateWithoutFlushing({mutator => mutator.setBodyOf(node,edit)})
+    } writeEditsTo(node,edits)
   }
   //@+node:gcross.20110503191908.1844: *3* getRoot
   def getRoot: Parent = tree.getRoot
@@ -154,6 +153,16 @@ class TreeController(tree: Tree) extends Librarian {
     val undo = undos.pop()
     undo.unwind(tree)
     redos.push(undo)
+  }
+  //@+node:gcross.20110504181005.1873: *3* writeEditsTo
+  protected def writeEditsTo(node: Node, edits: Seq[String]) {
+    if(edits.size() == 0) return;
+    var old_body = node.getBody
+    for(edit <- edits.dropRight(1)) {
+      undos.push(MutationLog(SetBodyOf(node.getId,old_body,edit)))
+      old_body = edit
+    }
+    mutateWithoutFlushing({mutator => mutator.setBodyOf(node,edits.last)})
   }
   //@-others
 }

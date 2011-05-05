@@ -104,6 +104,8 @@ object MutationLog {
   //@-others
   //@-<< Log Items >>
   //@+others
+  //@+node:gcross.20110504181005.1874: *3* apply
+  def apply(x: Item, xs: Item*) = new MutationLog(Seq((x +: xs) : _*))
   //@-others
 }
 //@-others
