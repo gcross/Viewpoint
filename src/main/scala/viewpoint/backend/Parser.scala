@@ -326,7 +326,6 @@ object Parser {
         }
         case PropertyLine(name,value) => {
           if(currently_extracting_comment) throw UnmatchedBeginComment
-          current_node.setProperty(name,value)
           current_body.append('@')
           current_body.append(name)
           current_body.append(' ')

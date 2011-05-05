@@ -6,9 +6,11 @@ package viewpoint.backend.crosswhite.model
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1397: ** << Imports >>
 import java.io.{PrintWriter,Writer}
+import scala.actors.Futures
 import scala.collection.JavaConversions._
+import scala.collection.Map
 import scala.collection.mutable
-import scala.collection.mutable.{HashMap,HashSet}
+import scala.collection.mutable.{HashSet}
 
 import viewpoint.{model => interface}
 import viewpoint.util.NodeEqualityPolicy
@@ -16,7 +18,7 @@ import viewpoint.util.NodeEqualityPolicy
 
 //@+others
 //@+node:gcross.20110408155929.1288: ** class Node
-class Node(var id: String, var heading: String, var body: String) extends Parent {
+class Node(var id: String, var heading: String, initial_body: String) extends Parent {
   //@+<< Imports >>
   //@+node:gcross.20110412144451.1383: *3* << Imports >>
   import Node._
@@ -24,8 +26,9 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
   //@+<< Fields >>
   //@+node:gcross.20110412144451.1382: *3* << Fields >>
   override val delegate = new Delegate(this)
+  private var my_body = initial_body
   val parents = new HashSet[Parent]
-  private[model] val properties = new HashMap[String,String]
+  private[crosswhite] var my_properties: () => Map[String,String] = parseBodyProperties
   //@-<< Fields >>
   //@+others
   //@+node:gcross.20110412144451.1381: *3* ===
@@ -92,12 +95,21 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
       builder.append("    ")
       builder.append(key)
       builder.append(": ")
-      builder.append(properties(key))
+      builder.append('"')
+      builder.append(StringEscapeUtils.escapeJavaScript(properties(key)))
+      builder.append('"')
       builder.append('\n')
     }
 
 
     super.appendYAML(indentation,builder)
+  }
+  //@+node:gcross.20110505113029.1718: *3* body
+  def body: String = my_body
+
+  def body_=(new_body: String) {
+    my_body = new_body
+    refreshProperties()
   }
   //@+node:gcross.20110412144451.1387: *3* compareAgainst
   def compareAgainst(examined_nodes: HashSet[(Node,Node)],other: Node): Boolean = {
@@ -132,13 +144,27 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
   def isPlaceholder: Boolean = heading eq null
   //@+node:gcross.20110412144451.1385: *3* isStub
   def isStub: Boolean = children.isEmpty && body.isEmpty
+  //@+node:gcross.20110505113029.1717: *3* parseBodyProperties
+  protected def parseBodyProperties: () => Map[String,String] =
+    Option(body) match {
+      case None => () => Map[String,String]()
+      case Some("") => () => Map[String,String]()
+      case _ => {
+        val future_value = Futures.future({parseProperties(body)})
+        () => future_value()
+      }
+    }
+  //@+node:gcross.20110505113029.1720: *3* properties
+  protected def properties = my_properties()
+  //@+node:gcross.20110505113029.1713: *3* refreshProperties
+  def refreshProperties() {
+    my_properties = parseBodyProperties
+  }
   //@+node:gcross.20110412144451.1388: *3* replaceWith
   def replaceWith(other: Node) {
     for(parent <- parents) parent.replaceChild(this,other)
     parents.clear
   }
-  //@+node:gcross.20110504230408.1717: *3* setProperty
-  def setProperty(key: String, value: String)  { properties(key) = value }
   //@+node:gcross.20110412144451.1380: *3* writeTo
   def writeTo(writer: Writer) {
     import scala.util.control.Breaks
@@ -324,14 +350,23 @@ val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
         case _ => None
       }
   }
+
+  object PropertyDirective {
+    val Regex = "@([^\\s]*) (.*)".r
+    def unapply(line: String): Option[(String,String)] =
+      line match {
+        case Regex(key,value) => Some((key,value))
+        case _ => None
+      }
+  }
   //@-<< Sentinels >>
 
   //@+others
+  //@+node:gcross.20110414153139.2329: *3* getNodeDelegate
+  implicit def getNodeDelegate(node: Node): interface.Node = node.delegate
   //@+node:gcross.20110412144451.1395: *3* isPropertyKey
   def isPropertyKey(key: String): Boolean =
     return property_keys.contains(key)
-  //@+node:gcross.20110414153139.2329: *3* getNodeDelegate
-  implicit def getNodeDelegate(node: Node): interface.Node = node.delegate
   //@+node:gcross.20110412144451.1396: *3* levelToString
   def levelToString(level: Int): String = {
     assert(level > 0)
@@ -340,6 +375,23 @@ val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
       case 2 => "**"
       case _ => "*%s*".format(level)
     }
+  }
+  //@+node:gcross.20110505113029.1719: *3* parseProperties
+  def parseProperties(body: String): Map[String,String] = {
+    val properties = mutable.Map[String,mutable.StringBuilder]()
+    body.lines.foreach({
+      case PropertyDirective(key,value) =>
+        properties.get(key) match {
+          case None =>
+            properties(key) = new mutable.StringBuilder(value)
+          case Some(builder) => {
+            builder += '\n'
+            builder ++= value
+          }
+        }
+      case _ =>
+    })
+    properties.mapValues(_.toString)
   }
   //@-others
 

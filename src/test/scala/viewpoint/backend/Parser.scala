@@ -174,6 +174,7 @@ class ParserSpecification extends Spec with ShouldMatchers {
            |heading: @thin node.cpp
            |body: "@first Hello,\n@first world!\nfoo\nBar\n"
            |properties:
+           |    first: "Hello,\nworld!"
            |children:
            |""".stripMargin
       )
@@ -204,8 +205,8 @@ class ParserSpecification extends Spec with ShouldMatchers {
            |heading: @thin node.cpp
            |body: "A\n@language value1\n@tabwidth value2\nB\n"
            |properties:
-           |    language: value1
-           |    tabwidth: value2
+           |    language: "value1"
+           |    tabwidth: "value2"
            |children:
            |""".stripMargin
       )
@@ -232,13 +233,13 @@ class ParserSpecification extends Spec with ShouldMatchers {
            |heading: @thin node.cpp
            |body: "foo\n@language value\n<< Section >>\nbar\n"
            |properties:
-           |    language: value
+           |    language: "value"
            |children:
            |  - id: nodeid
            |    heading: << Section >>
            |    body: "@language value\ncontent\n"
            |    properties:
-           |        language: value
+           |        language: "value"
            |    children:
            |""".stripMargin
       )
