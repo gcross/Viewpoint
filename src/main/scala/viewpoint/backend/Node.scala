@@ -7,6 +7,7 @@ package viewpoint.backend.crosswhite.model
 //@+node:gcross.20110412144451.1397: ** << Imports >>
 import java.io.{PrintWriter,Writer}
 import scala.collection.JavaConversions._
+import scala.collection.mutable
 import scala.collection.mutable.{HashMap,HashSet}
 
 import viewpoint.{model => interface}
@@ -36,6 +37,28 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
     if(visitor.visit(this)) {
       super.accept(visitor)
       visitor.exit(this)
+    }
+  }
+  //@+node:gcross.20110504230408.1718: *3* ancestors
+  def ancestors = new Iterator[Parent] {
+    val enqueued_ancestors = mutable.Queue[Parent]()
+    val observed_ancestors = mutable.Set[Parent]()
+
+    enqueued_ancestors ++= parents
+    observed_ancestors ++= parents
+
+    def hasNext: Boolean = !enqueued_ancestors.isEmpty
+
+    def next: Parent = {
+      val ancestor = enqueued_ancestors.dequeue()
+      ancestor match {
+        case (node: Node) =>
+          for (parent <- node.parents)
+            if(observed_ancestors.add(parent))
+              enqueued_ancestors.enqueue(parent)
+        case _ =>
+      }
+      ancestor
     }
   }
   //@+node:gcross.20110412144451.1378: *3* appendYAML
@@ -97,8 +120,8 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
   def getInheritedProperty(key: String) : Option[String] = {
     getProperty(key).orElse({
       for {
-        parent <- parents
-        value <- parent.getProperty(key)
+        ancestor <- ancestors
+        value <- ancestor.getProperty(key)
       } return Some(value)
       None
     })
