@@ -7,7 +7,7 @@ package viewpoint.backend.crosswhite.model
 //@+node:gcross.20110412144451.1397: ** << Imports >>
 import java.io.{PrintWriter,Writer}
 import scala.collection.JavaConversions._
-import scala.collection.mutable.{HashSet}
+import scala.collection.mutable.{HashMap,HashSet}
 
 import viewpoint.{model => interface}
 import viewpoint.util.NodeEqualityPolicy
@@ -24,6 +24,7 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
   //@+node:gcross.20110412144451.1382: *3* << Fields >>
   override val delegate = new Delegate(this)
   val parents = new HashSet[Parent]
+  private[model] val properties = new HashMap[String,String]
   //@-<< Fields >>
   //@+others
   //@+node:gcross.20110412144451.1381: *3* ===
@@ -40,6 +41,7 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
   //@+node:gcross.20110412144451.1378: *3* appendYAML
   override def appendYAML(indentation: String, builder: StringBuilder) {
     import org.apache.commons.lang.StringEscapeUtils
+    import scala.collection.JavaConversions._
 
     builder.append("id: ")
     builder.append(id)
@@ -56,6 +58,21 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
     builder.append(StringEscapeUtils.escapeJavaScript(body))
     builder.append('"')
     builder.append('\n')
+
+    builder.append(indentation)
+    builder.append("properties:")
+    builder.append('\n')
+    val keys : Array[String] = properties.keySet.toArray
+    scala.util.Sorting.quickSort(keys)
+    for(key <- keys) {
+      builder.append(indentation)
+      builder.append("    ")
+      builder.append(key)
+      builder.append(": ")
+      builder.append(properties(key))
+      builder.append('\n')
+    }
+
 
     super.appendYAML(indentation,builder)
   }
@@ -76,16 +93,18 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
       }
     )
   }
-  //@+node:gcross.20110412144451.1379: *3* getProperty
-  override def getProperty(key: String) : Option[String] = {
-    properties.get(key).orElse({
+  //@+node:gcross.20110412144451.1379: *3* getInheritedProperty
+  def getInheritedProperty(key: String) : Option[String] = {
+    getProperty(key).orElse({
       for {
         parent <- parents
-        maybe_value = parent.getProperty(key)
-      } if(maybe_value.isDefined) return maybe_value
+        value <- parent.getProperty(key)
+      } return Some(value)
       None
     })
   }
+  //@+node:gcross.20110504230408.1712: *3* getProperty
+  override def getProperty(key: String) : Option[String] = properties.get(key)
   //@+node:gcross.20110412144451.1384: *3* isPlaceholder
   def isPlaceholder: Boolean = heading eq null
   //@+node:gcross.20110412144451.1385: *3* isStub
@@ -95,6 +114,8 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
     for(parent <- parents) parent.replaceChild(this,other)
     parents.clear
   }
+  //@+node:gcross.20110504230408.1717: *3* setProperty
+  def setProperty(key: String, value: String)  { properties(key) = value }
   //@+node:gcross.20110412144451.1380: *3* writeTo
   def writeTo(writer: Writer) {
     import scala.util.control.Breaks
@@ -102,7 +123,7 @@ class Node(var id: String, var heading: String, var body: String) extends Parent
     import breaks.{break,breakable}
 
     val printer = new PrintWriter(writer)
-    val comment_marker = getProperty("comment").getOrElse("#")
+    val comment_marker = getInheritedProperty("comment").getOrElse("#")
     val lines = body.lines
     var number_of_first_lines = 0
     breakable {

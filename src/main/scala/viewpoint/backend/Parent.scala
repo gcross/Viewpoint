@@ -7,7 +7,7 @@ package viewpoint.backend.crosswhite.model
 //@+node:gcross.20110412144451.1376: ** << Imports >>
 import java.io.PrintWriter
 import scala.collection.Set
-import scala.collection.mutable.{ArrayBuffer,Buffer,HashMap,HashSet}
+import scala.collection.mutable.{ArrayBuffer,Buffer,HashSet}
 
 import viewpoint.{model => interface}
 
@@ -26,7 +26,6 @@ abstract class Parent {
   private[model] val active_tags = new HashSet[Long]
   private[model] val children = new ArrayBuffer[Child]
   private[model] var next_tag: Long = 0
-  private[model] val properties = new HashMap[String,String]
   private[model] val delegate: Delegate
   //@-<< Fields >>
   //@+others
@@ -44,21 +43,6 @@ abstract class Parent {
   }
   //@+node:gcross.20110412144451.1371: *3* appendYAML
   def appendYAML(indentation: String, builder: StringBuilder) {
-    import scala.collection.JavaConversions._
-    builder.append(indentation)
-    builder.append("properties:")
-    builder.append('\n')
-    val keys : Array[String] = properties.keySet.toArray
-    scala.util.Sorting.quickSort(keys)
-    for(key <- keys) {
-      builder.append(indentation)
-      builder.append("    ")
-      builder.append(key)
-      builder.append(": ")
-      builder.append(properties(key))
-      builder.append('\n')
-    }
-
     builder.append(indentation)
     builder.append("children:")
     builder.append('\n')
@@ -110,7 +94,7 @@ abstract class Parent {
   //@+node:gcross.20110417144805.2798: *3* getIndexOfChild
   def getIndexOfChild(tag: Long): Int = childTags.indexOf(tag)
   //@+node:gcross.20110412144451.1366: *3* getProperty
-  def getProperty(key: String) : Option[String] = properties.get(key)
+  def getProperty(key: String) : Option[String] = None
   //@+node:gcross.20110414153139.1467: *3* insertChild
   def insertChild(index: Int, node: Node): Long = {
     node.parents.add(this)
@@ -155,8 +139,6 @@ abstract class Parent {
       }
     }
   }
-  //@+node:gcross.20110412144451.1367: *3* setProperty
-  def setProperty(key: String, value: String)  { properties(key) = value }
   //@+node:gcross.20110412144451.1370: *3* toYAML
   def toYAML: String = {
     val builder = new StringBuilder

@@ -463,8 +463,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
     it("an empty file") {
       val ParseResult(tree,expanded_nodes) = parse(<leo_file/>)
       tree.root.toYAML should be(
-        """|properties:
-           |children:
+        """|children:
            |""".stripMargin
       )
       expanded_nodes should be (List())
@@ -478,8 +477,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
         </leo_file>
       )
       tree.root.toYAML should be(
-        """|properties:
-           |children:
+        """|children:
            |  - id: id
            |    heading: heading
            |    body: ""
@@ -497,8 +495,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
         </leo_file>
       )
       tree.root.toYAML should be(
-        """|properties:
-           |children:
+        """|children:
            |  - id: id
            |    heading: heading
            |    body: ""
@@ -520,8 +517,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
         </leo_file>
       )
       tree.root.toYAML should be(
-        """|properties:
-           |children:
+        """|children:
            |  - id: id
            |    heading: heading
            |    body: "Body goes here"
@@ -544,8 +540,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
         </leo_file>
       )
       tree.root.toYAML should be(
-        """|properties:
-           |children:
+        """|children:
            |  - id: id1
            |    heading: heading1
            |    body: "First body goes here"
@@ -573,8 +568,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
         </leo_file>
       )
       tree.root.toYAML should be(
-        """|properties:
-           |children:
+        """|children:
            |  - id: id
            |    heading: heading
            |    body: "Body goes here"
@@ -601,8 +595,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
         </leo_file>
       )
       tree.root.toYAML should be(
-        """|properties:
-           |children:
+        """|children:
            |  - id: id
            |    heading: heading
            |    body: "Body goes here"
@@ -637,8 +630,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
         </leo_file>
       )
       tree.root.toYAML should be(
-        """|properties:
-           |children:
+        """|children:
            |  - id: id1
            |    heading: heading1
            |    body: "First body goes here"
@@ -698,8 +690,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
         </leo_file>
       )
       tree.root.toYAML should be(
-        """|properties:
-           |children:
+        """|children:
            |  - id: id1
            |    heading: heading1
            |    body: "First body goes here"
