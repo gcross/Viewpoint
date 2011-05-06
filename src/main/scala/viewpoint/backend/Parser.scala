@@ -51,63 +51,38 @@ object Parser {
 
   object UnrecognizedSentinel extends ParseError
   //@-<< Errors >>
-  //@+<< Line case classes >>
-  //@+node:gcross.20110412144451.1399: *3* << Line case classes >>
-  sealed abstract class Line
-
-  object BeginCommentLine extends Line
-
-  case class BeginSectionLine(indentation: Int, section_name: String) extends Line
-
-  object EndCommentLine extends Line
-
-  case class EndSectionLine(section_name: String) extends Line
-
-  case class NodeLine(id: String, level: Int, heading: String) extends Line
-
-  case class PropertyLine(name: String, value: String) extends Line
-
-  case class TextLine(text: String) extends Line
-
-  object VerbatimLine extends Line
-  //@-<< Line case classes >>
-  //@+<< Line parser >>
-  //@+node:gcross.20110412144451.1406: *3* << Line parser >>
-  class LineParser(val comment_marker: String) {
+  //@+<< Line sentinels >>
+  //@+node:gcross.20110412144451.1406: *3* << Line sentinels >>
+  class LineSentinels(val comment_marker: String) {
     val comment_line_starter = comment_marker + " "
     val quoted_comment_marker = "\\Q%s\\E".format(comment_marker)
     val sentinel = comment_marker + "@"
 
-    val BeginCommentRegex = "%s@\\+at\\z".format(quoted_comment_marker).r
-    val BeginSectionRegex = "(\\s*)%s@\\+(.*)".format(quoted_comment_marker).r
-    val EndCommentRegex = "%s@@c\\z".format(quoted_comment_marker).r
-    val EndSectionRegex = "%s@-(.*)".format(quoted_comment_marker).r
-    val NodeRegex = "%s@\\+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
-    val PropertyRegex = "%s@@([^\\s]*) (.*)\\z".format(quoted_comment_marker).r
-    val VerbatimText = "%s@verbatim".format(comment_marker)
+    val BeginCommentSentinel = "%s@+at".format(comment_marker)
+    val EndCommentSentinel = "%s@@c".format(comment_marker)
+    val EndSectionSentinel = "%s@-(.*)".format(quoted_comment_marker).r
+    val PropertySentinel = "%s@@([^\\s]*) (.*)".format(quoted_comment_marker).r
+    val VerbatimSentinel = "%s@verbatim".format(comment_marker)
 
-    def apply(line: String): Line = line match {
-      case BeginCommentRegex() => BeginCommentLine
-      case EndCommentRegex() => EndCommentLine
-      case NodeRegex(id,level,heading) => NodeLine(id,parseLevel(level),heading)
-      case BeginSectionRegex(whitespace,section_name) => BeginSectionLine(whitespace.length,section_name)
-      case EndSectionRegex(section_name) => EndSectionLine(section_name)
-      case VerbatimText => VerbatimLine
-      case PropertyRegex(key,value) => PropertyLine(key,value)
-      case line =>
-        if(line.startsWith(sentinel))
-          throw UnrecognizedSentinel
-        else
-          TextLine(line)
+    object BeginSectionSentinel {
+      val Regex = "(\\s*)%s@\\+(.*)".format(quoted_comment_marker).r
+      def unapply(line: String): Option[(Int,String)] =
+        line match {
+          case Regex(indentation,name) => Some((indentation.length,name))
+          case _ => None
+        }
     }
 
-    def extractCommentLine(line: String): String =
-      if(line.startsWith(comment_line_starter))
-        line.substring(comment_line_starter.length)
-      else
-        throw UnmatchedBeginComment
+    object NodeSentinel {
+      val Regex = "%s@\\+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
+      def unapply(line: String): Option[(String,Int,String)] =
+        line match {
+          case Regex(id,level,heading) => Some((id,parseLevel(level),heading))
+          case _ => None
+        }
+    }
   }
-  //@-<< Line parser >>
+  //@-<< Line sentinels >>
   //@+<< Regular expressions >>
   //@+node:gcross.20110412144451.1410: *3* << Regular expressions >>
   val Header = "(\\s*)(.*?)@\\+leo-ver=(.*)".r
@@ -203,7 +178,8 @@ object Parser {
     val (comment_marker,version) = parseHeader
     if(version != "5-thin") throw UnsupportedFileVersion(version)
 
-    val parseLine = new LineParser(comment_marker)
+    val sentinels = new LineSentinels(comment_marker)
+    import sentinels._
 
     import scala.collection.mutable.Stack
 
@@ -229,8 +205,8 @@ object Parser {
       } else line
     }
 
-    var current_node = parseLine(nextSectionLine) match {
-      case NodeLine(id,level,heading) => {
+    var current_node = nextSectionLine match {
+      case NodeSentinel(id,level,heading) => {
         if(level != 1) throw BadLevelNumber(level)
         new Node(id,heading,"")
       }
@@ -240,8 +216,18 @@ object Parser {
     while(lines.hasNext) {
       if(current_section_level == 0) throw ContentAfterEndOfFileSentinel
       val line = nextSectionLine
-      try { parseLine(line) match {
-        case NodeLine(id,level,heading) => {
+      try { line match {
+        case BeginCommentSentinel => {
+          if(currently_extracting_comment) throw UnmatchedBeginComment
+          currently_extracting_comment = true
+          current_body.append("@\n")
+        }
+        case EndCommentSentinel => {
+          if(!currently_extracting_comment) throw MismatchedEndComment
+          currently_extracting_comment = false
+          current_body.append("@c\n")
+        }
+        case NodeSentinel(id,level,heading) => {
           currently_extracting_comment = false
           current_node.body = current_body.toString
           if(level < current_section_level) throw BadLevelNumber(level)
@@ -260,7 +246,7 @@ object Parser {
           current_node = new Node(id,heading,"")
           current_parent_node.appendChild(current_node)
         }
-        case BeginSectionLine(indentation,section_name) => {
+        case BeginSectionSentinel(indentation,section_name) => {
           if(currently_extracting_comment) throw UnmatchedBeginComment
           for(_ <- 1 to indentation) current_body.append(' ')
           if(section_name.charAt(0) != '<')
@@ -268,8 +254,8 @@ object Parser {
           current_body.append(section_name)
           current_body.append('\n')
           if(!lines.hasNext) throw UnmatchedBeginSection
-          val NodeLine(id,level,heading) = parseLine(lines.next.substring(indentation)) match {
-            case (n : NodeLine) => n
+          val (id,level,heading) = lines.next.substring(indentation) match {
+            case NodeSentinel(id,level,heading) => (id,level,heading)
             case _ => throw NodeNotFoundImmediatelyAfterBeginSection
           }
           if(level != current_level+1) throw BadLevelNumber(level)
@@ -290,7 +276,7 @@ object Parser {
           current_section_level = current_level
           current_section_name = section_name
         }
-        case EndSectionLine(section_name) => {
+        case EndSectionSentinel(section_name) => {
           if(section_name != current_section_name) throw MismatchedEndSection
           currently_extracting_comment = false
           current_node.body = current_body.toString
@@ -309,22 +295,12 @@ object Parser {
           }
           current_level -= 1
         }
-        case BeginCommentLine => {
-          if(currently_extracting_comment) throw UnmatchedBeginComment
-          currently_extracting_comment = true
-          current_body.append("@\n")
-        }
-        case EndCommentLine => {
-          if(!currently_extracting_comment) throw MismatchedEndComment
-          currently_extracting_comment = false
-          current_body.append("@c\n")
-        }
-        case VerbatimLine => {
+        case VerbatimSentinel => {
           if(currently_extracting_comment) throw UnmatchedBeginComment
           current_body.append("@verbatim\n")
           current_body.append(nextSectionLine)
         }
-        case PropertyLine(name,value) => {
+        case PropertySentinel(name,value) => {
           if(currently_extracting_comment) throw UnmatchedBeginComment
           current_body.append('@')
           current_body.append(name)
@@ -332,11 +308,17 @@ object Parser {
           current_body.append(value)
           current_body.append('\n')
         }
-        case TextLine(text) => {
+        case _ => {
+          if(line(0) == '@') throw UnrecognizedSentinel
           if(currently_extracting_comment)
-            current_body.append(parseLine.extractCommentLine(text))
+            current_body.append(
+              if(line.startsWith(comment_marker))
+                line.substring(comment_marker.length+1)
+              else
+                throw UnmatchedBeginComment
+            )
           else
-            current_body.append(text)
+            current_body.append(line)
           current_body.append('\n')
         }
       } } catch {

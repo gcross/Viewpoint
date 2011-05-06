@@ -14,13 +14,16 @@ import viewpoint.backend.crosswhite.parser._
 //@-<< Imports >>
 
 //@+others
-//@+node:gcross.20110408155929.1294: ** ParserExamples
+//@+node:gcross.20110408155929.1294: ** object ParserExamples
 object ParserExamples {
+  //@+others
+  //@+node:gcross.20110505163410.6438: *3* empty_file
   val empty_file =
     """|#@+leo-ver=5-thin
        |#@+node:gcross.20101205182001.1356: * @thin node.cpp
        |#@-leo
        |""".stripMargin
+  //@+node:gcross.20110505163410.6439: *3* single_node_file_with_content
   val single_node_file_with_content =
     """|Hello,
        |world!
@@ -30,6 +33,7 @@ object ParserExamples {
        |Bar
        |#@-leo
        |""".stripMargin
+  //@+node:gcross.20110505163410.6440: *3* single_node_file_with_explicitly_ended_comment
   val single_node_file_with_explicitly_ended_comment =
     """|#@+leo-ver=5-thin
        |#@+node:namegoeshere: * @thin node.cpp
@@ -42,6 +46,7 @@ object ParserExamples {
        |post
        |#@-leo
        |""".stripMargin
+  //@+node:gcross.20110505163410.6441: *3* single_node_file_with_comment_ended_by_end_of_file
   val single_node_file_with_comment_ended_by_end_of_file =
     """|#@+leo-ver=5-thin
        |#@+node:namegoeshere: * @thin node.cpp
@@ -52,6 +57,7 @@ object ParserExamples {
        |# here
        |#@-leo
        |""".stripMargin
+  //@+node:gcross.20110505163410.6442: *3* single_node_file_with_properties
   val single_node_file_with_properties =
     """|#@+leo-ver=5-thin
        |#@+node:namegoeshere: * @thin node.cpp
@@ -61,32 +67,35 @@ object ParserExamples {
        |B
        |#@-leo
        |""".stripMargin
-//@@raw
-  val file_with_single_named_section =
-    """|#@+leo-ver=5-thin
-       |#@+node:name: * @thin node.cpp
-       |foo
-       |#@+<< Section >>
-       |#@+node:nodeid: ** << Section >>
-       |content
-       |#@-<< Section >>
-       |bar
-       |#@-leo
-       |""".stripMargin
-  val file_with_single_named_section_with_properties =
-    """|#@+leo-ver=5-thin
-       |#@+node:name: * @thin node.cpp
-       |foo
-       |#@@language value
-       |#@+<< Section >>
-       |#@+node:nodeid: ** << Section >>
-       |#@@language value
-       |content
-       |#@-<< Section >>
-       |bar
-       |#@-leo
-       |""".stripMargin
-//@@end_raw
+  //@+node:gcross.20110505163410.6443: *3* file_with_single_named_section
+  //@@raw
+val file_with_single_named_section =
+  """|#@+leo-ver=5-thin
+     |#@+node:name: * @thin node.cpp
+     |foo
+     |#@+<< Section >>
+     |#@+node:nodeid: ** << Section >>
+     |content
+     |#@-<< Section >>
+     |bar
+     |#@-leo
+     |""".stripMargin
+  //@+node:gcross.20110505163410.6444: *3* file_with_single_named_section_with_properties
+  //@@raw
+val file_with_single_named_section_with_properties =
+  """|#@+leo-ver=5-thin
+     |#@+node:name: * @thin node.cpp
+     |foo
+     |#@@language value
+     |#@+<< Section >>
+     |#@+node:nodeid: ** << Section >>
+     |#@@language value
+     |content
+     |#@-<< Section >>
+     |bar
+     |#@-leo
+     |""".stripMargin
+  //@+node:gcross.20110505163410.6445: *3* file_with_nested_others_sections
   val file_with_nested_others_sections =
     """|#@+leo-ver=5-thin
        |#@+node:name: * @thin node.cpp
@@ -108,6 +117,7 @@ object ParserExamples {
        |post1
        |#@-leo
        |""".stripMargin
+  //@+node:gcross.20110505163410.6446: *3* file_with_nested_others_sections_with_comments
   val file_with_nested_others_sections_with_comments =
     """|#@+leo-ver=5-thin
        |#@+node:name: * @thin node.cpp
@@ -144,21 +154,28 @@ object ParserExamples {
        |post1
        |#@-leo
        |""".stripMargin
+  //@-others
 }
-//@+node:gcross.20110408155929.1295: ** ParserSpecification
+//@+node:gcross.20110505163410.6424: ** class ParserSpecification
 class ParserSpecification extends Spec with ShouldMatchers {
+  //@+<< Imports >>
+  //@+node:gcross.20110505163410.6437: *3* << Imports >>
   import Parser._
   import ParserExamples._
-
+  //@-<< Imports >>
+  //@+others
+  //@+node:gcross.20110505163410.6425: *3* The level parser should correctly parse
   describe("The level parser should correctly parse") {
     it("*") { parseLevel("*") should be (1) }
     it("**") { parseLevel("**") should be (2) }
     it("*3*") { parseLevel("*3*") should be (3) }
     it("*4*") { parseLevel("*4*") should be (4) }
   }
-
+  //@+node:gcross.20110505163410.6426: *3* The node parser should correctly parse
   describe("The node parser should correctly parse") {
-    it("an empty file") {
+    //@+others
+    //@+node:gcross.20110505163410.6427: *4* an empty file.
+    it("an empty file.") {
       parseOrThrow(empty_file.lines).toYAML should be(
         """|id: gcross.20101205182001.1356
            |heading: @thin node.cpp
@@ -168,7 +185,8 @@ class ParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
-    it("a single-node file with content") {
+    //@+node:gcross.20110505163410.6428: *4* a single-node file with content.
+    it("a single-node file with content.") {
       parseOrThrow(single_node_file_with_content.lines).toYAML should be(
         """|id: namegoeshere
            |heading: @thin node.cpp
@@ -179,7 +197,8 @@ class ParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
-    it("a single-node file with a comment ended by @c") {
+    //@+node:gcross.20110505163410.6429: *4* a single-node file with a comment ended by @c.
+    it("a single-node file with a comment ended by @c.") {
       parseOrThrow(single_node_file_with_explicitly_ended_comment.lines).toYAML should be(
         """|id: namegoeshere
            |heading: @thin node.cpp
@@ -189,7 +208,8 @@ class ParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
-    it("a single-node file with a comment ended by the end of file") {
+    //@+node:gcross.20110505163410.6430: *4* a single-node file with a comment ended by the end of file.
+    it("a single-node file with a comment ended by the end of file.") {
       parseOrThrow(single_node_file_with_comment_ended_by_end_of_file.lines).toYAML should be(
         """|id: namegoeshere
            |heading: @thin node.cpp
@@ -199,7 +219,8 @@ class ParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
-    it("a single-node file with properties") {
+    //@+node:gcross.20110505163410.6431: *4* a single-node file with properties.
+    it("a single-node file with properties.") {
       parseOrThrow(single_node_file_with_properties.lines).toYAML should be(
         """|id: namegoeshere
            |heading: @thin node.cpp
@@ -211,41 +232,44 @@ class ParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
-//@@raw
-    it("a file with a single named section") {
-      parseOrThrow(file_with_single_named_section.lines).toYAML should be(
-        """|id: name
-           |heading: @thin node.cpp
-           |body: "foo\n<< Section >>\nbar\n"
-           |properties:
-           |children:
-           |  - id: nodeid
-           |    heading: << Section >>
-           |    body: "content\n"
-           |    properties:
-           |    children:
-           |""".stripMargin
-      )
-    }
-    it("a file with a single named section with properties") {
-      parseOrThrow(file_with_single_named_section_with_properties.lines).toYAML should be(
-        """|id: name
-           |heading: @thin node.cpp
-           |body: "foo\n@language value\n<< Section >>\nbar\n"
-           |properties:
-           |    language: "value"
-           |children:
-           |  - id: nodeid
-           |    heading: << Section >>
-           |    body: "@language value\ncontent\n"
-           |    properties:
-           |        language: "value"
-           |    children:
-           |""".stripMargin
-      )
-    }
-//@@end_raw
-    it("a file with nested others sections") {
+    //@+node:gcross.20110505163410.6432: *4* a file with a single named section.
+    //@@raw
+it("a file with a single named section.") {
+  parseOrThrow(file_with_single_named_section.lines).toYAML should be(
+    """|id: name
+       |heading: @thin node.cpp
+       |body: "foo\n<< Section >>\nbar\n"
+       |properties:
+       |children:
+       |  - id: nodeid
+       |    heading: << Section >>
+       |    body: "content\n"
+       |    properties:
+       |    children:
+       |""".stripMargin
+  )
+}
+    //@+node:gcross.20110505163410.6433: *4* a file with a single named section with properties.
+    //@@raw
+it("a file with a single named section with properties.") {
+  parseOrThrow(file_with_single_named_section_with_properties.lines).toYAML should be(
+    """|id: name
+       |heading: @thin node.cpp
+       |body: "foo\n@language value\n<< Section >>\nbar\n"
+       |properties:
+       |    language: "value"
+       |children:
+       |  - id: nodeid
+       |    heading: << Section >>
+       |    body: "@language value\ncontent\n"
+       |    properties:
+       |        language: "value"
+       |    children:
+       |""".stripMargin
+  )
+}
+    //@+node:gcross.20110505163410.6434: *4* a file with nested others sections.
+    it("a file with nested others sections.") {
       parseOrThrow(file_with_nested_others_sections.lines).toYAML should be(
         """|id: name
            |heading: @thin node.cpp
@@ -285,7 +309,8 @@ class ParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
-    it("a file with nested others sections with comments") {
+    //@+node:gcross.20110505163410.6435: *4* a file with nested others sections with comments.
+    it("a file with nested others sections with comments.") {
       parseOrThrow(file_with_nested_others_sections_with_comments.lines).toYAML should be(
         """|id: name
            |heading: @thin node.cpp
@@ -325,7 +350,9 @@ class ParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
+    //@-others
   }
+  //@+node:gcross.20110505163410.6436: *3* The node tangler should correctly parse
   describe("The node tangler should correctly parse") {
     it("an empty file") {
       parseOrThrow(empty_file.lines).writeToString should be(empty_file)
@@ -355,16 +382,23 @@ class ParserSpecification extends Spec with ShouldMatchers {
       parseOrThrow(file_with_nested_others_sections_with_comments.lines).writeToString should be(file_with_nested_others_sections_with_comments)
     }
   }
+  //@-others
 }
+//@+node:gcross.20110408155929.1295: ** object ParserSpecification
 object ParserSpecification extends org.scalacheck.Properties("Parser") {
+  //@+<< Imports >>
+  //@+node:gcross.20110505163410.6447: *3* << Imports >>
   import org.scalacheck.Arbitrary
   import org.scalacheck.Arbitrary.arbitrary
   import org.scalacheck.Gen
   import org.scalacheck.Gen.{alphaStr,choose,listOf,listOf1,oneOf,posNum}
-  import org.scalacheck.Prop.{=?,all,forAll}
+  import org.scalacheck.Prop.{=?,all,forAll,propBoolean}
   import Parser._
   import ParserExamples._
+  //@-<< Imports >>
 
+  //@+<< Generators >>
+  //@+node:gcross.20110505163410.6448: *3* << Generators >>
   case class Comment(val string: String) { override def toString = string }
   implicit def unwrapComment(c: Comment) : String = c.string
   implicit val arbComment = Arbitrary[Comment] {
@@ -375,17 +409,56 @@ object ParserSpecification extends org.scalacheck.Properties("Parser") {
     oneOf(Gen.choose(Char.MinValue,0xD800-1),Gen.choose(0xDFFF+1,Char.MaxValue))
   )
   implicit val arbString = Arbitrary[String](arbitrary[List[Char]].map(_.mkString))
+  //@-<< Generators >>
 
-  property("level") = forAll { i: Int => i == parseLevel("*%s*".format(i)) }
-  property("begin comment") = forAll { (c: Comment) => =?(BeginCommentLine,new LineParser(c)("%s@+at".format(c))) }
-  property("verbatim") = forAll { (c: Comment) => =?(VerbatimLine,new LineParser(c)("%s@verbatim".format(c))) }
-  property("node") = forAll(arbitrary[Comment],alphaStr,choose(3,20),arbitrary[String]) { (c,name,level:Int,heading) => =?(NodeLine(name,level,heading),new LineParser(c)("%s@+node:%s: *%s* %s".format(c,name,level,heading))) }
-//@@raw
-  property("begin section (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),arbitrary[String]) { (c,indentation:Int,section_name) => =?(BeginSectionLine(indentation,"<<%s>>".format(section_name)),new LineParser(c)("%s%s@+<<%s>>".format(" "*indentation,c,section_name))) }
-//@@end_raw
-  property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) { (c,indentation:Int) => =?(BeginSectionLine(indentation,"others"),new LineParser(c)("%s%s@+others".format(" "*indentation,c))) }
-  property("property") = forAll(arbitrary[Comment],alphaStr,alphaStr) { (c,key,value) => =?(PropertyLine(key,value),new LineParser(c)("%s@@%s %s".format(c,key,value))) }
-  property("end section") = forAll(arbitrary[Comment],arbitrary[String]) { (c,section_name) => =?(EndSectionLine(section_name),new LineParser(c)("%s@-%s".format(c,section_name))) }
+  //@+others
+  //@+node:gcross.20110505163410.6449: *3* parseLevel
+  property("parseLevel") = forAll { i: Int => i == parseLevel("*%s*".format(i)) }
+  //@+node:gcross.20110505163410.6414: *3* Sentinel parser tests
+  //@+node:gcross.20110505163410.6423: *4* end section
+  property("end section") = forAll(arbitrary[Comment],arbitrary[String]) {
+    (c,section_name) =>
+    =?(
+      Some(List(section_name)),
+      new LineSentinels(c).EndSectionSentinel.unapplySeq("%s@-%s".format(c,section_name))
+    )
+  }
+  //@+node:gcross.20110505163410.6420: *4* begin section
+  //@@raw
+property("begin section (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),arbitrary[String]) { 
+  (c,indentation:Int,section_name) =>
+  =?(
+    Some((indentation,"<<%s>>".format(section_name))),
+    new LineSentinels(c).BeginSectionSentinel.unapply("%s%s@+<<%s>>".format(" "*indentation,c,section_name))
+  )
+}
+  //@@end_raw
+  //@+node:gcross.20110505163410.6421: *4* begin section (others)
+  property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) {
+    (c,indentation:Int) =>
+    =?(
+      Some((indentation,"others")),
+      new LineSentinels(c).BeginSectionSentinel.unapply("%s%s@+others".format(" "*indentation,c))
+    )
+  }
+  //@+node:gcross.20110505163410.6419: *4* node
+  property("node") = forAll(arbitrary[Comment],alphaStr,choose(3,20),arbitrary[String]) {
+    (c,name,level:Int,heading) =>
+    =?(
+      Some((name,level,heading)),
+      new LineSentinels(c).NodeSentinel.unapply("%s@+node:%s: *%s* %s".format(c,name,level,heading))
+    )
+  }
+  //@+node:gcross.20110505163410.6422: *4* property
+  property("property") = forAll(arbitrary[Comment],alphaStr,alphaStr) {
+    (c,key,value) =>
+    =?(
+      Some(List(key,value)),
+      new LineSentinels(c).PropertySentinel.unapplySeq("%s@@%s %s".format(c,key,value))
+    )
+  }
+  //@+node:gcross.20110505163410.6452: *3* Asynchronous I/O tests
+  //@+node:gcross.20110505163410.6450: *4* parseAllAsynchronously
   property("parseAllAsynchronously") = forAll(
     listOf(oneOf(
       arbitrary[String],
@@ -425,43 +498,51 @@ object ParserSpecification extends org.scalacheck.Properties("Parser") {
       }).toSeq : _*)
     )
   }
-  property("writeAllAsynchronously") = forAll { (bodies_and_flags : List[(String,Boolean)]) =>
-    val write_list =
-      for((body,flag) <- bodies_and_flags)
-      yield (
-//@@raw
+  //@+node:gcross.20110505163410.6451: *4* writeAllAsynchronously
+    property("writeAllAsynchronously") = forAll { (bodies_and_flags : List[(String,Boolean)]) =>
+      val write_list =
+        for((body,flag) <- bodies_and_flags)
+        yield (
+  //@@raw
         new Node("id","heading",body + (if(flag) "\n<< Bad >>\n" else "")),
-//@@end_raw
-        { () => new java.io.StringWriter }
+  //@@end_raw
+          { () => new java.io.StringWriter }
+        )
+      val result_channel = new scala.actors.Channel[Parser.WriteCompletionMessage]
+      Parser.writeAllAsynchronously(write_list.iterator,result_channel)
+      val results = result_channel receive { case Parser.CompletedWriteAll(results) => results }
+      all(
+        =?(write_list.size,results.size),
+        all(results.map({case (node,writer,maybe_problem) => {
+          val actual_result =
+            maybe_problem match {
+              case None => Right(writer.toString)
+              case Some(problem) => Left(problem.toString)
+            }
+          val correct_result =
+            try {
+              Right(node.writeToString)
+            } catch {
+              case e: Exception => Left(e.toString)
+            }
+          =?(correct_result,actual_result)
+        }}).toSeq : _*)
       )
-    val result_channel = new scala.actors.Channel[Parser.WriteCompletionMessage]
-    Parser.writeAllAsynchronously(write_list.iterator,result_channel)
-    val results = result_channel receive { case Parser.CompletedWriteAll(results) => results }
-    all(
-      =?(write_list.size,results.size),
-      all(results.map({case (node,writer,maybe_problem) => {
-        val actual_result =
-          maybe_problem match {
-            case None => Right(writer.toString)
-            case Some(problem) => Left(problem.toString)
-          }
-        val correct_result =
-          try {
-            Right(node.writeToString)
-          } catch {
-            case e: Exception => Left(e.toString)
-          }
-        =?(correct_result,actual_result)
-      }}).toSeq : _*)
-    )
-  }
+    }
+  //@-others
 }
-//@+node:gcross.20110408155929.1296: ** XMLParserSpecification
+//@+node:gcross.20110408155929.1296: ** class XMLParserSpecification
 class XMLParserSpecification extends Spec with ShouldMatchers {
+  //@+<< Imports >>
+  //@+node:gcross.20110505163410.6453: *3* << Imports >>
   import XMLParser._
-
+  //@-<< Imports >>
+  //@+others
+  //@+node:gcross.20110505163410.6454: *3* The xml parser should correctly parse
   describe("The xml parser should correctly parse") {
-    it("an empty file") {
+    //@+others
+    //@+node:gcross.20110505163410.6455: *4* an empty file.
+    it("an empty file.") {
       val ParseResult(tree,expanded_nodes) = parse(<leo_file/>)
       tree.root.toYAML should be(
         """|children:
@@ -469,7 +550,8 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
       )
       expanded_nodes should be (List())
     }
-    it("a file with a single vnode") {
+    //@+node:gcross.20110505163410.6456: *4* a file with a single vnode.
+    it("a file with a single vnode.") {
       val ParseResult(tree,expanded_nodes) = parse(
         <leo_file>
         <vnodes>
@@ -487,7 +569,8 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
-    it("a file with a single vnode with expanded nodes") {
+    //@+node:gcross.20110505163410.6457: *4* a file with a single vnode with expanded nodes.
+    it("a file with a single vnode with expanded nodes.") {
       val ParseResult(tree,expanded_nodes) = parse(
         <leo_file>
         <vnodes>
@@ -506,7 +589,8 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
       )
       expanded_nodes should be (List("id","id2","id3"))
     }
-    it("a file with a single vnode with text") {
+    //@+node:gcross.20110505163410.6458: *4* a file with a single vnode with text.
+    it("a file with a single vnode with text.") {
       val ParseResult(tree,expanded_nodes) = parse(
         <leo_file>
         <vnodes>
@@ -527,7 +611,8 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
-    it("a file with two vnodes with text") {
+    //@+node:gcross.20110505163410.6459: *4* a file with two vnodes with text.
+    it("a file with two vnodes with text.") {
       val ParseResult(tree,expanded_nodes) = parse(
         <leo_file>
         <vnodes>
@@ -556,7 +641,8 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
       )
       expanded_nodes should be (List())
     }
-    it("a file with a single cloned vnode with text and definition before clone") {
+    //@+node:gcross.20110505163410.6460: *4* a file with a single cloned vnode with text and definition before clone.
+    it("a file with a single cloned vnode with text and definition before clone.") {
       val ParseResult(tree,expanded_nodes) = parse(
         <leo_file>
         <vnodes>
@@ -583,7 +669,8 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
-    it("a file with a single cloned vnode with text and definition after clone") {
+    //@+node:gcross.20110505163410.6461: *4* a file with a single cloned vnode with text and definition after clone.
+    it("a file with a single cloned vnode with text and definition after clone.") {
       val ParseResult(tree,expanded_nodes) = parse(
         <leo_file>
         <vnodes>
@@ -610,7 +697,8 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
            |""".stripMargin
       )
     }
-    it("a file with nested vnodes") {
+    //@+node:gcross.20110505163410.6462: *4* a file with nested vnodes.
+    it("a file with nested vnodes.") {
       val ParseResult(tree,expanded_nodes) = parse(
         <leo_file>
         <vnodes>
@@ -666,7 +754,8 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
       )
       expanded_nodes should be (List())
     }
-    it("a file with nested vnodes including clones") {
+    //@+node:gcross.20110505163410.6463: *4* a file with nested vnodes including clones.
+    it("a file with nested vnodes including clones.") {
       val ParseResult(tree,expanded_nodes) = parse(
         <leo_file>
         <vnodes>
@@ -761,7 +850,9 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
       )
       expanded_nodes should be (List())
     }
+    //@-others
   }
+  //@-others
 }
 //@-others
 //@-leo
