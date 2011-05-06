@@ -5,6 +5,7 @@ package viewpoint.backend.crosswhite.testing
 
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1427: ** << Imports >>
+import scala.collection.{immutable,Map}
 import scala.collection.mutable.{ArrayBuffer,HashSet}
 import org.scalatest.Spec
 import org.scalatest.matchers.ShouldMatchers
@@ -14,160 +15,318 @@ import viewpoint.backend.crosswhite.parser._
 //@-<< Imports >>
 
 //@+others
-//@+node:gcross.20110408155929.1294: ** object ParserExamples
+//@+node:gcross.20110505183655.1897: ** object ParseExamples
 object ParserExamples {
-  //@+others
-  //@+node:gcross.20110505163410.6438: *3* empty_file
-  val empty_file =
-    """|#@+leo-ver=5-thin
-       |#@+node:gcross.20101205182001.1356: * @thin node.cpp
-       |#@-leo
-       |""".stripMargin
-  //@+node:gcross.20110505163410.6439: *3* single_node_file_with_content
-  val single_node_file_with_content =
-    """|Hello,
-       |world!
-       |#@+leo-ver=5-thin
-       |#@+node:namegoeshere: * @thin node.cpp
-       |foo
-       |Bar
-       |#@-leo
-       |""".stripMargin
-  //@+node:gcross.20110505163410.6440: *3* single_node_file_with_explicitly_ended_comment
-  val single_node_file_with_explicitly_ended_comment =
-    """|#@+leo-ver=5-thin
-       |#@+node:namegoeshere: * @thin node.cpp
-       |pre
-       |#@+at
-       |# comment
-       |# goes
-       |# here
-       |#@@c
-       |post
-       |#@-leo
-       |""".stripMargin
-  //@+node:gcross.20110505183655.1894: *3* single_node_file_with_explicitly_ended_comment_with_text_after_the_sentinels
-  val single_node_file_with_explicitly_ended_comment_with_text_after_the_sentinels =
-    """|#@+leo-ver=5-thin
-       |#@+node:namegoeshere: * @thin node.cpp
-       |pre
-       |#@+at fried
-       |# comment
-       |# goes
-       |# here
-       |#@@c mars bars
-       |post
-       |#@-leo
-       |""".stripMargin
-  //@+node:gcross.20110505163410.6441: *3* single_node_file_with_comment_ended_by_end_of_file
-  val single_node_file_with_comment_ended_by_end_of_file =
-    """|#@+leo-ver=5-thin
-       |#@+node:namegoeshere: * @thin node.cpp
-       |pre
-       |#@+at
-       |# comment
-       |# goes
-       |# here
-       |#@-leo
-       |""".stripMargin
-  //@+node:gcross.20110505163410.6442: *3* single_node_file_with_properties
-  val single_node_file_with_properties =
-    """|#@+leo-ver=5-thin
-       |#@+node:namegoeshere: * @thin node.cpp
-       |A
-       |#@@language value1
-       |#@@tabwidth value2
-       |B
-       |#@-leo
-       |""".stripMargin
-  //@+node:gcross.20110505163410.6443: *3* file_with_single_named_section
-  //@@raw
-val file_with_single_named_section =
-  """|#@+leo-ver=5-thin
-     |#@+node:name: * @thin node.cpp
-     |foo
-     |#@+<< Section >>
-     |#@+node:nodeid: ** << Section >>
-     |content
-     |#@-<< Section >>
-     |bar
-     |#@-leo
-     |""".stripMargin
-  //@+node:gcross.20110505163410.6444: *3* file_with_single_named_section_with_properties
-  //@@raw
-val file_with_single_named_section_with_properties =
-  """|#@+leo-ver=5-thin
-     |#@+node:name: * @thin node.cpp
-     |foo
-     |#@@language value
-     |#@+<< Section >>
-     |#@+node:nodeid: ** << Section >>
-     |#@@language value
-     |content
-     |#@-<< Section >>
-     |bar
-     |#@-leo
-     |""".stripMargin
-  //@+node:gcross.20110505163410.6445: *3* file_with_nested_others_sections
-  val file_with_nested_others_sections =
-    """|#@+leo-ver=5-thin
-       |#@+node:name: * @thin node.cpp
-       |pre1
-       |#@+others
-       |#@+node:ay: ** A
-       |content of A
-       |#@+node:ay1: *3* 1
-       |content of A1
-       |#@+node:ay2: *3* 2
-       |content of A2
-       |#@+node:bee: ** B
-       |content of B
-       |#@+node:bee1: *3* 1
-       |content of B1
-       |#@+node:bee1a: *4* a
-       |content of B1a
-       |#@-others
-       |post1
-       |#@-leo
-       |""".stripMargin
-  //@+node:gcross.20110505163410.6446: *3* file_with_nested_others_sections_with_comments
-  val file_with_nested_others_sections_with_comments =
-    """|#@+leo-ver=5-thin
-       |#@+node:name: * @thin node.cpp
-       |pre1
-       |#@+at
-       |# comment 1
-       |#@@c
-       |#@+others
-       |#@+node:ay: ** A
-       |content of A
-       |#@+at
-       |# comment A
-       |#@+node:ay1: *3* 1
-       |content of A1
-       |#@+at
-       |# comment A1
-       |#@+node:ay2: *3* 2
-       |content of A2
-       |#@+at
-       |# comment A2
-       |#@+node:bee: ** B
-       |content of B
-       |#@+at
-       |# comment B
-       |#@+node:bee1: *3* 1
-       |content of B1
-       |#@+at
-       |# comment B1
-       |#@+node:bee1a: *4* a
-       |content of B1a
-       |#@+at
-       |# comment B1a
-       |#@-others
-       |post1
-       |#@-leo
-       |""".stripMargin
-  //@-others
+  val examples_with_yaml = immutable.Map[String,(String,String)](
+    //@+others
+    //@+node:gcross.20110505183655.1898: *3* an empty file.
+    "an empty file" ->
+      ("""|#@+leo-ver=5-thin
+          |#@+node:gcross.20101205182001.1356: * @thin node.cpp
+          |#@-leo
+          |""".stripMargin
+
+      ,"""|id: gcross.20101205182001.1356
+          |heading: @thin node.cpp
+          |body: ""
+          |properties:
+          |children:
+          |""".stripMargin
+      ),
+    //@+node:gcross.20110505163410.6428: *3* a single-node file with content.
+    "a single-node file with content." ->
+      ("""|Hello,
+          |world!
+          |#@+leo-ver=5-thin
+          |#@+node:namegoeshere: * @thin node.cpp
+          |foo
+          |Bar
+          |#@-leo
+          |""".stripMargin
+
+      ,"""|id: namegoeshere
+          |heading: @thin node.cpp
+          |body: "@first Hello,\n@first world!\nfoo\nBar\n"
+          |properties:
+          |    first: "Hello,\nworld!"
+          |children:
+          |""".stripMargin
+      ),
+    //@+node:gcross.20110505163410.6429: *3* a single-node file with a comment ended by @c.
+    "a single-node file with a comment ended by @c." ->
+      ("""|#@+leo-ver=5-thin
+          |#@+node:namegoeshere: * @thin node.cpp
+          |pre
+          |#@+at
+          |# comment
+          |# goes
+          |# here
+          |#@@c
+          |post
+          |#@-leo
+          |""".stripMargin
+
+      ,"""|id: namegoeshere
+          |heading: @thin node.cpp
+          |body: "pre\n@\ncomment\ngoes\nhere\n@c\npost\n"
+          |properties:
+          |children:
+          |""".stripMargin
+      ),
+    //@+node:gcross.20110505183655.1896: *3* a single-node file with a comment ended by @c with text after the sentinels.
+    "a single-node file with a comment ended by @c with text after the sentinels." ->
+      ("""|#@+leo-ver=5-thin
+          |#@+node:namegoeshere: * @thin node.cpp
+          |pre
+          |#@+at fried
+          |# comment
+          |# goes
+          |# here
+          |#@@c mars bars
+          |post
+          |#@-leo
+          |""".stripMargin
+
+      ,"""|id: namegoeshere
+          |heading: @thin node.cpp
+          |body: "pre\n@ fried\ncomment\ngoes\nhere\n@c mars bars\npost\n"
+          |properties:
+          |children:
+          |""".stripMargin
+      ),
+    //@+node:gcross.20110505163410.6430: *3* a single-node file with a comment ended by the end of file.
+    "a single-node file with a comment ended by the end of file." ->
+      ("""|#@+leo-ver=5-thin
+          |#@+node:namegoeshere: * @thin node.cpp
+          |pre
+          |#@+at
+          |# comment
+          |# goes
+          |# here
+          |#@-leo
+          |""".stripMargin
+
+      ,"""|id: namegoeshere
+          |heading: @thin node.cpp
+          |body: "pre\n@\ncomment\ngoes\nhere\n"
+          |properties:
+          |children:
+          |""".stripMargin
+      ),
+    //@+node:gcross.20110505163410.6431: *3* a single-node file with properties.
+    "a single-node file with properties." ->
+      ("""|#@+leo-ver=5-thin
+          |#@+node:namegoeshere: * @thin node.cpp
+          |A
+          |#@@language value1
+          |#@@tabwidth value2
+          |B
+          |#@-leo
+          |""".stripMargin
+
+      ,"""|id: namegoeshere
+          |heading: @thin node.cpp
+          |body: "A\n@language value1\n@tabwidth value2\nB\n"
+          |properties:
+          |    language: "value1"
+          |    tabwidth: "value2"
+          |children:
+          |""".stripMargin
+      ),
+    //@+node:gcross.20110505163410.6432: *3* a file with a single named section.
+    //@@raw
+"a file with a single named section." ->
+  ("""|#@+leo-ver=5-thin
+      |#@+node:name: * @thin node.cpp
+      |foo
+      |#@+<< Section >>
+      |#@+node:nodeid: ** << Section >>
+      |content
+      |#@-<< Section >>
+      |bar
+      |#@-leo
+      |""".stripMargin
+
+  ,"""|id: name
+      |heading: @thin node.cpp
+      |body: "foo\n<< Section >>\nbar\n"
+      |properties:
+      |children:
+      |  - id: nodeid
+      |    heading: << Section >>
+      |    body: "content\n"
+      |    properties:
+      |    children:
+      |""".stripMargin
+  ),
+    //@+node:gcross.20110505163410.6433: *3* a file with a single named section with properties.
+    //@@raw
+"a file with a single named section with properties." ->
+  ("""|#@+leo-ver=5-thin
+      |#@+node:name: * @thin node.cpp
+      |foo
+      |#@@language value
+      |#@+<< Section >>
+      |#@+node:nodeid: ** << Section >>
+      |#@@language value
+      |content
+      |#@-<< Section >>
+      |bar
+      |#@-leo
+      |""".stripMargin
+
+  ,"""|id: name
+      |heading: @thin node.cpp
+      |body: "foo\n@language value\n<< Section >>\nbar\n"
+      |properties:
+      |    language: "value"
+      |children:
+      |  - id: nodeid
+      |    heading: << Section >>
+      |    body: "@language value\ncontent\n"
+      |    properties:
+      |        language: "value"
+      |    children:
+      |""".stripMargin
+  ),
+    //@+node:gcross.20110505163410.6434: *3* a file with nested others sections.
+    "a file with nested others sections." ->
+      ("""|#@+leo-ver=5-thin
+          |#@+node:name: * @thin node.cpp
+          |pre1
+          |#@+others
+          |#@+node:ay: ** A
+          |content of A
+          |#@+node:ay1: *3* 1
+          |content of A1
+          |#@+node:ay2: *3* 2
+          |content of A2
+          |#@+node:bee: ** B
+          |content of B
+          |#@+node:bee1: *3* 1
+          |content of B1
+          |#@+node:bee1a: *4* a
+          |content of B1a
+          |#@-others
+          |post1
+          |#@-leo
+          |""".stripMargin
+
+      ,"""|id: name
+          |heading: @thin node.cpp
+          |body: "pre1\n@others\npost1\n"
+          |properties:
+          |children:
+          |  - id: ay
+          |    heading: A
+          |    body: "content of A\n"
+          |    properties:
+          |    children:
+          |      - id: ay1
+          |        heading: 1
+          |        body: "content of A1\n"
+          |        properties:
+          |        children:
+          |      - id: ay2
+          |        heading: 2
+          |        body: "content of A2\n"
+          |        properties:
+          |        children:
+          |  - id: bee
+          |    heading: B
+          |    body: "content of B\n"
+          |    properties:
+          |    children:
+          |      - id: bee1
+          |        heading: 1
+          |        body: "content of B1\n"
+          |        properties:
+          |        children:
+          |          - id: bee1a
+          |            heading: a
+          |            body: "content of B1a\n"
+          |            properties:
+          |            children:
+          |""".stripMargin
+      ),
+    //@+node:gcross.20110505163410.6435: *3* a file with nested others sections with comments.
+    "a file with nested others sections with comments." ->
+      ("""|#@+leo-ver=5-thin
+          |#@+node:name: * @thin node.cpp
+          |pre1
+          |#@+at
+          |# comment 1
+          |#@@c
+          |#@+others
+          |#@+node:ay: ** A
+          |content of A
+          |#@+at
+          |# comment A
+          |#@+node:ay1: *3* 1
+          |content of A1
+          |#@+at
+          |# comment A1
+          |#@+node:ay2: *3* 2
+          |content of A2
+          |#@+at
+          |# comment A2
+          |#@+node:bee: ** B
+          |content of B
+          |#@+at
+          |# comment B
+          |#@+node:bee1: *3* 1
+          |content of B1
+          |#@+at
+          |# comment B1
+          |#@+node:bee1a: *4* a
+          |content of B1a
+          |#@+at
+          |# comment B1a
+          |#@-others
+          |post1
+          |#@-leo
+          |""".stripMargin
+
+      ,"""|id: name
+          |heading: @thin node.cpp
+          |body: "pre1\n@\ncomment 1\n@c\n@others\npost1\n"
+          |properties:
+          |children:
+          |  - id: ay
+          |    heading: A
+          |    body: "content of A\n@\ncomment A\n"
+          |    properties:
+          |    children:
+          |      - id: ay1
+          |        heading: 1
+          |        body: "content of A1\n@\ncomment A1\n"
+          |        properties:
+          |        children:
+          |      - id: ay2
+          |        heading: 2
+          |        body: "content of A2\n@\ncomment A2\n"
+          |        properties:
+          |        children:
+          |  - id: bee
+          |    heading: B
+          |    body: "content of B\n@\ncomment B\n"
+          |    properties:
+          |    children:
+          |      - id: bee1
+          |        heading: 1
+          |        body: "content of B1\n@\ncomment B1\n"
+          |        properties:
+          |        children:
+          |          - id: bee1a
+          |            heading: a
+          |            body: "content of B1a\n@\ncomment B1a\n"
+          |            properties:
+          |            children:
+          |""".stripMargin
+      )
+    //@-others
+  )
+  val examples: Map[String,String] = examples_with_yaml.mapValues(_._1)
 }
 //@+node:gcross.20110505163410.6424: ** class ParserSpecification
 class ParserSpecification extends Spec with ShouldMatchers {
@@ -186,224 +345,14 @@ class ParserSpecification extends Spec with ShouldMatchers {
   }
   //@+node:gcross.20110505163410.6426: *3* The node parser should correctly parse
   describe("The node parser should correctly parse") {
-    //@+others
-    //@+node:gcross.20110505163410.6427: *4* an empty file.
-    it("an empty file.") {
-      parseOrThrow(empty_file.lines).toYAML should be(
-        """|id: gcross.20101205182001.1356
-           |heading: @thin node.cpp
-           |body: ""
-           |properties:
-           |children:
-           |""".stripMargin
-      )
+    for((label,(input,correct_yaml)) <- examples_with_yaml) {
+      it(label) { parseOrThrow(input.lines).toYAML should be(correct_yaml) }
     }
-    //@+node:gcross.20110505163410.6428: *4* a single-node file with content.
-    it("a single-node file with content.") {
-      parseOrThrow(single_node_file_with_content.lines).toYAML should be(
-        """|id: namegoeshere
-           |heading: @thin node.cpp
-           |body: "@first Hello,\n@first world!\nfoo\nBar\n"
-           |properties:
-           |    first: "Hello,\nworld!"
-           |children:
-           |""".stripMargin
-      )
-    }
-    //@+node:gcross.20110505163410.6429: *4* a single-node file with a comment ended by @c.
-    it("a single-node file with a comment ended by @c.") {
-      parseOrThrow(single_node_file_with_explicitly_ended_comment.lines).toYAML should be(
-        """|id: namegoeshere
-           |heading: @thin node.cpp
-           |body: "pre\n@\ncomment\ngoes\nhere\n@c\npost\n"
-           |properties:
-           |children:
-           |""".stripMargin
-      )
-    }
-    //@+node:gcross.20110505183655.1896: *4* a single-node file with a comment ended by @c with text after the sentinels.
-    it("a single-node file with a comment ended by @c with text after the sentinels.") {
-      parseOrThrow(single_node_file_with_explicitly_ended_comment_with_text_after_the_sentinels.lines).toYAML should be(
-        """|id: namegoeshere
-           |heading: @thin node.cpp
-           |body: "pre\n@ fried\ncomment\ngoes\nhere\n@c mars bars\npost\n"
-           |properties:
-           |children:
-           |""".stripMargin
-      )
-    }
-    //@+node:gcross.20110505163410.6430: *4* a single-node file with a comment ended by the end of file.
-    it("a single-node file with a comment ended by the end of file.") {
-      parseOrThrow(single_node_file_with_comment_ended_by_end_of_file.lines).toYAML should be(
-        """|id: namegoeshere
-           |heading: @thin node.cpp
-           |body: "pre\n@\ncomment\ngoes\nhere\n"
-           |properties:
-           |children:
-           |""".stripMargin
-      )
-    }
-    //@+node:gcross.20110505163410.6431: *4* a single-node file with properties.
-    it("a single-node file with properties.") {
-      parseOrThrow(single_node_file_with_properties.lines).toYAML should be(
-        """|id: namegoeshere
-           |heading: @thin node.cpp
-           |body: "A\n@language value1\n@tabwidth value2\nB\n"
-           |properties:
-           |    language: "value1"
-           |    tabwidth: "value2"
-           |children:
-           |""".stripMargin
-      )
-    }
-    //@+node:gcross.20110505163410.6432: *4* a file with a single named section.
-    //@@raw
-it("a file with a single named section.") {
-  parseOrThrow(file_with_single_named_section.lines).toYAML should be(
-    """|id: name
-       |heading: @thin node.cpp
-       |body: "foo\n<< Section >>\nbar\n"
-       |properties:
-       |children:
-       |  - id: nodeid
-       |    heading: << Section >>
-       |    body: "content\n"
-       |    properties:
-       |    children:
-       |""".stripMargin
-  )
-}
-    //@+node:gcross.20110505163410.6433: *4* a file with a single named section with properties.
-    //@@raw
-it("a file with a single named section with properties.") {
-  parseOrThrow(file_with_single_named_section_with_properties.lines).toYAML should be(
-    """|id: name
-       |heading: @thin node.cpp
-       |body: "foo\n@language value\n<< Section >>\nbar\n"
-       |properties:
-       |    language: "value"
-       |children:
-       |  - id: nodeid
-       |    heading: << Section >>
-       |    body: "@language value\ncontent\n"
-       |    properties:
-       |        language: "value"
-       |    children:
-       |""".stripMargin
-  )
-}
-    //@+node:gcross.20110505163410.6434: *4* a file with nested others sections.
-    it("a file with nested others sections.") {
-      parseOrThrow(file_with_nested_others_sections.lines).toYAML should be(
-        """|id: name
-           |heading: @thin node.cpp
-           |body: "pre1\n@others\npost1\n"
-           |properties:
-           |children:
-           |  - id: ay
-           |    heading: A
-           |    body: "content of A\n"
-           |    properties:
-           |    children:
-           |      - id: ay1
-           |        heading: 1
-           |        body: "content of A1\n"
-           |        properties:
-           |        children:
-           |      - id: ay2
-           |        heading: 2
-           |        body: "content of A2\n"
-           |        properties:
-           |        children:
-           |  - id: bee
-           |    heading: B
-           |    body: "content of B\n"
-           |    properties:
-           |    children:
-           |      - id: bee1
-           |        heading: 1
-           |        body: "content of B1\n"
-           |        properties:
-           |        children:
-           |          - id: bee1a
-           |            heading: a
-           |            body: "content of B1a\n"
-           |            properties:
-           |            children:
-           |""".stripMargin
-      )
-    }
-    //@+node:gcross.20110505163410.6435: *4* a file with nested others sections with comments.
-    it("a file with nested others sections with comments.") {
-      parseOrThrow(file_with_nested_others_sections_with_comments.lines).toYAML should be(
-        """|id: name
-           |heading: @thin node.cpp
-           |body: "pre1\n@\ncomment 1\n@c\n@others\npost1\n"
-           |properties:
-           |children:
-           |  - id: ay
-           |    heading: A
-           |    body: "content of A\n@\ncomment A\n"
-           |    properties:
-           |    children:
-           |      - id: ay1
-           |        heading: 1
-           |        body: "content of A1\n@\ncomment A1\n"
-           |        properties:
-           |        children:
-           |      - id: ay2
-           |        heading: 2
-           |        body: "content of A2\n@\ncomment A2\n"
-           |        properties:
-           |        children:
-           |  - id: bee
-           |    heading: B
-           |    body: "content of B\n@\ncomment B\n"
-           |    properties:
-           |    children:
-           |      - id: bee1
-           |        heading: 1
-           |        body: "content of B1\n@\ncomment B1\n"
-           |        properties:
-           |        children:
-           |          - id: bee1a
-           |            heading: a
-           |            body: "content of B1a\n@\ncomment B1a\n"
-           |            properties:
-           |            children:
-           |""".stripMargin
-      )
-    }
-    //@-others
   }
   //@+node:gcross.20110505163410.6436: *3* The node tangler should correctly parse
   describe("The node tangler should correctly parse") {
-    it("an empty file") {
-      parseOrThrow(empty_file.lines).writeToString should be(empty_file)
-    }
-    it("a single-node file with content") {
-      parseOrThrow(single_node_file_with_content.lines).writeToString should be(single_node_file_with_content)
-    }
-    it("a single-node file with a comment ended by @c") {
-      parseOrThrow(single_node_file_with_explicitly_ended_comment.lines).writeToString should be(single_node_file_with_explicitly_ended_comment)
-    }
-    it("a single-node file with a comment ended by the end of file") {
-      parseOrThrow(single_node_file_with_comment_ended_by_end_of_file.lines).writeToString should be(single_node_file_with_comment_ended_by_end_of_file)
-    }
-    it("a single-node file with properties") {
-      parseOrThrow(single_node_file_with_properties.lines).writeToString should be(single_node_file_with_properties)
-    }
-    it("a file with a single named section") {
-      parseOrThrow(file_with_single_named_section.lines).writeToString should be(file_with_single_named_section)
-    }
-    it("a file with a single named section with properties") {
-      parseOrThrow(file_with_single_named_section_with_properties.lines).writeToString should be(file_with_single_named_section_with_properties)
-    }
-    it("a file with nested others sections") {
-      parseOrThrow(file_with_nested_others_sections.lines).writeToString should be(file_with_nested_others_sections)
-    }
-    it("a file with nested others sections with comments") {
-      parseOrThrow(file_with_nested_others_sections_with_comments.lines).writeToString should be(file_with_nested_others_sections_with_comments)
+    for((label,input) <- examples) {
+      it(label) { parseOrThrow(input.lines).writeToString should be(input) }
     }
   }
   //@-others
@@ -517,17 +466,7 @@ property("BeginSectionSentinel (<<name>>)") = forAll(arbitrary[Comment],choose(0
   property("parseAllAsynchronously") = forAll(
     listOf(oneOf(
       arbitrary[String],
-      oneOf(Array(
-        empty_file,
-        single_node_file_with_content,
-        single_node_file_with_explicitly_ended_comment,
-        single_node_file_with_comment_ended_by_end_of_file,
-        single_node_file_with_properties,
-        file_with_single_named_section,
-        file_with_single_named_section_with_properties,
-        file_with_nested_others_sections,
-        file_with_nested_others_sections_with_comments
-      ))
+      oneOf(examples.values.toSeq)
     )).map(_.toArray)
   ) { sources =>
     val parse_list = (0 until sources.size) zip (sources.map(source => {() => source.lines}))
