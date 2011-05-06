@@ -5,7 +5,7 @@ package viewpoint.backend.crosswhite.testing
 
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1427: ** << Imports >>
-import scala.collection.mutable.HashSet
+import scala.collection.mutable.{ArrayBuffer,HashSet}
 import org.scalatest.Spec
 import org.scalatest.matchers.ShouldMatchers
 
@@ -43,6 +43,19 @@ object ParserExamples {
        |# goes
        |# here
        |#@@c
+       |post
+       |#@-leo
+       |""".stripMargin
+  //@+node:gcross.20110505183655.1894: *3* single_node_file_with_explicitly_ended_comment_with_text_after_the_sentinels
+  val single_node_file_with_explicitly_ended_comment_with_text_after_the_sentinels =
+    """|#@+leo-ver=5-thin
+       |#@+node:namegoeshere: * @thin node.cpp
+       |pre
+       |#@+at fried
+       |# comment
+       |# goes
+       |# here
+       |#@@c mars bars
        |post
        |#@-leo
        |""".stripMargin
@@ -203,6 +216,17 @@ class ParserSpecification extends Spec with ShouldMatchers {
         """|id: namegoeshere
            |heading: @thin node.cpp
            |body: "pre\n@\ncomment\ngoes\nhere\n@c\npost\n"
+           |properties:
+           |children:
+           |""".stripMargin
+      )
+    }
+    //@+node:gcross.20110505183655.1896: *4* a single-node file with a comment ended by @c with text after the sentinels.
+    it("a single-node file with a comment ended by @c with text after the sentinels.") {
+      parseOrThrow(single_node_file_with_explicitly_ended_comment_with_text_after_the_sentinels.lines).toYAML should be(
+        """|id: namegoeshere
+           |heading: @thin node.cpp
+           |body: "pre\n@ fried\ncomment\ngoes\nhere\n@c mars bars\npost\n"
            |properties:
            |children:
            |""".stripMargin
@@ -415,17 +439,25 @@ object ParserSpecification extends org.scalacheck.Properties("Parser") {
   //@+node:gcross.20110505163410.6449: *3* parseLevel
   property("parseLevel") = forAll { i: Int => i == parseLevel("*%s*".format(i)) }
   //@+node:gcross.20110505163410.6414: *3* Sentinel parser tests
-  //@+node:gcross.20110505163410.6423: *4* end section
-  property("end section") = forAll(arbitrary[Comment],arbitrary[String]) {
-    (c,section_name) =>
+  //@+node:gcross.20110505183655.1889: *4* BeginCommentSentinel
+  property("BeginCommentSentinel (with text)") = forAll(arbitrary[Comment],alphaStr) {
+    (c,s) =>
     =?(
-      Some(List(section_name)),
-      new LineSentinels(c).EndSectionSentinel.unapplySeq("%s@-%s".format(c,section_name))
+      Some("@ " + s),
+      new LineSentinels(c).BeginCommentSentinel.unapply("%s@+at %s".format(c,s))
     )
   }
-  //@+node:gcross.20110505163410.6420: *4* begin section
+
+  property("BeginCommentSentinel (without text)") = forAll(arbitrary[Comment]) {
+    (c) =>
+    =?(
+      Some("@"),
+      new LineSentinels(c).BeginCommentSentinel.unapply("%s@+at".format(c))
+    )
+  }
+  //@+node:gcross.20110505163410.6420: *4* BeginSectionSentinel
   //@@raw
-property("begin section (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),arbitrary[String]) { 
+property("BeginSectionSentinel (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),alphaStr) {
   (c,indentation:Int,section_name) =>
   =?(
     Some((indentation,"<<%s>>".format(section_name))),
@@ -433,24 +465,47 @@ property("begin section (<<name>>)") = forAll(arbitrary[Comment],choose(0,20),ar
   )
 }
   //@@end_raw
-  //@+node:gcross.20110505163410.6421: *4* begin section (others)
-  property("begin section (others)") = forAll(arbitrary[Comment],choose(0,20)) {
+  property("BeginSectionSentinel (others)") = forAll(arbitrary[Comment],choose(0,20)) {
     (c,indentation:Int) =>
     =?(
       Some((indentation,"others")),
       new LineSentinels(c).BeginSectionSentinel.unapply("%s%s@+others".format(" "*indentation,c))
     )
   }
-  //@+node:gcross.20110505163410.6419: *4* node
-  property("node") = forAll(arbitrary[Comment],alphaStr,choose(3,20),arbitrary[String]) {
+  //@+node:gcross.20110505183655.1891: *4* EndCommentSentinel
+  property("EndCommentSentinel (with text)") = forAll(arbitrary[Comment],alphaStr) {
+    (c,s) =>
+    =?(
+      Some("@c " + s),
+      new LineSentinels(c).EndCommentSentinel.unapply("%s@@c %s".format(c,s))
+    )
+  }
+
+  property("EndCommentSentinel (without text)") = forAll(arbitrary[Comment]) {
+    (c) =>
+    =?(
+      Some("@c"),
+      new LineSentinels(c).EndCommentSentinel.unapply("%s@@c".format(c))
+    )
+  }
+  //@+node:gcross.20110505163410.6423: *4* EndSectionSentinel
+  property("EndSectionSentinel") = forAll(arbitrary[Comment],alphaStr) {
+    (c,section_name) =>
+    =?(
+      Some(List(section_name)),
+      new LineSentinels(c).EndSectionSentinel.unapplySeq("%s@-%s".format(c,section_name))
+    )
+  }
+  //@+node:gcross.20110505163410.6419: *4* NodeSentinel
+  property("NodeSentinel") = forAll(arbitrary[Comment],alphaStr,choose(3,20),alphaStr) {
     (c,name,level:Int,heading) =>
     =?(
       Some((name,level,heading)),
       new LineSentinels(c).NodeSentinel.unapply("%s@+node:%s: *%s* %s".format(c,name,level,heading))
     )
   }
-  //@+node:gcross.20110505163410.6422: *4* property
-  property("property") = forAll(arbitrary[Comment],alphaStr,alphaStr) {
+  //@+node:gcross.20110505163410.6422: *4* PropertySentinel
+  property("PropertySentinel") = forAll(arbitrary[Comment],alphaStr,alphaStr) {
     (c,key,value) =>
     =?(
       Some(List(key,value)),

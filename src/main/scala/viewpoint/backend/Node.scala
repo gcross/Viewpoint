@@ -7,9 +7,9 @@ package viewpoint.backend.crosswhite.model
 //@+node:gcross.20110412144451.1397: ** << Imports >>
 import java.io.{PrintWriter,Writer}
 import scala.actors.{Future,Futures}
+import scala.collection.{immutable,mutable}
 import scala.collection.JavaConversions._
 import scala.collection.Map
-import scala.collection.mutable
 import scala.collection.mutable.{HashSet}
 
 import viewpoint.{model => interface}
@@ -359,9 +359,10 @@ val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
 
   object PropertyDirective {
     val Regex = "@([^\\s]*) (.*)".r
+    val forbidden_keys = immutable.Set("","c")
     def unapply(line: String): Option[(String,String)] =
       line match {
-        case Regex(key,value) => Some((key,value))
+        case Regex(key,value) if ! forbidden_keys(key) => Some((key,value))
         case _ => None
       }
   }

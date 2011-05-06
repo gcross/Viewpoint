@@ -54,18 +54,24 @@ object Parser {
   //@+<< Line sentinels >>
   //@+node:gcross.20110412144451.1406: *3* << Line sentinels >>
   class LineSentinels(val comment_marker: String) {
-    val comment_line_starter = comment_marker + " "
     val quoted_comment_marker = "\\Q%s\\E".format(comment_marker)
-    val sentinel = comment_marker + "@"
 
-    val BeginCommentSentinel = "%s@+at".format(comment_marker)
-    val EndCommentSentinel = "%s@@c".format(comment_marker)
-    val EndSectionSentinel = "%s@-(.*)".format(quoted_comment_marker).r
-    val PropertySentinel = "%s@@([^\\s]*) (.*)".format(quoted_comment_marker).r
-    val VerbatimSentinel = "%s@verbatim".format(comment_marker)
+    val EndSectionSentinel = "^%s@-(.*)".format(quoted_comment_marker).r
+    val PropertySentinel = "^%s@@([^\\s]*) (.*)".format(quoted_comment_marker).r
+    val VerbatimSentinel = "^%s@verbatim$".format(quoted_comment_marker).r
+
+    object BeginCommentSentinel {
+      val Regex = "^%s@\\+at( .*)?".format(quoted_comment_marker).r
+      def unapply(line: String): Option[String] =
+        line match {
+          case Regex() => Some("@")
+          case Regex(text_or_null) => Some("@" + Option(text_or_null).getOrElse(""))
+          case _ => None
+        }
+    }
 
     object BeginSectionSentinel {
-      val Regex = "(\\s*)%s@\\+(.*)".format(quoted_comment_marker).r
+      val Regex = "^(\\s*)%s@\\+(.*)".format(quoted_comment_marker).r
       def unapply(line: String): Option[(Int,String)] =
         line match {
           case Regex(indentation,name) => Some((indentation.length,name))
@@ -73,8 +79,18 @@ object Parser {
         }
     }
 
+    object EndCommentSentinel {
+      val Regex = "^%s@@c( .*)?".format(quoted_comment_marker).r
+      def unapply(line: String): Option[String] =
+        line match {
+          case Regex() => Some("@c")
+          case Regex(text_or_null) => Some("@c" + Option(text_or_null).getOrElse(""))
+          case _ => None
+        }
+    }
+
     object NodeSentinel {
-      val Regex = "%s@\\+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
+      val Regex = "^%s@\\+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
       def unapply(line: String): Option[(String,Int,String)] =
         line match {
           case Regex(id,level,heading) => Some((id,parseLevel(level),heading))
@@ -217,15 +233,17 @@ object Parser {
       if(current_section_level == 0) throw ContentAfterEndOfFileSentinel
       val line = nextSectionLine
       try { line match {
-        case BeginCommentSentinel => {
+        case BeginCommentSentinel(text) => {
           if(currently_extracting_comment) throw UnmatchedBeginComment
           currently_extracting_comment = true
-          current_body.append("@\n")
+          current_body.append(text)
+          current_body.append('\n')
         }
-        case EndCommentSentinel => {
+        case EndCommentSentinel(text) => {
           if(!currently_extracting_comment) throw MismatchedEndComment
           currently_extracting_comment = false
-          current_body.append("@c\n")
+          current_body.append(text)
+          current_body.append('\n')
         }
         case NodeSentinel(id,level,heading) => {
           currently_extracting_comment = false
@@ -295,7 +313,7 @@ object Parser {
           }
           current_level -= 1
         }
-        case VerbatimSentinel => {
+        case VerbatimSentinel() => {
           if(currently_extracting_comment) throw UnmatchedBeginComment
           current_body.append("@verbatim\n")
           current_body.append(nextSectionLine)
