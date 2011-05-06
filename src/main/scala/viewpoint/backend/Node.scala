@@ -235,37 +235,43 @@ class Node(var id: String, var heading: String, initial_body: String) extends Pa
             printer.print("@-")
             printer.println(given_section_name)
           }
-          case line @ Sentinel(sentinel) => {
-            printer.print(indentation)
-            sentinel match {
-              case "" => {
+          case line @ Directive() => {
+            line match {
+              case BeginCommentDirective(text) => {
+                printer.print(indentation)
                 printer.print(comment_marker)
-                printer.println("@+at")
+                printer.print("@+at")
+                printer.println(text)
                 val breaks = new Breaks
                 import breaks.{break,breakable}
                 breakable {
                   while(lines.hasNext) {
                     printer.print(indentation)
                     printer.print(comment_marker)
-                    val line = lines.next
-                    if(line == "@c") {
-                      printer.println("@@c")
-                      break
-                    } else {
-                      printer.print(' ')
-                      printer.println(line)
+                    lines.next match {
+                      case EndCommentDirective(text) => {
+                        printer.print("@@c")
+                        printer.println(text)
+                        break
+                      }
+                      case line => {
+                        printer.print(' ')
+                        printer.println(line)
+                      }
                     }
                   }
                 }
               }
-              case "verbatim" => {
+              case VerbatimDirective => {
+                printer.print(indentation)
                 printer.print(comment_marker)
                 printer.println("@verbatim")
                 printer.print(indentation)
                 printer.println(lines.next)
               }
-              case other => {
-                if(isPropertyKey(other.takeWhile(!_.isSpaceChar))) {
+              case PropertyDirective(key,value) => {
+                printer.print(indentation)
+                if(isPropertyKey(key)) {
                   printer.print(comment_marker)
                   printer.print('@')
                   printer.println(line)
@@ -275,7 +281,10 @@ class Node(var id: String, var heading: String, initial_body: String) extends Pa
               }
             }
           }
-        case line => printer.println(line)
+          case line => {
+            printer.print(indentation)
+            printer.println(line)
+          }
       }
     }
     if(!seen_others)
@@ -334,14 +343,6 @@ val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
 
   val PathSentinel = "\\s*@path\\s*(.*?)\\s*".r
 
-  object Sentinel {
-    def unapply(line: String): Option[String] =
-      if(line(0) == '@')
-        Some(line.substring(1))
-      else
-        None
-  }
-
   object SectionRegex {
   //@@raw
   val Regex = "(\\s*)((?:<<\\s*(.*?)\\s*>>|@others)\\s*)\\z".r
@@ -356,7 +357,35 @@ val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
         case _ => None
       }
   }
-
+  //@-<< Sentinels >>
+  //@+<< Directives >>
+  //@+node:gcross.20110505183655.1900: *3* << Directives >>
+  //@+others
+  //@+node:gcross.20110505183655.1901: *4* BeginCommentDirective
+  object BeginCommentDirective {
+    val Regex = "^@( .*)?$".r
+    def unapply(line: String): Option[String] =
+      line match {
+        case Regex() => Some("")
+        case Regex(text_or_null) => Some(Option(text_or_null).getOrElse(""))
+        case _ => None
+      }
+  }
+  //@+node:gcross.20110505183655.1902: *4* Directive
+  object Directive {
+    def unapply(line: String): Boolean = line(0) == '@'
+  }
+  //@+node:gcross.20110505183655.1903: *4* EndCommentDirective
+  object EndCommentDirective {
+    val Regex = "^@c( .*)?$".r
+    def unapply(line: String): Option[String] =
+      line match {
+        case Regex() => Some("")
+        case Regex(text_or_null) => Some(Option(text_or_null).getOrElse(""))
+        case _ => None
+      }
+  }
+  //@+node:gcross.20110505183655.1904: *4* PropertyDirective
   object PropertyDirective {
     val Regex = "@([^\\s]*) (.*)".r
     val forbidden_keys = immutable.Set("","c")
@@ -366,7 +395,10 @@ val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
         case _ => None
       }
   }
-  //@-<< Sentinels >>
+  //@+node:gcross.20110505183655.1905: *4* VerbatimDirective
+  val VerbatimDirective = "@verbatim"
+  //@-others
+  //@-<< Directives >>
 
   //@+others
   //@+node:gcross.20110414153139.2329: *3* getNodeDelegate
