@@ -246,7 +246,15 @@ object Parser {
     while(lines.hasNext) {
       if(current_section_level == 0) throw ContentAfterEndOfFileSentinel
       wrappingParseError(line_number,nextIndentedLine) {
-        case BeginCommentSentinel(text) => {
+        //@+<< Sentinel handlers >>
+        //@+node:gcross.20110507151400.1891: *4* << Sentinel handlers >>
+        //@+at
+        // Note that the ordering of some of these cases is important.
+        //@@c
+
+        //@+<< Begin comment sentinel >>
+        //@+node:gcross.20110507151400.1892: *5* << Begin comment sentinel >>
+        case BeginCommentSentinel(text) =>
           current_body.append(text)
           current_body.append('\n')
 
@@ -277,9 +285,10 @@ object Parser {
             if(keep_going) parseComment
           }
           parseComment
-        }
-        case EndCommentSentinel(text) => throw MismatchedEndComment
-        case NodeSentinel(id,level,heading) => {
+        //@-<< Begin comment sentinel >>
+        //@+<< Node sentinel >>
+        //@+node:gcross.20110507151400.1894: *5* << Node sentinel >>
+        case NodeSentinel(id,level,heading) =>
           current_node.body = current_body.toString
           if(level < current_section_level) throw BadLevelNumber(level)
           while(level < current_level) {
@@ -296,8 +305,10 @@ object Parser {
           current_body = new StringBuilder
           current_node = new Node(id,heading,"")
           current_parent_node.appendChild(current_node)
-        }
-        case BeginSectionSentinel(indentation,section_name) => {
+        //@-<< Node sentinel >>
+        //@+<< Begin section sentinel >>
+        //@+node:gcross.20110507151400.1895: *5* << Begin section sentinel >>
+        case BeginSectionSentinel(indentation,section_name) =>
           for(_ <- 1 to indentation) current_body.append(' ')
           if(section_name.charAt(0) != '<')
             current_body.append('@')
@@ -325,8 +336,10 @@ object Parser {
           current_section_indentation += indentation
           current_section_level = current_level
           current_section_name = section_name
-        }
-        case EndSectionSentinel(section_name) => {
+        //@-<< Begin section sentinel >>
+        //@+<< End section sentinel >>
+        //@+node:gcross.20110507151400.1896: *5* << End section sentinel >>
+        case EndSectionSentinel(section_name) =>
           if(section_name != current_section_name) throw MismatchedEndSection
           current_node.body = current_body.toString
           while(current_level > current_section_level) {
@@ -343,18 +356,27 @@ object Parser {
             current_section_name = section_name_stack.pop
           }
           current_level -= 1
-        }
-        case VerbatimSentinel() => {
+        //@-<< End section sentinel >>
+        //@+<< Verbatim sentinel >>
+        //@+node:gcross.20110507151400.1897: *5* << Verbatim sentinel >>
+        case VerbatimSentinel() =>
           current_body.append("@verbatim\n")
           current_body.append(nextIndentedLine)
-        }
-        case PropertySentinel(name,value) => {
+        //@-<< Verbatim sentinel >>
+        //@+<< Property sentinel >>
+        //@+node:gcross.20110507151400.1898: *5* << Property sentinel >>
+        case PropertySentinel(name,value) =>
           current_body.append('@')
           current_body.append(name)
           current_body.append(' ')
           current_body.append(value)
           current_body.append('\n')
-        }
+        //@-<< Property sentinel >>
+        //@+<< Mismatched sentinels >>
+        //@+node:gcross.20110507151400.1893: *5* << Mismatched sentinels >>
+        case EndCommentSentinel(text) => throw MismatchedEndComment
+        //@-<< Mismatched sentinels >>
+        //@-<< Sentinel handlers >>
         case line => {
           if(line(0) == '@') throw UnrecognizedSentinel
           current_body.append(line)
