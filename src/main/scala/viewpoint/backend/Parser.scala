@@ -6,6 +6,8 @@ package viewpoint.backend.crosswhite.parser
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1398: ** << Imports >>
 import java.io.Writer
+import scala.annotation.tailrec
+import scala.collection.BufferedIterator
 import scala.collection.mutable.ListBuffer
 
 import viewpoint.backend.crosswhite.model.Node
@@ -168,12 +170,17 @@ object Parser {
     }
   }
   //@+node:gcross.20110412144451.1405: *3* parseOrThrow
-  def parseOrThrow(lines: Iterator[String]) : Node = {
+  def parseOrThrow(unbuffered_lines: Iterator[String]) : Node = {
+    val lines: BufferedIterator[String] = unbuffered_lines.buffered
     var line_number = 0
     def nextLine : String = {
       line_number = line_number + 1
       if(!lines.hasNext) throw UnexpectedEndOfFile
       lines.next
+    }
+    def peekLine : String = {
+      if(!lines.hasNext) throw UnexpectedEndOfFile
+      lines.head
     }
     var current_body : StringBuilder = new StringBuilder
 
@@ -204,7 +211,6 @@ object Parser {
     var current_section_indentation = 0
     var current_section_level = 2
     var current_section_name = "leo"
-    var currently_extracting_comment = false
 
     val body_stack = new Stack[StringBuilder]
     val node_stack = new Stack[Node]
@@ -212,16 +218,17 @@ object Parser {
     val section_level_stack = new Stack[Int]
     val section_name_stack = new Stack[String]
 
-    def nextSectionLine : String = {
-      val line = nextLine
+    def stripIndentation(line: String): String =
       if(line.length >= 0) {
         val indentation = countIndentation(line)
         if(indentation < current_section_indentation) throw UnexpectedUnindent
         line.substring(indentation)
       } else line
-    }
 
-    var current_node = nextSectionLine match {
+    def nextIndentedLine: String = stripIndentation(nextLine)
+    def peekIndentedLine: String = stripIndentation(peekLine)
+
+    var current_node = nextIndentedLine match {
       case NodeSentinel(id,level,heading) => {
         if(level != 1) throw BadLevelNumber(level)
         new Node(id,heading,"")
@@ -229,24 +236,50 @@ object Parser {
       case _ => throw NodeNotFoundImmediatelyAfterBeginSection
     }
 
+    def wrappingParseError[V](line_number: Int, line: String)(block: String => V): V =
+      try {
+        block(line)
+      } catch {
+        case (e : ParseError) => throw ParseErrorWithContext(line_number,line,e)
+      }
+
     while(lines.hasNext) {
       if(current_section_level == 0) throw ContentAfterEndOfFileSentinel
-      val line = nextSectionLine
-      try { line match {
+      wrappingParseError(line_number,nextIndentedLine) {
         case BeginCommentSentinel(text) => {
-          if(currently_extracting_comment) throw UnmatchedBeginComment
-          currently_extracting_comment = true
           current_body.append(text)
           current_body.append('\n')
+
+          @tailrec
+          def parseComment {
+            val keep_going =
+              wrappingParseError(line_number+1,peekIndentedLine) {
+                case EndCommentSentinel(text) =>
+                  current_body.append(text)
+                  current_body.append('\n')
+                  nextLine
+                  false
+                case EndSectionSentinel(_) =>
+                  false
+                case NodeSentinel(_,_,_) =>
+                  false
+                case line =>
+                  current_body.append(
+                    if(line.startsWith(comment_marker))
+                      line.substring(comment_marker.length+1)
+                    else
+                      throw UnmatchedBeginComment
+                  )
+                  current_body.append('\n')
+                  nextLine
+                  true
+              }
+            if(keep_going) parseComment
+          }
+          parseComment
         }
-        case EndCommentSentinel(text) => {
-          if(!currently_extracting_comment) throw MismatchedEndComment
-          currently_extracting_comment = false
-          current_body.append(text)
-          current_body.append('\n')
-        }
+        case EndCommentSentinel(text) => throw MismatchedEndComment
         case NodeSentinel(id,level,heading) => {
-          currently_extracting_comment = false
           current_node.body = current_body.toString
           if(level < current_section_level) throw BadLevelNumber(level)
           while(level < current_level) {
@@ -265,7 +298,6 @@ object Parser {
           current_parent_node.appendChild(current_node)
         }
         case BeginSectionSentinel(indentation,section_name) => {
-          if(currently_extracting_comment) throw UnmatchedBeginComment
           for(_ <- 1 to indentation) current_body.append(' ')
           if(section_name.charAt(0) != '<')
             current_body.append('@')
@@ -296,7 +328,6 @@ object Parser {
         }
         case EndSectionSentinel(section_name) => {
           if(section_name != current_section_name) throw MismatchedEndSection
-          currently_extracting_comment = false
           current_node.body = current_body.toString
           while(current_level > current_section_level) {
             current_node = current_parent_node
@@ -314,33 +345,21 @@ object Parser {
           current_level -= 1
         }
         case VerbatimSentinel() => {
-          if(currently_extracting_comment) throw UnmatchedBeginComment
           current_body.append("@verbatim\n")
-          current_body.append(nextSectionLine)
+          current_body.append(nextIndentedLine)
         }
         case PropertySentinel(name,value) => {
-          if(currently_extracting_comment) throw UnmatchedBeginComment
           current_body.append('@')
           current_body.append(name)
           current_body.append(' ')
           current_body.append(value)
           current_body.append('\n')
         }
-        case _ => {
+        case line => {
           if(line(0) == '@') throw UnrecognizedSentinel
-          if(currently_extracting_comment)
-            current_body.append(
-              if(line.startsWith(comment_marker))
-                line.substring(comment_marker.length+1)
-              else
-                throw UnmatchedBeginComment
-            )
-          else
-            current_body.append(line)
+          current_body.append(line)
           current_body.append('\n')
         }
-      } } catch {
-        case (e : ParseError) => throw ParseErrorWithContext(line_number,line,e)
       }
     }
     if(current_level > 0) throw UnexpectedEndOfFile
