@@ -5,8 +5,6 @@ package viewpoint.backend.crosswhite.parser
 
 //@+<< Imports >>
 //@+node:gcross.20110412144451.1422: ** << Imports >>
-import scala.collection.mutable.ListBuffer
-
 import viewpoint.backend.crosswhite.model.{Node,Parent,Tree}
 //@-<< Imports >>
 
@@ -21,45 +19,35 @@ object XMLParser {
   case class NodeDefinitionAppearsMultipleTimes(id: String) extends ParseError
   case class UnmatchedTNode(id: String) extends ParseError
   //@-<< Errors >>
-  //@+<< case class ParseResult >>
-  //@+node:gcross.20110412144451.1424: *3* << case class ParseResult >>
-  case class ParseResult(tree: Tree, expanded_nodes: List[String])
-  //@-<< case class ParseResult >>
   //@+others
   //@+node:gcross.20110412144451.1425: *3* parse
-  def parse(xml: scala.xml.Node): ParseResult = {
+  def parse(xml: scala.xml.Node): Tree = {
     val tree = new Tree
-    val expanded_nodes_builder = new ListBuffer[String]
-    (xml \ "vnodes" \ "v").foreach(parseVNode(tree,tree.root,expanded_nodes_builder))
+    def parseVNode(parent: Parent)(vnode: scala.xml.Node) {
+      val id = (vnode \ "@t").text
+      val maybe_heading = {
+        val heading_nodes = vnode \ "vh"
+        heading_nodes.size match {
+          case 0 => None
+          case 1 => Some(heading_nodes.text)
+          case _ => throw TooManyHeadings(id,heading_nodes.size)
+        }
+      }
+      val node = tree.lookupOrElseAddNode(id,{(null,"")})
+      for(heading <- maybe_heading) {
+        if(!node.isPlaceholder)
+          throw NodeDefinitionAppearsMultipleTimes(id)
+        else {
+          node.heading = heading
+          (vnode \ "v").foreach(parseVNode(node))
+        }
+      }
+      parent.appendChild(node)
+    }
+    (xml \ "vnodes" \ "v").foreach(parseVNode(tree.root))
     for (tnode <- xml \ "tnodes" \ "t"; id = (tnode \ "@tx").text)
       tree.lookupNode(id).getOrElse({throw UnmatchedTNode(id)}).body = tnode.text
-    ParseResult(tree,expanded_nodes_builder.result)
-  }
-  //@+node:gcross.20110412144451.1426: *3* parseVNode
-  def parseVNode(tree: Tree, parent: Parent, expanded_nodes_builder: ListBuffer[String])(vnode: scala.xml.Node) {
-    val id = (vnode \ "@t").text
-    val maybe_heading = {
-      val heading_nodes = vnode \ "vh"
-      heading_nodes.size match {
-        case 0 => None
-        case 1 => Some(heading_nodes.text)
-        case _ => throw TooManyHeadings(id,heading_nodes.size)
-      }
-    }
-    val node = tree.lookupOrElseAddNode(id,{(null,"")})
-    for(heading <- maybe_heading) {
-      if(!node.isPlaceholder)
-        throw NodeDefinitionAppearsMultipleTimes(id)
-      else {
-        node.heading = heading
-        (vnode \ "v").foreach(parseVNode(tree,node,expanded_nodes_builder))
-      }
-    }
-    if((vnode \ "@a").text.contains('E'))
-      expanded_nodes_builder += id
-    for(child_id <- (vnode \ "@expanded").text.split(',') if child_id.nonEmpty)
-      expanded_nodes_builder += child_id
-    parent.appendChild(node)
+    tree
   }
   //@-others
 }

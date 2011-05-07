@@ -11,7 +11,8 @@ import org.scalatest.matchers.ShouldMatchers
 
 import viewpoint.action.testing._
 import viewpoint.backend.crosswhite.model._
-import viewpoint.backend.crosswhite.parser._
+import viewpoint.backend.crosswhite.parser.Parser
+import viewpoint.backend.crosswhite.parser.XMLParser.{parse => parseXML}
 import viewpoint.model.testing._
 import viewpoint.util.testing._
 //@-<< Imports >>
@@ -25,10 +26,7 @@ class MutatorWrappersSpecification extends MutatorWrappersModelSpecification({ne
 class NodeSpecification extends Spec with ShouldMatchers {
   describe("The node comparer should work for") {
     def test(correct_result: Boolean, n1: scala.xml.Node, n2: scala.xml.Node) {
-      import XMLParser._
-      val ParseResult(tree1,_) = parse(n1)
-      val ParseResult(tree2,_) = parse(n2)
-      (tree1.root.getChildNode(0) === tree2.root.getChildNode(0)) should be (correct_result)
+      (parseXML(n1).root.getChildNode(0) === parseXML(n2).root.getChildNode(0)) should be (correct_result)
     }
     it("identical singletons") {
       test(true,
@@ -271,10 +269,8 @@ class NodeVisitorSpecification extends Spec with ShouldMatchers {
   describe("The visitor should work for") {
     def test(xml: scala.xml.Node, correct_result: Array[String]) {
       import scala.collection.mutable.ArrayBuilder
-      import XMLParser._
-      val ParseResult(tree,_) = parse(xml)
       val builder = ArrayBuilder.make[String]
-      tree.root.accept(new NodeVisitor {
+      parseXML(xml).root.accept(new NodeVisitor {
         def visit(node: Node) = {
           builder += node.id
           true
@@ -349,10 +345,8 @@ class NodeVisitorWithMemorySpecification extends Spec with ShouldMatchers {
   describe("The visitor should work for") {
     def test(xml: scala.xml.Node, correct_result: Array[String]) {
       import scala.collection.mutable.ArrayBuilder
-      import XMLParser._
-      val ParseResult(tree,_) = parse(xml)
       val builder = ArrayBuilder.make[String]
-      tree.root.accept(new NodeVisitorWithMemory {
+      parseXML(xml).root.accept(new NodeVisitorWithMemory {
         def visit(node: Node, seen: Boolean) = {
           builder += node.id
           !seen
@@ -427,10 +421,9 @@ class TreeSpecification extends Spec with ShouldMatchers {
   describe("The merger should work for") {
     def test(n1: scala.xml.Node, n2: scala.xml.Node, n3: scala.xml.Node) {
       import scala.collection.mutable.HashMap
-      import XMLParser._
-      val ParseResult(tree1,_) = parse(n1)
-      val ParseResult(tree2,_) = parse(n2)
-      val ParseResult(tree3,_) = parse(n3)
+      val tree1 = parseXML(n1)
+      val tree2 = parseXML(n2)
+      val tree3 = parseXML(n3)
       val substitute = tree2.root.getChildNode(0)
       tree1.mergeAndReplaceStub(tree1.lookupNode(substitute.id).get,substitute)
       (tree1.root.getChildNode(0) === tree3.root.getChildNode(0)) should be (true)
@@ -609,17 +602,16 @@ class TreeSpecification extends Spec with ShouldMatchers {
   describe("The parse result merger should work for") {
     def test(n1: scala.xml.Node, n2: Either[Exception,scala.xml.Node], n3: scala.xml.Node) {
       import scala.collection.mutable.HashMap
-      import XMLParser._
-      val ParseResult(tree1,_) = parse(n1)
+      val tree1 = parseXML(n1)
       val result: Parser.ParseResult =
         n2 match {
           case Left(e) => Left(e)
           case Right(node) => {
-            val ParseResult(tree2,_) = parse(node)
+            val tree2 = parseXML(node)
             Right(tree2.root.getChildNode(0))
           }
         }
-      val ParseResult(tree3,_) = parse(n3)
+      val tree3 = parseXML(n3)
       tree1.mergeParseResultWithStub(tree1.lookupNode("id").get,result)
       tree1.root.getChildNode(0).toYAML should be (tree3.root.getChildNode(0).toYAML)
     }
@@ -679,8 +671,7 @@ class TreeSpecification extends Spec with ShouldMatchers {
     import java.io.File
     import scala.collection.{Map,Set}
     def test(xml: scala.xml.Node, correct_files_associated_with_node: Map[String,Set[File]], correct_nodes_associated_with_file: Map[File,Set[String]]) {
-      import XMLParser._
-      val ParseResult(tree,_) = parse(xml)
+      val tree = parseXML(xml)
       val (observed_files_associated_with_node,observed_nodes_associated_with_file) = tree.findFileNodes(new File("."))
       observed_files_associated_with_node.map({case (node,files) => (node.id,files)}) should be (correct_files_associated_with_node)
       observed_nodes_associated_with_file.map({case (file,nodes) => (file,nodes.map(_.id))}) should be (correct_nodes_associated_with_file)

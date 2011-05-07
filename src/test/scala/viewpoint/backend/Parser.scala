@@ -537,23 +537,20 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
     //@+others
     //@+node:gcross.20110505163410.6455: *4* an empty file.
     it("an empty file.") {
-      val ParseResult(tree,expanded_nodes) = parse(<leo_file/>)
-      tree.root.toYAML should be(
+      parse(<leo_file/>).root.toYAML should be(
         """|children:
            |""".stripMargin
       )
-      expanded_nodes should be (List())
     }
     //@+node:gcross.20110505163410.6456: *4* a file with a single vnode.
     it("a file with a single vnode.") {
-      val ParseResult(tree,expanded_nodes) = parse(
+      parse(
         <leo_file>
         <vnodes>
           <v t="id"><vh>heading</vh></v>
         </vnodes>
         </leo_file>
-      )
-      tree.root.toYAML should be(
+      ).root.toYAML should be(
         """|children:
            |  - id: id
            |    heading: heading
@@ -562,30 +559,10 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
            |    children:
            |""".stripMargin
       )
-    }
-    //@+node:gcross.20110505163410.6457: *4* a file with a single vnode with expanded nodes.
-    it("a file with a single vnode with expanded nodes.") {
-      val ParseResult(tree,expanded_nodes) = parse(
-        <leo_file>
-        <vnodes>
-          <v t="id" a="E" expanded="id2,id3,"><vh>heading</vh></v>
-        </vnodes>
-        </leo_file>
-      )
-      tree.root.toYAML should be(
-        """|children:
-           |  - id: id
-           |    heading: heading
-           |    body: ""
-           |    properties:
-           |    children:
-           |""".stripMargin
-      )
-      expanded_nodes should be (List("id","id2","id3"))
     }
     //@+node:gcross.20110505163410.6458: *4* a file with a single vnode with text.
     it("a file with a single vnode with text.") {
-      val ParseResult(tree,expanded_nodes) = parse(
+      parse(
         <leo_file>
         <vnodes>
           <v t="id"><vh>heading</vh></v>
@@ -594,8 +571,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           <t tx="id">Body goes here</t>
         </tnodes>
         </leo_file>
-      )
-      tree.root.toYAML should be(
+      ).root.toYAML should be(
         """|children:
            |  - id: id
            |    heading: heading
@@ -607,7 +583,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
     }
     //@+node:gcross.20110505163410.6459: *4* a file with two vnodes with text.
     it("a file with two vnodes with text.") {
-      val ParseResult(tree,expanded_nodes) = parse(
+      parse(
         <leo_file>
         <vnodes>
           <v t="id1"><vh>heading1</vh></v>
@@ -618,8 +594,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           <t tx="id2">Second body goes here</t>
         </tnodes>
         </leo_file>
-      )
-      tree.root.toYAML should be(
+      ).root.toYAML should be(
         """|children:
            |  - id: id1
            |    heading: heading1
@@ -633,11 +608,10 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
            |    children:
            |""".stripMargin
       )
-      expanded_nodes should be (List())
     }
     //@+node:gcross.20110505163410.6460: *4* a file with a single cloned vnode with text and definition before clone.
     it("a file with a single cloned vnode with text and definition before clone.") {
-      val ParseResult(tree,expanded_nodes) = parse(
+      parse(
         <leo_file>
         <vnodes>
           <v t="id"><vh>heading</vh></v>
@@ -647,8 +621,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           <t tx="id">Body goes here</t>
         </tnodes>
         </leo_file>
-      )
-      tree.root.toYAML should be(
+      ).root.toYAML should be(
         """|children:
            |  - id: id
            |    heading: heading
@@ -665,7 +638,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
     }
     //@+node:gcross.20110505163410.6461: *4* a file with a single cloned vnode with text and definition after clone.
     it("a file with a single cloned vnode with text and definition after clone.") {
-      val ParseResult(tree,expanded_nodes) = parse(
+      parse(
         <leo_file>
         <vnodes>
           <v t="id"></v>
@@ -675,8 +648,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           <t tx="id">Body goes here</t>
         </tnodes>
         </leo_file>
-      )
-      tree.root.toYAML should be(
+      ).root.toYAML should be(
         """|children:
            |  - id: id
            |    heading: heading
@@ -693,7 +665,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
     }
     //@+node:gcross.20110505163410.6462: *4* a file with nested vnodes.
     it("a file with nested vnodes.") {
-      val ParseResult(tree,expanded_nodes) = parse(
+      parse(
         <leo_file>
         <vnodes>
           <v t="id1"><vh>heading1</vh></v>
@@ -711,8 +683,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           <t tx="id2a2">Nested body goes here</t>
         </tnodes>
         </leo_file>
-      )
-      tree.root.toYAML should be(
+      ).root.toYAML should be(
         """|children:
            |  - id: id1
            |    heading: heading1
@@ -746,11 +717,10 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
            |        children:
            |""".stripMargin
       )
-      expanded_nodes should be (List())
     }
     //@+node:gcross.20110505163410.6463: *4* a file with nested vnodes including clones.
     it("a file with nested vnodes including clones.") {
-      val ParseResult(tree,expanded_nodes) = parse(
+      parse(
         <leo_file>
         <vnodes>
           <v t="id1"><vh>heading1</vh>
@@ -772,8 +742,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           <t tx="id2a2">Nested body goes here</t>
         </tnodes>
         </leo_file>
-      )
-      tree.root.toYAML should be(
+      ).root.toYAML should be(
         """|children:
            |  - id: id1
            |    heading: heading1
@@ -842,7 +811,6 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
            |                    children:
            |""".stripMargin
       )
-      expanded_nodes should be (List())
     }
     //@-others
   }
