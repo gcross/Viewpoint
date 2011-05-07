@@ -531,288 +531,323 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
   //@+node:gcross.20110505163410.6453: *3* << Imports >>
   import XMLParser._
   //@-<< Imports >>
-  //@+others
-  //@+node:gcross.20110505163410.6454: *3* The xml parser should correctly parse
-  describe("The xml parser should correctly parse") {
+  //@+<< Examples >>
+  //@+node:gcross.20110505163410.6454: *3* << Examples >>
+  val examples_with_yaml = immutable.ListMap[String,(scala.xml.Node,String)](
     //@+others
     //@+node:gcross.20110505163410.6455: *4* an empty file.
-    it("an empty file.") {
-      parse(<leo_file/>).root.toYAML should be(
-        """|children:
-           |""".stripMargin
+    "an empty file." ->
+      (
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+</vnodes>
+<tnodes>
+</tnodes>
+</leo_file>
+    //@@end_raw
+      ,"""|children:
+          |""".stripMargin
       )
-    }
+    ,
     //@+node:gcross.20110505163410.6456: *4* a file with a single vnode.
-    it("a file with a single vnode.") {
-      parse(
-        <leo_file>
-        <vnodes>
-          <v t="id"><vh>heading</vh></v>
-        </vnodes>
-        </leo_file>
-      ).root.toYAML should be(
-        """|children:
-           |  - id: id
-           |    heading: heading
-           |    body: ""
-           |    properties:
-           |    children:
-           |""".stripMargin
+    "a file with a single vnode." ->
+      (
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+<v t="id"><vh>heading</vh></v>
+</vnodes>
+<tnodes>
+</tnodes>
+</leo_file>
+    //@@end_raw
+      ,"""|children:
+          |  - id: id
+          |    heading: heading
+          |    body: ""
+          |    properties:
+          |    children:
+          |""".stripMargin
       )
-    }
+    ,
     //@+node:gcross.20110505163410.6458: *4* a file with a single vnode with text.
-    it("a file with a single vnode with text.") {
-      parse(
-        <leo_file>
-        <vnodes>
-          <v t="id"><vh>heading</vh></v>
-        </vnodes>
-        <tnodes>
-          <t tx="id">Body goes here</t>
-        </tnodes>
-        </leo_file>
-      ).root.toYAML should be(
-        """|children:
-           |  - id: id
-           |    heading: heading
-           |    body: "Body goes here"
-           |    properties:
-           |    children:
-           |""".stripMargin
+    "a file with a single vnode with text." ->
+      (
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+<v t="id"><vh>heading</vh></v>
+</vnodes>
+<tnodes>
+<t tx="id">Body goes here</t>
+</tnodes>
+</leo_file>
+    //@@end_raw
+      ,"""|children:
+          |  - id: id
+          |    heading: heading
+          |    body: "Body goes here"
+          |    properties:
+          |    children:
+          |""".stripMargin
       )
-    }
+    ,
     //@+node:gcross.20110505163410.6459: *4* a file with two vnodes with text.
-    it("a file with two vnodes with text.") {
-      parse(
-        <leo_file>
-        <vnodes>
-          <v t="id1"><vh>heading1</vh></v>
-          <v t="id2"><vh>heading2</vh></v>
-        </vnodes>
-        <tnodes>
-          <t tx="id1">First body goes here</t>
-          <t tx="id2">Second body goes here</t>
-        </tnodes>
-        </leo_file>
-      ).root.toYAML should be(
-        """|children:
-           |  - id: id1
-           |    heading: heading1
-           |    body: "First body goes here"
-           |    properties:
-           |    children:
-           |  - id: id2
-           |    heading: heading2
-           |    body: "Second body goes here"
-           |    properties:
-           |    children:
-           |""".stripMargin
+    "a file with two vnodes with text." ->
+      (
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+<v t="id1"><vh>heading1</vh></v>
+<v t="id2"><vh>heading2</vh></v>
+</vnodes>
+<tnodes>
+<t tx="id1">First body goes here</t>
+<t tx="id2">Second body goes here</t>
+</tnodes>
+</leo_file>
+    //@@end_raw
+      ,"""|children:
+          |  - id: id1
+          |    heading: heading1
+          |    body: "First body goes here"
+          |    properties:
+          |    children:
+          |  - id: id2
+          |    heading: heading2
+          |    body: "Second body goes here"
+          |    properties:
+          |    children:
+          |""".stripMargin
       )
-    }
+    ,
     //@+node:gcross.20110505163410.6460: *4* a file with a single cloned vnode with text and definition before clone.
-    it("a file with a single cloned vnode with text and definition before clone.") {
-      parse(
-        <leo_file>
-        <vnodes>
-          <v t="id"><vh>heading</vh></v>
-          <v t="id"></v>
-        </vnodes>
-        <tnodes>
-          <t tx="id">Body goes here</t>
-        </tnodes>
-        </leo_file>
-      ).root.toYAML should be(
-        """|children:
-           |  - id: id
-           |    heading: heading
-           |    body: "Body goes here"
-           |    properties:
-           |    children:
-           |  - id: id
-           |    heading: heading
-           |    body: "Body goes here"
-           |    properties:
-           |    children:
-           |""".stripMargin
+    "a file with a single cloned vnode with text and definition before clone." ->
+      (
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+<v t="id"><vh>heading</vh></v>
+<v t="id"></v>
+</vnodes>
+<tnodes>
+<t tx="id">Body goes here</t>
+</tnodes>
+</leo_file>
+    //@@end_raw
+      ,"""|children:
+          |  - id: id
+          |    heading: heading
+          |    body: "Body goes here"
+          |    properties:
+          |    children:
+          |  - id: id
+          |    heading: heading
+          |    body: "Body goes here"
+          |    properties:
+          |    children:
+          |""".stripMargin
       )
-    }
+    ,
     //@+node:gcross.20110505163410.6461: *4* a file with a single cloned vnode with text and definition after clone.
-    it("a file with a single cloned vnode with text and definition after clone.") {
-      parse(
-        <leo_file>
-        <vnodes>
-          <v t="id"></v>
-          <v t="id"><vh>heading</vh></v>
-        </vnodes>
-        <tnodes>
-          <t tx="id">Body goes here</t>
-        </tnodes>
-        </leo_file>
-      ).root.toYAML should be(
-        """|children:
-           |  - id: id
-           |    heading: heading
-           |    body: "Body goes here"
-           |    properties:
-           |    children:
-           |  - id: id
-           |    heading: heading
-           |    body: "Body goes here"
-           |    properties:
-           |    children:
-           |""".stripMargin
+    "a file with a single cloned vnode with text and definition after clone." ->
+      (
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+<v t="id"></v>
+<v t="id"><vh>heading</vh></v>
+</vnodes>
+<tnodes>
+<t tx="id">Body goes here</t>
+</tnodes>
+</leo_file>
+    //@@end_raw
+      ,"""|children:
+          |  - id: id
+          |    heading: heading
+          |    body: "Body goes here"
+          |    properties:
+          |    children:
+          |  - id: id
+          |    heading: heading
+          |    body: "Body goes here"
+          |    properties:
+          |    children:
+          |""".stripMargin
       )
-    }
+    ,
     //@+node:gcross.20110505163410.6462: *4* a file with nested vnodes.
-    it("a file with nested vnodes.") {
-      parse(
-        <leo_file>
-        <vnodes>
-          <v t="id1"><vh>heading1</vh></v>
-          <v t="id2"><vh>heading2</vh>
-            <v t="id2a"><vh>heading2a</vh>
-              <v t="id2a1"><vh>heading2a1</vh></v>
-              <v t="id2a2"><vh>heading2a2</vh></v>
-            </v>
-            <v t="id2b"><vh>heading2b</vh></v>
-          </v>
-        </vnodes>
-        <tnodes>
-          <t tx="id1">First body goes here</t>
-          <t tx="id2">Second body goes here</t>
-          <t tx="id2a2">Nested body goes here</t>
-        </tnodes>
-        </leo_file>
-      ).root.toYAML should be(
-        """|children:
-           |  - id: id1
-           |    heading: heading1
-           |    body: "First body goes here"
-           |    properties:
-           |    children:
-           |  - id: id2
-           |    heading: heading2
-           |    body: "Second body goes here"
-           |    properties:
-           |    children:
-           |      - id: id2a
-           |        heading: heading2a
-           |        body: ""
-           |        properties:
-           |        children:
-           |          - id: id2a1
-           |            heading: heading2a1
-           |            body: ""
-           |            properties:
-           |            children:
-           |          - id: id2a2
-           |            heading: heading2a2
-           |            body: "Nested body goes here"
-           |            properties:
-           |            children:
-           |      - id: id2b
-           |        heading: heading2b
-           |        body: ""
-           |        properties:
-           |        children:
-           |""".stripMargin
+    "a file with nested vnodes." ->
+      (
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+<v t="id1"><vh>heading1</vh></v>
+<v t="id2"><vh>heading2</vh>
+<v t="id2a"><vh>heading2a</vh>
+<v t="id2a1"><vh>heading2a1</vh></v>
+<v t="id2a2"><vh>heading2a2</vh></v>
+</v>
+<v t="id2b"><vh>heading2b</vh></v>
+</v>
+</vnodes>
+<tnodes>
+<t tx="id1">First body goes here</t>
+<t tx="id2">Second body goes here</t>
+<t tx="id2a2">Nested body goes here</t>
+</tnodes>
+</leo_file>
+    //@@end_raw
+      ,"""|children:
+          |  - id: id1
+          |    heading: heading1
+          |    body: "First body goes here"
+          |    properties:
+          |    children:
+          |  - id: id2
+          |    heading: heading2
+          |    body: "Second body goes here"
+          |    properties:
+          |    children:
+          |      - id: id2a
+          |        heading: heading2a
+          |        body: ""
+          |        properties:
+          |        children:
+          |          - id: id2a1
+          |            heading: heading2a1
+          |            body: ""
+          |            properties:
+          |            children:
+          |          - id: id2a2
+          |            heading: heading2a2
+          |            body: "Nested body goes here"
+          |            properties:
+          |            children:
+          |      - id: id2b
+          |        heading: heading2b
+          |        body: ""
+          |        properties:
+          |        children:
+          |""".stripMargin
       )
-    }
+    ,
     //@+node:gcross.20110505163410.6463: *4* a file with nested vnodes including clones.
-    it("a file with nested vnodes including clones.") {
-      parse(
-        <leo_file>
-        <vnodes>
-          <v t="id1"><vh>heading1</vh>
-            <v t="id2a"/>
-          </v>
-          <v t="id2"><vh>heading2</vh>
-            <v t="id2a"><vh>heading2a</vh>
-              <v t="id2a1"><vh>heading2a1</vh></v>
-              <v t="id2a2"><vh>heading2a2</vh></v>
-            </v>
-            <v t="id2b"><vh>heading2b</vh>
-                <v t="id1"/>
-            </v>
-          </v>
-        </vnodes>
-        <tnodes>
-          <t tx="id1">First body goes here</t>
-          <t tx="id2">Second body goes here</t>
-          <t tx="id2a2">Nested body goes here</t>
-        </tnodes>
-        </leo_file>
-      ).root.toYAML should be(
-        """|children:
-           |  - id: id1
-           |    heading: heading1
-           |    body: "First body goes here"
-           |    properties:
-           |    children:
-           |      - id: id2a
-           |        heading: heading2a
-           |        body: ""
-           |        properties:
-           |        children:
-           |          - id: id2a1
-           |            heading: heading2a1
-           |            body: ""
-           |            properties:
-           |            children:
-           |          - id: id2a2
-           |            heading: heading2a2
-           |            body: "Nested body goes here"
-           |            properties:
-           |            children:
-           |  - id: id2
-           |    heading: heading2
-           |    body: "Second body goes here"
-           |    properties:
-           |    children:
-           |      - id: id2a
-           |        heading: heading2a
-           |        body: ""
-           |        properties:
-           |        children:
-           |          - id: id2a1
-           |            heading: heading2a1
-           |            body: ""
-           |            properties:
-           |            children:
-           |          - id: id2a2
-           |            heading: heading2a2
-           |            body: "Nested body goes here"
-           |            properties:
-           |            children:
-           |      - id: id2b
-           |        heading: heading2b
-           |        body: ""
-           |        properties:
-           |        children:
-           |          - id: id1
-           |            heading: heading1
-           |            body: "First body goes here"
-           |            properties:
-           |            children:
-           |              - id: id2a
-           |                heading: heading2a
-           |                body: ""
-           |                properties:
-           |                children:
-           |                  - id: id2a1
-           |                    heading: heading2a1
-           |                    body: ""
-           |                    properties:
-           |                    children:
-           |                  - id: id2a2
-           |                    heading: heading2a2
-           |                    body: "Nested body goes here"
-           |                    properties:
-           |                    children:
-           |""".stripMargin
+    "a file with nested vnodes including clones." ->
+      (
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+<v t="id1"><vh>heading1</vh>
+<v t="id2a"/>
+</v>
+<v t="id2"><vh>heading2</vh>
+<v t="id2a"><vh>heading2a</vh>
+<v t="id2a1"><vh>heading2a1</vh></v>
+<v t="id2a2"><vh>heading2a2</vh></v>
+</v>
+<v t="id2b"><vh>heading2b</vh>
+<v t="id1"/>
+</v>
+</v>
+</vnodes>
+<tnodes>
+<t tx="id1">First body goes here</t>
+<t tx="id2">Second body goes here</t>
+<t tx="id2a2">Nested body goes here</t>
+</tnodes>
+</leo_file>
+    //@@end_raw
+      ,"""|children:
+          |  - id: id1
+          |    heading: heading1
+          |    body: "First body goes here"
+          |    properties:
+          |    children:
+          |      - id: id2a
+          |        heading: heading2a
+          |        body: ""
+          |        properties:
+          |        children:
+          |          - id: id2a1
+          |            heading: heading2a1
+          |            body: ""
+          |            properties:
+          |            children:
+          |          - id: id2a2
+          |            heading: heading2a2
+          |            body: "Nested body goes here"
+          |            properties:
+          |            children:
+          |  - id: id2
+          |    heading: heading2
+          |    body: "Second body goes here"
+          |    properties:
+          |    children:
+          |      - id: id2a
+          |        heading: heading2a
+          |        body: ""
+          |        properties:
+          |        children:
+          |          - id: id2a1
+          |            heading: heading2a1
+          |            body: ""
+          |            properties:
+          |            children:
+          |          - id: id2a2
+          |            heading: heading2a2
+          |            body: "Nested body goes here"
+          |            properties:
+          |            children:
+          |      - id: id2b
+          |        heading: heading2b
+          |        body: ""
+          |        properties:
+          |        children:
+          |          - id: id1
+          |            heading: heading1
+          |            body: "First body goes here"
+          |            properties:
+          |            children:
+          |              - id: id2a
+          |                heading: heading2a
+          |                body: ""
+          |                properties:
+          |                children:
+          |                  - id: id2a1
+          |                    heading: heading2a1
+          |                    body: ""
+          |                    properties:
+          |                    children:
+          |                  - id: id2a2
+          |                    heading: heading2a2
+          |                    body: "Nested body goes here"
+          |                    properties:
+          |                    children:
+          |""".stripMargin
       )
-    }
     //@-others
+  )
+  val examples = examples_with_yaml.mapValues(_._1)
+  //@-<< Examples >>
+  //@+others
+  //@+node:gcross.20110507151400.1885: *3* The xml parser should correctly parse
+  describe("The xml parser should correctly parse") {
+    for((label,(xml,yaml)) <- examples_with_yaml) {
+      it(label) {
+        parse(xml).root.toYAML should be (yaml)
+      }
+    }
   }
   //@-others
 }
