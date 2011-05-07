@@ -533,37 +533,32 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
   //@-<< Imports >>
   //@+<< Examples >>
   //@+node:gcross.20110505163410.6454: *3* << Examples >>
-  val examples_with_yaml = immutable.ListMap[String,(scala.xml.Node,String)](
+  val examples = immutable.ListMap[String,(scala.xml.Node,String,scala.xml.Node)](
     //@+others
     //@+node:gcross.20110505163410.6455: *4* an empty file.
     "an empty file." ->
-      (
+      (<leo_file/>
+      ,"""|children:
+          |""".stripMargin
+      ,
     //@@raw
 <leo_file>
 <leo_header file_format="2"/>
-<vnodes>
-</vnodes>
+<vnodes/>
 <tnodes>
 </tnodes>
 </leo_file>
     //@@end_raw
-      ,"""|children:
-          |""".stripMargin
       )
     ,
     //@+node:gcross.20110505163410.6456: *4* a file with a single vnode.
     "a file with a single vnode." ->
-      (
-    //@@raw
-<leo_file>
-<leo_header file_format="2"/>
-<vnodes>
-<v t="id"><vh>heading</vh></v>
-</vnodes>
-<tnodes>
-</tnodes>
-</leo_file>
-    //@@end_raw
+      (<leo_file>
+       <leo_header file_format="2"/>
+       <vnodes>
+        <v t="id"><vh>heading</vh></v>
+       </vnodes>
+       </leo_file>
       ,"""|children:
           |  - id: id
           |    heading: heading
@@ -571,11 +566,23 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           |    properties:
           |    children:
           |""".stripMargin
+      ,
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+<v t="id"><vh>heading</vh></v>
+</vnodes>
+<tnodes>
+<t tx="id"></t>
+</tnodes>
+</leo_file>
+    //@@end_raw
       )
     ,
     //@+node:gcross.20110505163410.6458: *4* a file with a single vnode with text.
-    "a file with a single vnode with text." ->
-      (
+    "a file with a single vnode with text." -> {
+      val xml =
     //@@raw
 <leo_file>
 <leo_header file_format="2"/>
@@ -587,6 +594,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
 </tnodes>
 </leo_file>
     //@@end_raw
+      (xml
       ,"""|children:
           |  - id: id
           |    heading: heading
@@ -594,11 +602,13 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           |    properties:
           |    children:
           |""".stripMargin
+      ,xml
       )
+    }
     ,
     //@+node:gcross.20110505163410.6459: *4* a file with two vnodes with text.
-    "a file with two vnodes with text." ->
-      (
+    "a file with two vnodes with text." -> {
+      val xml =
     //@@raw
 <leo_file>
 <leo_header file_format="2"/>
@@ -612,6 +622,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
 </tnodes>
 </leo_file>
     //@@end_raw
+      (xml
       ,"""|children:
           |  - id: id1
           |    heading: heading1
@@ -624,11 +635,13 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           |    properties:
           |    children:
           |""".stripMargin
+      ,xml
       )
+    }
     ,
     //@+node:gcross.20110505163410.6460: *4* a file with a single cloned vnode with text and definition before clone.
-    "a file with a single cloned vnode with text and definition before clone." ->
-      (
+    "a file with a single cloned vnode with text and definition before clone." -> {
+      val xml =
     //@@raw
 <leo_file>
 <leo_header file_format="2"/>
@@ -641,6 +654,7 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
 </tnodes>
 </leo_file>
     //@@end_raw
+      (xml
       ,"""|children:
           |  - id: id
           |    heading: heading
@@ -653,23 +667,22 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           |    properties:
           |    children:
           |""".stripMargin
+      ,xml
       )
+    }
     ,
     //@+node:gcross.20110505163410.6461: *4* a file with a single cloned vnode with text and definition after clone.
     "a file with a single cloned vnode with text and definition after clone." ->
-      (
-    //@@raw
-<leo_file>
-<leo_header file_format="2"/>
-<vnodes>
-<v t="id"></v>
-<v t="id"><vh>heading</vh></v>
-</vnodes>
-<tnodes>
-<t tx="id">Body goes here</t>
-</tnodes>
-</leo_file>
-    //@@end_raw
+      (<leo_file>
+       <leo_header file_format="2"/>
+       <vnodes>
+        <v t="id"/>
+        <v t="id"><vh>heading</vh></v>
+       </vnodes>
+       <tnodes>
+        <t tx="id">Body goes here</t>
+       </tnodes>
+       </leo_file>
       ,"""|children:
           |  - id: id
           |    heading: heading
@@ -682,11 +695,24 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           |    properties:
           |    children:
           |""".stripMargin
+      ,
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+<v t="id"><vh>heading</vh></v>
+<v t="id"></v>
+</vnodes>
+<tnodes>
+<t tx="id">Body goes here</t>
+</tnodes>
+</leo_file>
+    //@@end_raw
       )
     ,
     //@+node:gcross.20110505163410.6462: *4* a file with nested vnodes.
-    "a file with nested vnodes." ->
-      (
+    "a file with nested vnodes." -> {
+      val xml =
     //@@raw
 <leo_file>
 <leo_header file_format="2"/>
@@ -703,10 +729,14 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
 <tnodes>
 <t tx="id1">First body goes here</t>
 <t tx="id2">Second body goes here</t>
+<t tx="id2a"></t>
+<t tx="id2a1"></t>
 <t tx="id2a2">Nested body goes here</t>
+<t tx="id2b"></t>
 </tnodes>
 </leo_file>
     //@@end_raw
+      (xml
       ,"""|children:
           |  - id: id1
           |    heading: heading1
@@ -739,35 +769,34 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           |        properties:
           |        children:
           |""".stripMargin
+      ,xml
       )
+    }
     ,
     //@+node:gcross.20110505163410.6463: *4* a file with nested vnodes including clones.
     "a file with nested vnodes including clones." ->
-      (
-    //@@raw
-<leo_file>
-<leo_header file_format="2"/>
-<vnodes>
-<v t="id1"><vh>heading1</vh>
-<v t="id2a"/>
-</v>
-<v t="id2"><vh>heading2</vh>
-<v t="id2a"><vh>heading2a</vh>
-<v t="id2a1"><vh>heading2a1</vh></v>
-<v t="id2a2"><vh>heading2a2</vh></v>
-</v>
-<v t="id2b"><vh>heading2b</vh>
-<v t="id1"/>
-</v>
-</v>
-</vnodes>
-<tnodes>
-<t tx="id1">First body goes here</t>
-<t tx="id2">Second body goes here</t>
-<t tx="id2a2">Nested body goes here</t>
-</tnodes>
-</leo_file>
-    //@@end_raw
+      (<leo_file>
+       <leo_header file_format="2"/>
+       <vnodes>
+         <v t="id1"><vh>heading1</vh>
+           <v t="id2a"/>
+         </v>
+         <v t="id2"><vh>heading2</vh>
+           <v t="id2a"><vh>heading2a</vh>
+             <v t="id2a1"><vh>heading2a1</vh></v>
+             <v t="id2a2"><vh>heading2a2</vh></v>
+           </v>
+           <v t="id2b"><vh>heading2b</vh>
+             <v t="id1"/>
+           </v>
+         </v>
+      </vnodes>
+      <tnodes>
+        <t tx="id1">First body goes here</t>
+        <t tx="id2">Second body goes here</t>
+        <t tx="id2a2">Nested body goes here</t>
+      </tnodes>
+      </leo_file>
       ,"""|children:
           |  - id: id1
           |    heading: heading1
@@ -835,17 +864,52 @@ class XMLParserSpecification extends Spec with ShouldMatchers {
           |                    properties:
           |                    children:
           |""".stripMargin
+      ,
+    //@@raw
+<leo_file>
+<leo_header file_format="2"/>
+<vnodes>
+<v t="id1"><vh>heading1</vh>
+<v t="id2a"><vh>heading2a</vh>
+<v t="id2a1"><vh>heading2a1</vh></v>
+<v t="id2a2"><vh>heading2a2</vh></v>
+</v>
+</v>
+<v t="id2"><vh>heading2</vh>
+<v t="id2a"/>
+<v t="id2b"><vh>heading2b</vh>
+<v t="id1"/>
+</v>
+</v>
+</vnodes>
+<tnodes>
+<t tx="id1">First body goes here</t>
+<t tx="id2">Second body goes here</t>
+<t tx="id2a"></t>
+<t tx="id2a1"></t>
+<t tx="id2a2">Nested body goes here</t>
+<t tx="id2b"></t>
+</tnodes>
+</leo_file>
+    //@@end_raw
       )
     //@-others
   )
-  val examples = examples_with_yaml.mapValues(_._1)
   //@-<< Examples >>
   //@+others
   //@+node:gcross.20110507151400.1885: *3* The xml parser should correctly parse
   describe("The xml parser should correctly parse") {
-    for((label,(xml,yaml)) <- examples_with_yaml) {
+    for((label,(xml,yaml,_)) <- examples) {
       it(label) {
         parse(xml).root.toYAML should be (yaml)
+      }
+    }
+  }
+  //@+node:gcross.20110507151400.1887: *3* The xml serializer should correctly reserialize
+  describe("The xml serializer should correctly reserialize") {
+    for((label,(input_xml,_,correct_output_xml)) <- examples) {
+      it(label) {
+        serialize(parse(input_xml).root) should be (correct_output_xml)
       }
     }
   }
