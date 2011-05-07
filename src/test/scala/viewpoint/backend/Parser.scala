@@ -17,7 +17,7 @@ import viewpoint.backend.crosswhite.parser._
 //@+others
 //@+node:gcross.20110505183655.1897: ** object ParseExamples
 object ParserExamples {
-  val examples_with_yaml = immutable.Map[String,(String,String)](
+  val examples_with_yaml = immutable.ListMap[String,(String,String)](
     //@+others
     //@+node:gcross.20110505183655.1898: *3* an empty file.
     "an empty file" ->
@@ -326,7 +326,7 @@ object ParserExamples {
       )
     //@-others
   )
-  val examples: Map[String,String] = examples_with_yaml.mapValues(_._1)
+  val examples = examples_with_yaml.mapValues(_._1)
 }
 //@+node:gcross.20110505163410.6424: ** class ParserSpecification
 class ParserSpecification extends Spec with ShouldMatchers {
