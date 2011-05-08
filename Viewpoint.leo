@@ -37,6 +37,10 @@
 <v t="gcross.20110414143741.1457"><vh>@file UnknownNodeException.java</vh></v>
 <v t="gcross.20110414153139.1452"><vh>@file UnknownParentException.java</vh></v>
 </v>
+<v t="gcross.20110427143105.2176"><vh>@path util</vh>
+<v t="gcross.20110427143105.2178"><vh>@file ActionBracket.java</vh></v>
+<v t="gcross.20110427143105.2180"><vh>@file EmptyActionBracket.java</vh></v>
+</v>
 <v t="gcross.20110422115402.3270"><vh>@path view</vh>
 <v t="gcross.20110503191908.2398"><vh>@file BodyEditorLock.java</vh></v>
 <v t="gcross.20110503191908.2400"><vh>@file BodyEditorLockHolder.java</vh></v>
@@ -44,23 +48,14 @@
 <v t="gcross.20110422115402.3282"><vh>@file ChildSelectionAddedEvent.java</vh></v>
 <v t="gcross.20110422115402.3286"><vh>@file ChildSelectionChangedEvent.java</vh></v>
 <v t="gcross.20110422115402.3272"><vh>@file ChildSelectionEvent.java</vh></v>
-<v t="gcross.20110422115402.3284"><vh>@file ChildSelectionRemovedEvent.java</vh></v>
 <v t="gcross.20110422115402.3288"><vh>@file ChildSelectionListener.java</vh></v>
+<v t="gcross.20110422115402.3284"><vh>@file ChildSelectionRemovedEvent.java</vh></v>
 </v>
-</v>
-<v t="gcross.20110427143105.2176"><vh>@path util</vh>
-<v t="gcross.20110427143105.2178"><vh>@file ActionBracket.java</vh></v>
-<v t="gcross.20110427143105.2180"><vh>@file EmptyActionBracket.java</vh></v>
 </v>
 </v>
 </v>
 <v t="gcross.20110412144451.1345"><vh>@path scala</vh>
 <v t="gcross.20110412144451.1346"><vh>@path viewpoint</vh>
-<v t="gcross.20110413143734.1425"><vh>@path view</vh>
-<v t="gcross.20110422115402.3305"><vh>@file ChildSelection.scala</vh></v>
-<v t="gcross.20110413143734.1426"><vh>@file JViewpoint.scala</vh></v>
-<v t="gcross.20110417144805.2197"><vh>@file TreeController.scala</vh></v>
-</v>
 <v t="gcross.20110412144451.1349"><vh>@path backend</vh>
 <v t="gcross.20110418093501.1580"><vh>@file Child.scala</vh></v>
 <v t="gcross.20110412144451.1347"><vh>@file Node.scala</vh></v>
@@ -85,6 +80,11 @@
 <v t="gcross.20110503170605.1704"><vh>@file TemporaryAccessMutator.scala</vh></v>
 <v t="gcross.20110422115402.5171"><vh>@file Transaction.scala</vh></v>
 <v t="gcross.20110425115406.1726"><vh>@file TreeChangeEventRecorder.scala</vh></v>
+</v>
+<v t="gcross.20110413143734.1425"><vh>@path view</vh>
+<v t="gcross.20110422115402.3305"><vh>@file ChildSelection.scala</vh></v>
+<v t="gcross.20110413143734.1426"><vh>@file JViewpoint.scala</vh></v>
+<v t="gcross.20110417144805.2197"><vh>@file TreeController.scala</vh></v>
 </v>
 </v>
 </v>
