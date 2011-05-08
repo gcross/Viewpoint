@@ -218,12 +218,16 @@ object Parser {
     val section_level_stack = new Stack[Int]
     val section_name_stack = new Stack[String]
 
-    def stripIndentation(line: String): String =
+    def tryStripIndentation(line: String): Option[String] =
       if(line.length >= 0) {
         val indentation = countIndentation(line)
-        if(indentation < current_section_indentation) throw UnexpectedUnindent
-        line.substring(indentation)
-      } else line
+        if(indentation < current_section_indentation)
+          None
+        else
+          Some(line.substring(current_section_indentation))
+      } else Some(line)
+
+    def stripIndentation(line: String): String = tryStripIndentation(line).getOrElse({throw UnexpectedUnindent})
 
     def nextIndentedLine: String = stripIndentation(nextLine)
     def peekIndentedLine: String = stripIndentation(peekLine)

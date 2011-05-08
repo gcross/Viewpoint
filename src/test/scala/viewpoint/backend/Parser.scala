@@ -159,6 +159,32 @@ object ParserExamples {
       |    children:
       |""".stripMargin
   ),
+    //@+node:gcross.20110507151400.1902: *3* a file with a single named and indented section.
+    //@@raw
+"a file with a single named and indented section." ->
+  ("""|#@+leo-ver=5-thin
+      |#@+node:name: * @thin node.cpp
+      |foo
+      |  #@+<< Section >>
+      |  #@+node:nodeid: ** << Section >>
+      |  content
+      |  #@-<< Section >>
+      |bar
+      |#@-leo
+      |""".stripMargin
+
+  ,"""|id: name
+      |heading: @thin node.cpp
+      |body: "foo\n  << Section >>\nbar\n"
+      |properties:
+      |children:
+      |  - id: nodeid
+      |    heading: << Section >>
+      |    body: "content\n"
+      |    properties:
+      |    children:
+      |""".stripMargin
+  ),
     //@+node:gcross.20110505163410.6433: *3* a file with a single named section with properties.
     //@@raw
 "a file with a single named section with properties." ->
