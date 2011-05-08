@@ -349,7 +349,99 @@ object ParserExamples {
           |            properties:
           |            children:
           |""".stripMargin
-      )
+      ),
+    //@+node:gcross.20110507151400.1904: *3* a file with a raw block inside a nested section, explicitly ended.
+    //@@raw
+"a file with a raw block inside a nested section, explicitly ended." ->
+  ("""|#@+leo-ver=5-thin
+      |#@+node:name: * @thin node.cpp
+      |foo
+      |  #@+<< Section >>
+      |  #@+node:nodeid: ** << Section >>
+      |  #@@raw
+      |mars
+      |bars
+      |  #@@end_raw
+      |  #@-<< Section >>
+      |bar
+      |#@-leo
+      |""".stripMargin
+
+  ,"""|id: name
+      |heading: @thin node.cpp
+      |body: "foo\n  << Section >>\nbar\n"
+      |properties:
+      |children:
+      |  - id: nodeid
+      |    heading: << Section >>
+      |    body: "@raw\nmars\nbars\n@end_raw\n"
+      |    properties:
+      |    children:
+      |""".stripMargin
+  ),
+    //@+node:gcross.20110507151400.1920: *3* a file with a raw block inside a nested section, implicitly ended by end of section.
+    //@@raw
+"a file with a raw block inside a nested section, implicitly ended by end of section." ->
+  ("""|#@+leo-ver=5-thin
+      |#@+node:name: * @thin node.cpp
+      |foo
+      |  #@+<< Section >>
+      |  #@+node:nodeid: ** << Section >>
+      |  #@@raw
+      |mars
+      |bars
+      |  #@-<< Section >>
+      |bar
+      |#@-leo
+      |""".stripMargin
+
+  ,"""|id: name
+      |heading: @thin node.cpp
+      |body: "foo\n  << Section >>\nbar\n"
+      |properties:
+      |children:
+      |  - id: nodeid
+      |    heading: << Section >>
+      |    body: "@raw\nmars\nbars\n"
+      |    properties:
+      |    children:
+      |""".stripMargin
+  ),
+    //@+node:gcross.20110507151400.1922: *3* a file with a raw block inside a nested section, implicitly ended by beginning of sibling.
+    //@@raw
+"a file with a raw block inside a nested section, implicitly ended by beginning of sibling." ->
+  ("""|#@+leo-ver=5-thin
+      |#@+node:name: * @thin node.cpp
+      |foo
+      |  #@+others
+      |  #@+node:nodeid: ** Sibling 1
+      |  #@@raw
+      |mars
+      |bars
+      |  #@+node:nodeid: ** Sibling 2
+      |  content
+      |  #@-others
+      |bar
+      |#@-leo
+      |""".stripMargin
+
+  ,"""|id: name
+      |heading: @thin node.cpp
+      |body: "foo\n  @others\nbar\n"
+      |properties:
+      |children:
+      |  - id: nodeid
+      |    heading: Sibling 1
+      |    body: "@raw\nmars\nbars\n"
+      |    properties:
+      |    children:
+      |  - id: nodeid
+      |    heading: Sibling 2
+      |    body: "content\n"
+      |    properties:
+      |    children:
+      |""".stripMargin
+  )
     //@-others
   )
   val examples = examples_with_yaml.mapValues(_._1)

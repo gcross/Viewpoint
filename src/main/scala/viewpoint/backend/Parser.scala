@@ -58,6 +58,8 @@ object Parser {
   class LineSentinels(val comment_marker: String) {
     val quoted_comment_marker = "\\Q%s\\E".format(comment_marker)
 
+    val BeginRawSentinel = "^%s@@raw$".format(quoted_comment_marker).r
+    val EndRawSentinel = "^%s@@end_raw$".format(quoted_comment_marker).r
     val EndSectionSentinel = "^%s@-(.*)".format(quoted_comment_marker).r
     val PropertySentinel = "^%s@@([^\\s]*) (.*)".format(quoted_comment_marker).r
     val VerbatimSentinel = "^%s@verbatim$".format(quoted_comment_marker).r
@@ -292,6 +294,29 @@ object Parser {
             }
           ) {}
         //@-<< Begin comment sentinel >>
+        //@+<< Begin raw sentinel >>
+        //@+node:gcross.20110507151400.1900: *5* << Begin raw sentinel >>
+        case BeginRawSentinel() =>
+          current_body.append("@raw\n")
+
+          while(
+            wrappingParseError(line_number+1,peekLine) (
+              line =>
+              tryStripIndentation(line) match {
+                case Some(EndRawSentinel()) =>
+                  current_body.append("@end_raw\n")
+                  nextLine
+                  false
+                case Some(EndNodeBodySentinel()) => false
+                case _ =>
+                  current_body.append(line)
+                  current_body.append('\n')
+                  nextLine
+                  true
+              }
+            )
+          ) {}
+        //@-<< Begin raw sentinel >>
         //@+<< Node sentinel >>
         //@+node:gcross.20110507151400.1894: *5* << Node sentinel >>
         case NodeSentinel(id,level,heading) =>
@@ -381,6 +406,7 @@ object Parser {
         //@+<< Mismatched sentinels >>
         //@+node:gcross.20110507151400.1893: *5* << Mismatched sentinels >>
         case EndCommentSentinel(text) => throw MismatchedEndComment
+        case EndRawSentinel(text) => throw MismatchedEndComment
         //@-<< Mismatched sentinels >>
         //@-<< Sentinel handlers >>
         case line => {

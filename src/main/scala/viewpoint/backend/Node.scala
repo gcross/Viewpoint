@@ -264,6 +264,27 @@ class Node(var id: String, var heading: String, initial_body: String) extends Pa
               }
             }) {}
           //@-<< Begin comment directive >>
+          //@+<< Begin raw directive >>
+          //@+node:gcross.20110507151400.1918: *5* << Begin raw directive >>
+          case BeginRawDirective =>
+            printer.print(indentation)
+            printer.print(comment_marker)
+            printer.println("@@raw")
+            while(lines.hasNext && {
+              lines.next match {
+                case EndRawDirective => {
+                  printer.print(indentation)
+                  printer.print(comment_marker)
+                  printer.println("@@end_raw")
+                  false
+                }
+                case line => {
+                  printer.println(line)
+                  true
+                }
+              }
+            }) {}
+          //@-<< Begin raw directive >>
           //@+<< Verbatim directive >>
           //@+node:gcross.20110507151400.1916: *5* << Verbatim directive >>
           case VerbatimDirective =>
@@ -376,6 +397,8 @@ val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
         case _ => None
       }
   }
+  //@+node:gcross.20110507151400.1910: *4* BeginRawDirective
+  val BeginRawDirective = "@raw"
   //@+node:gcross.20110505183655.1902: *4* Directive
   object Directive {
     def unapply(line: String): Boolean = line(0) == '@'
@@ -390,6 +413,8 @@ val NamedSection = "\\s*<<\\s*(.*?)\\s*>>\\s*\\z".r
         case _ => None
       }
   }
+  //@+node:gcross.20110507151400.1912: *4* EndRawDirective
+  val EndRawDirective = "@end_raw"
   //@+node:gcross.20110505183655.1904: *4* PropertyDirective
   object PropertyDirective {
     val Regex = "@([^\\s]*) (.*)".r
