@@ -211,80 +211,85 @@ class Node(var id: String, var heading: String, initial_body: String) extends Pa
 
     var seen_others = false
     val lines = maybe_lines.getOrElse({body.lines})
-    while(lines.hasNext) {
-      lines.next match {
-          case SectionRegex(additional_indentation,given_section_name,maybe_section_name) => {
-            val section_indentation = indentation + additional_indentation
-            printer.print(section_indentation)
-            printer.print(comment_marker)
-            printer.print("@+")
-            printer.println(given_section_name)
-            maybe_section_name match {
-              case Some(section_name) =>
-                findChildWithSectionName(section_name).getOrElse({
-                  throw NoSectionFound(section_name)
-                }).writeTo(level+1,section_indentation,comment_marker,printer)
-              case None => {
-                if(seen_others) throw OthersAppearsTwice
-                seen_others = true
-                writeUnnamedChildrenTo(level+1,section_indentation,comment_marker,printer)
-              }
-            }
-            printer.print(section_indentation)
-            printer.print(comment_marker)
-            printer.print("@-")
-            printer.println(given_section_name)
+    lines.foreach {
+      //@+<< Named Section >>
+      //@+node:gcross.20110507151400.1913: *4* << Named Section >>
+      case SectionRegex(additional_indentation,given_section_name,maybe_section_name) =>
+        val section_indentation = indentation + additional_indentation
+        printer.print(section_indentation)
+        printer.print(comment_marker)
+        printer.print("@+")
+        printer.println(given_section_name)
+        maybe_section_name match {
+          case Some(section_name) =>
+            findChildWithSectionName(section_name).getOrElse({
+              throw NoSectionFound(section_name)
+            }).writeTo(level+1,section_indentation,comment_marker,printer)
+          case None => {
+            if(seen_others) throw OthersAppearsTwice
+            seen_others = true
+            writeUnnamedChildrenTo(level+1,section_indentation,comment_marker,printer)
           }
-          case line @ Directive() => {
-            line match {
-              case BeginCommentDirective(text) => {
-                printer.print(indentation)
-                printer.print(comment_marker)
-                printer.print("@+at")
-                printer.println(text)
-                val breaks = new Breaks
-                import breaks.{break,breakable}
-                breakable {
-                  while(lines.hasNext) {
-                    printer.print(indentation)
-                    printer.print(comment_marker)
-                    lines.next match {
-                      case EndCommentDirective(text) => {
-                        printer.print("@@c")
-                        printer.println(text)
-                        break
-                      }
-                      case line => {
-                        printer.print(' ')
-                        printer.println(line)
-                      }
-                    }
-                  }
-                }
-              }
-              case VerbatimDirective => {
-                printer.print(indentation)
-                printer.print(comment_marker)
-                printer.println("@verbatim")
-                printer.print(indentation)
-                printer.println(lines.next)
-              }
-              case PropertyDirective(key,value) => {
-                printer.print(indentation)
-                if(isPropertyKey(key)) {
-                  printer.print(comment_marker)
-                  printer.print('@')
-                  printer.println(line)
-                } else {
-                  printer.println(line)
-                }
-              }
-            }
-          }
-          case line => {
+        }
+        printer.print(section_indentation)
+        printer.print(comment_marker)
+        printer.print("@-")
+        printer.println(given_section_name)
+      //@-<< Named Section >>
+      //@+<< Directive >>
+      //@+node:gcross.20110507151400.1914: *4* << Directive >>
+      case line @ Directive() =>
+        line match {
+          //@+<< Begin comment directive >>
+          //@+node:gcross.20110507151400.1915: *5* << Begin comment directive >>
+          case BeginCommentDirective(text) =>
             printer.print(indentation)
-            printer.println(line)
-          }
+            printer.print(comment_marker)
+            printer.print("@+at")
+            printer.println(text)
+            while(lines.hasNext && {
+              printer.print(indentation)
+              printer.print(comment_marker)
+              lines.next match {
+                case EndCommentDirective(text) => {
+                  printer.print("@@c")
+                  printer.println(text)
+                  false
+                }
+                case line => {
+                  printer.print(' ')
+                  printer.println(line)
+                  true
+                }
+              }
+            }) {}
+          //@-<< Begin comment directive >>
+          //@+<< Verbatim directive >>
+          //@+node:gcross.20110507151400.1916: *5* << Verbatim directive >>
+          case VerbatimDirective =>
+            printer.print(indentation)
+            printer.print(comment_marker)
+            printer.println("@verbatim")
+            printer.print(indentation)
+            printer.println(lines.next)
+          //@-<< Verbatim directive >>
+          //@+<< Property directive >>
+          //@+node:gcross.20110507151400.1917: *5* << Property directive >>
+          case PropertyDirective(key,value) =>
+            printer.print(indentation)
+            if(isPropertyKey(key)) {
+              printer.print(comment_marker)
+              printer.print('@')
+              printer.println(line)
+            } else {
+              printer.println(line)
+            }
+          //@-<< Property directive >>
+        }
+      //@-<< Directive >>
+      case line => {
+        printer.print(indentation)
+        printer.println(line)
       }
     }
     if(!seen_others)

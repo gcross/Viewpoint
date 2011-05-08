@@ -91,6 +91,15 @@ object Parser {
         }
     }
 
+    object EndNodeBodySentinel {
+      def unapply(line: String): Boolean =
+        line match {
+          case NodeSentinel(_,_,_) => true
+          case EndSectionSentinel(_) => true
+          case _ => false
+        }
+    }
+
     object NodeSentinel {
       val Regex = "^%s@\\+node:(.*?):\\s*(\\*?[0-9]*\\*) (.*)".format(quoted_comment_marker).r
       def unapply(line: String): Option[(String,Int,String)] =
@@ -262,33 +271,26 @@ object Parser {
           current_body.append(text)
           current_body.append('\n')
 
-          @tailrec
-          def parseComment {
-            val keep_going =
-              wrappingParseError(line_number+1,peekIndentedLine) {
-                case EndCommentSentinel(text) =>
-                  current_body.append(text)
-                  current_body.append('\n')
-                  nextLine
-                  false
-                case EndSectionSentinel(_) =>
-                  false
-                case NodeSentinel(_,_,_) =>
-                  false
-                case line =>
-                  current_body.append(
-                    if(line.startsWith(comment_marker))
-                      line.substring(comment_marker.length+1)
-                    else
-                      throw UnmatchedBeginComment
-                  )
-                  current_body.append('\n')
-                  nextLine
-                  true
-              }
-            if(keep_going) parseComment
-          }
-          parseComment
+          while(
+            wrappingParseError(line_number+1,peekIndentedLine) {
+              case EndNodeBodySentinel() => false
+              case EndCommentSentinel(text) =>
+                current_body.append(text)
+                current_body.append('\n')
+                nextLine
+                false
+              case line =>
+                current_body.append(
+                  if(line.startsWith(comment_marker))
+                    line.substring(comment_marker.length+1)
+                  else
+                    throw UnmatchedBeginComment
+                )
+                current_body.append('\n')
+                nextLine
+                true
+            }
+          ) {}
         //@-<< Begin comment sentinel >>
         //@+<< Node sentinel >>
         //@+node:gcross.20110507151400.1894: *5* << Node sentinel >>
