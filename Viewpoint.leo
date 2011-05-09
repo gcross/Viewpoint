@@ -85,6 +85,12 @@
 <v t="gcross.20110422115402.3305"><vh>@file ChildSelection.scala</vh></v>
 <v t="gcross.20110413143734.1426"><vh>@file JViewpoint.scala</vh></v>
 <v t="gcross.20110417144805.2197"><vh>@file TreeController.scala</vh></v>
+<v t="gcross.20110507151400.1925"><vh>@path editor</vh>
+<v t="gcross.20110507151400.1926"><vh>@path rsyntax</vh>
+<v t="gcross.20110507151400.1927"><vh>@file BodyEditor.scala</vh></v>
+<v t="gcross.20110507151400.1936"><vh>@file NodeDocument.scala</vh></v>
+</v>
+</v>
 </v>
 </v>
 </v>
@@ -129,5 +135,7 @@
 <t tx="gcross.20110422115402.3270"></t>
 <t tx="gcross.20110422115402.3271"></t>
 <t tx="gcross.20110427143105.2176"></t>
+<t tx="gcross.20110507151400.1925"></t>
+<t tx="gcross.20110507151400.1926"></t>
 </tnodes>
 </leo_file>
